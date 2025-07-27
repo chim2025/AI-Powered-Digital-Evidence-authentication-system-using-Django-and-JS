@@ -1,0 +1,205 @@
+:root {
+    --green: #28a745;
+    --dark-bg: #121212;
+    --light-bg: #f8f9fa;
+    --text-color: #212529;
+    --input-bg: #fff;
+  }
+  
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--light-bg);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+  }
+  .dark-theme body {
+    background-color: #121212;
+    color: #f8f9fa;
+  }
+  
+  .dark-theme .login-container {
+    background: #1e1e1e;
+    color: #f8f9fa;
+  }
+  
+  .dark-theme input {
+    background-color: #1e1e1e;
+    color: #f8f9fa;
+  }
+  
+  .dark-theme .slider {
+    background: var(--green);
+  }
+  
+  
+  .dark-theme {
+    --light-bg: #121212;
+    --text-color: #f8f9fa;
+    --input-bg: #1e1e1e;
+  }
+  
+  .login-container {
+    max-width: 400px;
+    margin: 7vh auto;
+    background: var(--input-bg);
+    padding: 3rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  }
+  
+  .brand {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: var(--green);
+  }
+  
+  .input-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+  }
+  
+  .input-group input {
+    width: 80%;
+    padding: 0.8rem 2.5rem 0.8rem 2.5rem;
+    border: 1px solid #ccc;
+    border-radius: 30px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    outline: none;
+  }
+  
+  .input-group i {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 12px;
+    color: #888;
+  }
+  
+  .input-group .toggle-password {
+    left: unset;
+    right: 12px;
+    cursor: pointer;
+  }
+  
+  button {
+    width: 100%;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 30px;
+    background-color: var(--green);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    position: relative;
+  }
+  
+  .spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
+  }
+  
+  .hidden {
+    display: none;
+  }
+  
+  .options {
+    margin-bottom: 1rem;
+  }
+  
+  .footer {
+    text-align: center;
+    font-size: 0.8rem;
+    margin-top: 1.5rem;
+    color: #666;
+  }
+  
+  .theme-toggle {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+  }
+  
+  .theme-toggle input {
+    display: none;
+  }
+  
+  .slider {
+    width: 50px;
+    height: 25px;
+    background: #ccc;
+    display: inline-block;
+    border-radius: 30px;
+    position: relative;
+    cursor: pointer;
+  }
+  
+  .slider::before {
+    content: '';
+    width: 22px;
+    height: 22px;
+    background: white;
+    position: absolute;
+    top: 1.5px;
+    left: 2px;
+    border-radius: 50%;
+    transition: 0.3s;
+  }
+  
+  input:checked + .slider::before {
+    transform: translateX(25px);
+  }
+  
+  input:checked + .slider {
+    background: var(--green);
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .navbar {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    background-color: --input-bg;
+    color: var(--green);
+    position: sticky;
+    top: 0;
+    padding: 10px 20px;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .navbar h1 {
+    font-size: 2rem;
+    margin-right: 15px;
+    font-family: 'Orbitron', sans-serif;
+    
+  }
+  
+  .app-title {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-right: 10px;
+  }
+  
+  .subtitle {
+    font-size: 1rem;
+    color: #aaa;
+  }
+  .optios label{
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+      color: green;
+  }
+  
+  

@@ -1,0 +1,297 @@
+<!-- register.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Registration Wizard</title>
+  <link rel="stylesheet" href="/static/css/register.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+<div class="container">
+  
+  <div id="progress-bar">
+    <div id="progress-bar-inner"></div>
+  </div>
+  <h2>Registration Wizard</h2>
+  <form id="registration-form" method="POST" action="/register/">
+    {% csrf_token %}
+    
+    
+    <div class="step">
+      <div class="terms-container">
+  
+            <div class="terms-policy">
+              <h2>Terms of Service & Privacy Policy</h2>
+              <p>
+                By using our platform, you agree to our Terms of Service and Privacy Policy. 
+                We are committed to protecting your personal data and only collect what is necessary 
+                to provide and improve our services.
+              </p>
+              <p>
+                You are responsible for the information you provide, and you must not use our services 
+                for unlawful purposes. We use secure technologies to keep your data safe and never sell 
+                your personal information.
+              </p>
+              <p>
+                You can review, update, or delete your information at any time. For full details, please 
+                read our complete Terms of Service and Privacy Policy.
+             
+              </p>
+            </div>
+          </br>
+          <label class="checkbox-modern">
+            <input type="checkbox" id="agree" required />
+            <span class="checkmark"></span>
+            <span class="terms-text">
+            I agree to the 
+            <a href="#" target="_blank">Terms of Service</a> and 
+            <a href="#" target="_blank">Privacy Policy</a>.
+          </span>
+        </label>
+        <div id="terms-error" class="error-message"></div>
+      </div>
+      
+    </br> <button type="button" class="next-btn">Continue</button>
+    </div>
+
+    <!-- Step 2: Names -->
+    <div class="step">
+      <label for="surname">Surname</label>
+      <input type="text" id="surname" name="surname" required>
+
+      <label for="firstname">First Name</label>
+      <input type="text" id="firstname" name="firstname" required>
+
+      <label for="middlename">Middle Name</label>
+      <input type="text" id="middlename" name="middlename">
+      <div class="buttons">
+        <button type="button" class="prev-btn">Back</button>
+        <button type="button" class="next-btn">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Nationality and Address -->
+    <div class="step">
+      <label for="country">Country</label>
+<div class="country-container">
+  <input type="text" id="country-search" placeholder="Search your country..." autocomplete="off" name="country" required />
+  <ul id="country-list" class="dropdown-list"></ul>
+</div>
+<small class="error-text" id="country-error"></small>
+
+      <label for="address">Address</label>
+      <input type="text" id="address" name="address" required>
+      <div class="buttons">
+        <button type="button" class="prev-btn">Back</button>
+        <button type="button" class="next-btn">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Email and Phone -->
+    <div class="step">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required>
+      <small id="email-feedback" class="error-text"></small>
+      <span id="email-spinner" class="spinner" style="display: none;"></span>
+      <label for="phone">Phone Number</label>
+      <input type="tel" id="phone" name="phone_number" required>
+      <small id="phone-feedback" class="error-text"></small>
+      <span id="phone-spinner" class="spinner" style="display: none;"></span>
+      <div class="buttons">
+        <button type="button" class="prev-btn">Back</button>
+        <button type="button" class="next-btn">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 5: Username and Password -->
+    <div class="step" id="step-password">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" required>
+      <small id="username-feedback" class="error-text"></small>
+      <span id="username-spinner" class="spinner" style="display: none;"></span>
+      <small id="username-feedback"></small>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required>
+      <div id="password-strength">
+        <span id="strength-bar"></span>
+      </div>
+      <small id="password-feedback" class="error-text"></small>
+      
+      <label for="confirm-password">Confirm Password</label>
+      <input type="password" id="confirm-password" name="confirmpassword" required>
+      <small id="confirm-feedback" class="error-text"></small>
+      
+      <div class="buttons">
+        <button type="button" class="prev-btn">Back</button>
+        <button type="button" id="pd" class="next-btn">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 6: Professional Info -->
+    <div class="step">
+      <label for="profession">Professional Level in Forensics</label>
+      <select id="profession" name="profession">
+        <option>Beginner</option>
+        <option>Intermediate</option>
+        <option>Expert</option>
+      </select>
+
+      <label for="enterprise">Enterprise/Organization</label>
+      <input type="text" id="enterprise" name="enterprise">
+
+      <label for="software-use">Software Use Type</label>
+      <select id="software-use" name="software_use">
+        <option value="default">Default</option>
+        <option value="ai">Advanced AI Model</option>
+        <option value="novice">Novice Engine</option>
+      </select>
+      <div class="buttons">
+        <button type="button" class="prev-btn">Back</button>
+        <button type="submit">Register</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% if messages %}
+  <div class="custom-alert-container">
+    {% for message in messages %}
+      <div class="custom-alert {{ message.tags }}">
+        <span class="close-btn" onclick="this.parentElement.style.display='none';">&times;</span>
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+<style>
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ccc;
+    border-top-color: #333;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-left: 8px;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .error-text {
+    font-size: 14px;
+    margin-top: 4px;
+    margin-bottom:4px;
+    display: block;
+  }
+</style>
+
+<style>
+  .custom-alert-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    width: 300px;
+  }
+
+  .custom-alert {
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #fff;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    animation: fadeIn 0.5s ease-in-out;
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+  }
+
+  .custom-alert.success {
+    background-color: #28a745; /* green */
+  }
+
+  .custom-alert.error {
+    background-color: #dc3545; /* red */
+  }
+
+  .custom-alert.info {
+    background-color: #17a2b8; /* blue */
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+<script>
+  
+  setTimeout(() => {
+    const alerts = document.querySelectorAll('.custom-alert');
+    alerts.forEach(alert => {
+      alert.style.opacity = '0';
+      setTimeout(() => {
+        alert.style.display = 'none';
+      }, 500); 
+    });
+  }, 5000); 
+</script>
+
+
+</form>
+<!-- Theme Toggle Icon -->
+<button id="theme-toggle" title="Toggle Theme"><i class="fas fa-moon"></i></button>
+<script src="/static/js/register.js"></script>
+<script src="/static/js/validator.js"></script>
+<footer>
+  <p>&copy; 2025 Chimenka Goodluck Uchechi. All rights reserved.</p>
+</footer>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+      const password = document.getElementById('password');
+      const confirmPassword = document.getElementById('confirm-password');
+      const confirmFeedback = document.getElementById('confirm-feedback');
+  
+      function validatePasswordMatch() {
+          if (confirmPassword.value === '') {
+              confirmFeedback.textContent = '';
+              confirmPassword.setCustomValidity('');
+              return;
+          }
+  
+          if (password.value !== confirmPassword.value) {
+              confirmFeedback.textContent = 'Passwords do not match';
+              confirmPassword.setCustomValidity('Passwords do not match');
+          } else {
+              confirmFeedback.textContent = '';
+              confirmPassword.setCustomValidity('');
+          }
+      }
+  
+      password.addEventListener('input', validatePasswordMatch);
+      confirmPassword.addEventListener('input', validatePasswordMatch);
+  });
+
+
+
+  </script>
+  
+</body>
+</html>

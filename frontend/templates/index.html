@@ -1,0 +1,75 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EvidenceHub</title>
+    <link rel="stylesheet" href="/static/css/index.css">
+   
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&family=Roboto&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="preloader">
+        <div class="loader-wrapper">
+          <h1>🔍</h1>
+          <h1 class="app-title">EvidenceHub</h1>
+          <p class="subtitle">Digital Forensics Suite</p>
+          <div class="progress-bar"><div class="bar"></div></div>
+          <p class="credit">Developed by <strong>Chimenka Goodluck Uchechi</strong></p>
+          <button id="reload-btn" class="btn outline">Please Wait...</button>
+        </div>
+      </div>
+      <audio id="doneSound" src="{% static 'audio/done.mp3' %}"></audio>
+      
+    <div class="theme-toggle">
+        <input type="checkbox" id="themeCheckbox" aria-label="Toggle Theme">
+        <label for="themeCheckbox" class="toggle-label">
+          <span class="icon sun">🌞</span>
+          <span class="icon moon">🌙</span>
+          <span class="toggle-ball"></span>
+        </label>
+      </div>
+      
+      
+      <div id="toast" class="toast">Theme switched</div>
+      
+    
+    <header>
+        <div class="container">
+            <h1>🔍Evidence Hub</h1>
+            <p class="subtitle" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">Digital Forensics Suite</p>
+            <p>Powered by AI • Secured with Forensics • Built for Justice</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="intro">
+            <h2>About the System</h2>
+            <p>
+                This platform helps forensic investigators and cybersecurity experts to authenticate digital evidence using state-of-the-art AI and forensic tools.
+            </p>
+        </section>
+
+        <section class="features">
+            <h2>Key Features</h2>
+            <ul>
+                <li>🔒 AI-Based Evidence Authentication</li>
+                <li>🧬 Metadata & Integrity Checks</li>
+                <li>🎥 Deepfake & File Tampering Detection</li>
+                <li>🔗 Chain of Custody Tracking</li>
+                <li>📊 Real-time Forensic Analysis Reports</li>
+            </ul>
+        </section>
+
+        <section class="cta">
+            <a href="/login" class="btn">Start a Project</a>
+            <a href="/register" class="btn outline">Registration </a>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Chimenka Goodluck Uchechi. All rights reserved.</p>
+    </footer>
+    <script src="/static/js/background.js" ></script>
+</body>
+</html>
