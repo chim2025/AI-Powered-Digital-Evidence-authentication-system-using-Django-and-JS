@@ -15,12 +15,12 @@ from datetime import datetime
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 
-# from .utils.file_utils import save_uploaded_file
-# from .ai_models.analysis_layer import image
-# from .ai_models.deepfake_detector import analyze_deepfake
-# from .ai_models.utils import full_image_forensic_analysis
-# from .ai_models.filehash import compute_file_hashes
-# from evidencemodule.document_authentication.run_pipeline import full_document_analysis
+from .utils.file_utils import save_uploaded_file
+from .ai_models.analysis_layer import image
+from .ai_models.deepfake_detector import analyze_deepfake
+from .ai_models.utils import full_image_forensic_analysis
+from .ai_models.filehash import compute_file_hashes
+from evidencemodule.document_authentication.run_pipeline import full_document_analysis
 from .models import User
 
 
@@ -163,72 +163,72 @@ def safe_serialize(obj):
     return str(obj)
 
 
-# @csrf_exempt
-# def analyze_evidence(request):
-#     if request.method == "POST" and request.FILES.get("file"):
-#         evidence_file = request.FILES["file"]
-#         # file_path = save_uploaded_file(evidence_file)
-#         file_type = evidence_file.content_type
+@csrf_exempt
+def analyze_evidence(request):
+    if request.method == "POST" and request.FILES.get("file"):
+        evidence_file = request.FILES["file"]
+        # file_path = save_uploaded_file(evidence_file)
+        file_type = evidence_file.content_type
 
-#         def event_stream():
-#             try:
-#                 start_time = datetime.now()
-#                 start_msg = f"Analysis started at: {start_time.strftime('%H:%M:%S')}"
-#                 yield f'data: {json.dumps({"progress": 1, "message": start_msg})}\n\n'
-#                 sys.stdout.flush()
-#                 time.sleep(0.3)
+        def event_stream():
+            try:
+                start_time = datetime.now()
+                start_msg = f"Analysis started at: {start_time.strftime('%H:%M:%S')}"
+                yield f'data: {json.dumps({"progress": 1, "message": start_msg})}\n\n'
+                sys.stdout.flush()
+                time.sleep(0.3)
 
-#                 yield 'data: {"progress": 5, "message": "Uploading file..."}\n\n'
-#                 time.sleep(0.5)
+                yield 'data: {"progress": 5, "message": "Uploading file..."}\n\n'
+                time.sleep(0.5)
 
-#                 yield 'data: {"progress": 20, "message": "Initializing analysis..."}\n\n'
-#                 result = {}
+                yield 'data: {"progress": 20, "message": "Initializing analysis..."}\n\n'
+                result = {}
 
-#                 file_ext = os.path.splitext(file_path)[1].lower()
-#                 is_image = file_type.startswith("image/")
+                file_ext = os.path.splitext(file_path)[1].lower()
+                is_image = file_type.startswith("image/")
 
-#                 if is_image:
-#                     yield 'data: {"progress": 40, "message": "Running deepfake detection..."}\n\n'
-#                     deepfake_result = analyze_deepfake(file_path)
-#                     result["deepfake"] = deepfake_result
-#                     time.sleep(0.5)
+                if is_image:
+                    yield 'data: {"progress": 40, "message": "Running deepfake detection..."}\n\n'
+                    deepfake_result = analyze_deepfake(file_path)
+                    result["deepfake"] = deepfake_result
+                    time.sleep(0.5)
 
-#                     yield 'data: {"progress": 60, "message": "Running full forensic image analysis..."}\n\n'
-#                     stream_list = []
+                    yield 'data: {"progress": 60, "message": "Running full forensic image analysis..."}\n\n'
+                    stream_list = []
 
-#                     def collector(update):
-#                         stream_list.append(f'data: {json.dumps(update)}\n\n')
-#                         time.sleep(0.2)
+                    def collector(update):
+                        stream_list.append(f'data: {json.dumps(update)}\n\n')
+                        time.sleep(0.2)
 
-#                     forensic_result = full_image_forensic_analysis(file_path, streamer=collector)
-#                     for line in stream_list:
-#                         yield line
-#                     result.update(forensic_result)
+                    forensic_result = full_image_forensic_analysis(file_path, streamer=collector)
+                    for line in stream_list:
+                        yield line
+                    result.update(forensic_result)
 
-#                 elif file_ext in ['.pdf', '.docx', '.txt', '.doc']:
-#                     yield 'data: {"progress": 60, "message": "Running document authenticity check..."}\n\n'
-#                     doc_result = full_document_analysis(file_path)
-#                     result["text_detection"] = doc_result.get("detection_result")
-#                     result["report"] = doc_result.get("report")
+                elif file_ext in ['.pdf', '.docx', '.txt', '.doc']:
+                    yield 'data: {"progress": 60, "message": "Running document authenticity check..."}\n\n'
+                    doc_result = full_document_analysis(file_path)
+                    result["text_detection"] = doc_result.get("detection_result")
+                    result["report"] = doc_result.get("report")
 
-#                 yield 'data: {"progress": 90, "message": "Computing file hashes..."}\n\n'
-#                 hash_result = compute_file_hashes(file_path)
-#                 result.update(json.loads(hash_result))
+                yield 'data: {"progress": 90, "message": "Computing file hashes..."}\n\n'
+                hash_result = compute_file_hashes(file_path)
+                result.update(json.loads(hash_result))
 
-#                 end_time = datetime.now()
-#                 end_msg = f"Analysis ended at: {end_time.strftime('%H:%M:%S')}"
-#                 yield f'data: {json.dumps({"progress": 99, "message": end_msg})}\n\n'
-#                 yield f'data: {json.dumps({"progress": 100, "message": "Analysis complete", "result": result})}\n\n'
-#                 print(result)
+                end_time = datetime.now()
+                end_msg = f"Analysis ended at: {end_time.strftime('%H:%M:%S')}"
+                yield f'data: {json.dumps({"progress": 99, "message": end_msg})}\n\n'
+                yield f'data: {json.dumps({"progress": 100, "message": "Analysis complete", "result": result})}\n\n'
+                print(result)
 
-#                 if os.path.exists(file_path):
-#                     os.remove(file_path)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
 
-#             except Exception as e:
-#                 yield f'data: {json.dumps({"progress": 100, "message": "Error: " + str(e), "error": True})}\n\n'
+            except Exception as e:
+                yield f'data: {json.dumps({"progress": 100, "message": "Error: " + str(e), "error": True})}\n\n'
 
-#         return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+        return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
 
-#     return HttpResponse(json.dumps({"error": "No file or invalid request."}), content_type="application/json")
+    return HttpResponse(json.dumps({"error": "No file or invalid request."}), content_type="application/json")
 
 
