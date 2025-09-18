@@ -1,0 +1,531 @@
+
+#running_process {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(48, 46, 46, 0.6);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 40px;
+  z-index: 1000;
+}
+
+/* Hide modal */
+#running_process.hidden {
+  display: none;
+}
+
+/* Modal box */
+.modal-box {
+  background: #fff;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 1000px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+  padding: 20px;
+  position: relative;
+  animation: slideDown 0.3s ease-out;
+}
+
+/* Close button */
+.modal-box .close {
+  position: absolute;
+  right: 15px;
+  top: 10px;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #333;
+}
+.modal-box .close:hover {
+  color: red;
+}
+
+/* Table styling */
+.table-wrapper {
+  overflow-x: auto;
+}
+.modal-box table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.modal-box th, .modal-box td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+.modal-box th {
+  background: #f4f4f4;
+  position: sticky;
+  top: 0;
+}
+.modal-box tr:nth-child(even) {
+  background: #fafafa;
+}
+.modal-box tr:hover {
+  background: #f1f1f1;
+}
+.modal-box td.cmd {
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Slide animation */
+@keyframes slideDown {
+  from { transform: translateY(-50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+/* Search box inside modal */
+#processSearch {
+  width: 100%;
+  padding: 8px;
+  margin: 10px 0 15px 0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+#processSearch:focus {
+  outline: none;
+  border-color: green;
+  box-shadow: 0 0 3px rgba(3, 24, 3, 0.5);
+}
+
+/* Highlight search matches */
+mark {
+  background: yellow;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+.modal-box .toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+
+.modal-box .toolbar input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.modal-box .toolbar button {
+  padding: 8px 12px;
+  border: none;
+  background: green;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.modal-box .toolbar button:hover {
+  background: green;
+}
+/* Sortable header styling (Memory / CPU) */
+.modal-box th.sortable {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-right: 22px; /* space for arrow */
+}
+.modal-box th.sortable::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #666;
+}
+.modal-box th.sortable.asc::after { content: '▲'; }
+.modal-box th.sortable.desc::after { content: '▼'; }
+
+/* keep mark highlight visible and readable */
+mark { background: #ffeb3b; color: #000; padding: 0 2px; border-radius: 3px; }
+/* counter styling */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.toolbar .counter {
+  margin-left: auto;
+  font-size: 13px;
+  color: #555;
+  font-style: italic;
+}
+.process-popup {
+  position: absolute;
+  background: #fff;
+  border-radius: 8px;
+  padding: 15px;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  z-index: 2000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.process-popup h4 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 5px;
+}
+
+.process-popup p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.process-popup {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 15px;
+  min-width: 280px;
+  max-width: 500px;  /* wider if needed */
+  max-height: 400px;
+  overflow-y: auto;  /* scroll if content is long */
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  opacity: 0;
+  transform: translateX(30px);
+  transition: all 0.25s ease;
+  z-index: 1200;
+}
+
+.process-popup.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.process-popup .popup-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 8px;
+  padding-bottom: 5px;
+}
+
+.process-popup .menu-icon {
+  font-size: 16px;
+  color: #666;
+}
+
+.process-popup .cmdline {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  max-width: 100%;
+  overflow-x: auto; /* horizontal scroll if one long word */
+}
+.process-popup {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 15px;
+  width: 400px;          /* fixed width for consistency */
+  max-height: 400px;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  opacity: 0;
+  transition: all 0.25s ease;
+  z-index: 1200;
+}
+
+.process-popup.open-right {
+  transform: translateX(30px);
+}
+.process-popup.open-left {
+  transform: translateX(-30px);
+}
+
+.process-popup.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.process-popup .popup-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 8px;
+  padding-bottom: 5px;
+}
+
+.process-popup .menu-icon {
+  font-size: 16px;
+  color: #666;
+}
+
+.process-popup .cmdline {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  overflow-x: auto; /* scroll only inside cmdline if needed */
+}
+/* Arrow column */
+#processTable td.row-arrow {
+  width: 25px;
+  text-align: center;
+  font-weight: bold;
+  color: #ff8800;
+  cursor: pointer;
+  user-select: none;
+}
+#processTable tr.row-active td.row-arrow {
+  color: #d35400;
+}
+.modal-box {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+.toolbar.sticky {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  padding: 8px;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.table-wrapper {
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: 70vh;
+}
+.save-menu {
+  position: relative;
+  display: inline-block;
+}
+
+#saveDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  color:black;
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  margin-top: 4px;
+  z-index: 999;
+}
+
+#saveDropdown button {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  color:black !important;
+  cursor: pointer;
+}
+
+#saveDropdown button:hover {
+  background: #f0f0f0;
+}
+
+.hidden {
+  display: none;
+}
+.table-wrapper {
+  max-height: 700px; /* or whatever height you want */
+  overflow-y: auto;
+  border: 1px solid #ccc;
+}
+
+#processTable thead th {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa; /* so they don’t become transparent */
+  z-index: 2; /* keeps them above table rows */
+  border-bottom: 2px solid #ddd;
+}
+
+
+
+
+/*******************************************************************************************
+
+
+
+/* Modal background container (existing element #running_process) */
+
+
+
+
+
+
+/* Title */
+.modal-box h2 { margin: 6px 0 8px 0; font-size: 18px; }
+
+/* Toolbar (sticky) */
+
+/* Toolbar elements */
+
+
+/* Save dropdown */
+.save-menu { position: relative; display:inline-block; }
+.dropdown { position: absolute; top: calc(100% + 6px); left: 0; background: #fff; border: 1px solid #ddd; box-shadow: 0 6px 18px rgba(0,0,0,0.08); border-radius:6px; z-index:20; }
+.dropdown.hidden { display: none; }
+.dropdown button { display:block; width:100%; padding:8px 12px; border:none; background:none; text-align:left; cursor:pointer; }
+.dropdown button:hover { background:#f3f3f3; }
+
+/* Table wrapper - scrollable region */
+
+/* status indicators */
+.status-indicator { padding:4px 8px; border-radius: 14px; display:inline-flex; align-items:center; gap:6px; font-weight:600; font-size:13px; }
+.status-indicator.running { color:#155724; background:#e6f4ea; border:1px solid #c6efcd; }
+.status-indicator.stopped { color:#6b0b0b; background:#fbeaea; border:1px solid #f3c5c5; }
+
+/* command cell truncated in table, but full stored in data-full */
+td.cmd {
+  max-width: 380px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* highlight style */
+mark { background: green; color: #000; padding: 0 2px; border-radius:3px; }
+
+/* popup (submenu) */
+/* Popup (submenu) */
+.process-popup {
+  position: absolute;
+  min-width: 340px;
+  max-width: 480px;
+  width: auto;                 /* controlled by JS */
+  max-height: 80vh;            /* responsive height */
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px;
+  border: 2px solid rgb(233, 224, 224);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2), 0 0 14px rgba(255,200,0,0.25);
+  z-index: 2000;
+  opacity: 0;
+  transform: translateY(-8px) scale(0.99);
+  transition: all 0.18s ease;
+  cursor: default;
+}
+
+.process-popup.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Header */
+.process-popup .popup-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 6px;
+  background: #f0f0f0;
+  border-bottom: 1px solid #ccc;
+  cursor: move;
+}
+
+.process-popup .menu-icon {
+  color: green;
+  font-size: 16px;
+}
+
+/* Popup content spacing */
+.process-popup .popup-content p {
+  margin: 4px 0;
+}
+
+/* Command line area */
+.process-popup .cmdline {
+  display: flex;
+  flex-direction: column; /* stack button + code */
+  gap: 4px;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.process-popup .cmdline code {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+  max-height: 160px;
+}
+
+/* Copy button */
+.process-popup .cmdline .copy-btn {
+  align-self: flex-start;
+  font-size: 11px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+/* Status icon alignment */
+.process-popup .status-indicator i {
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .process-popup {
+    width: 320px;
+  }
+  td.cmd {
+    max-width: 220px;
+  }
+}
+.loading-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid green;
+  border-radius: 50%;
+  width: 50px; height: 50px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
