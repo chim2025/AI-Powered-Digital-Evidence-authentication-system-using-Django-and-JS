@@ -1,5 +1,5 @@
 
-'''import psutil
+import psutil
 import socket
 import platform
 from datetime import datetime
@@ -87,4 +87,4 @@ system_info = {
 network_interfaces = psutil.net_if_addrs()
 system_info["network_interfaces"] = ", ".join(network_interfaces.keys())
 system_info["python_version"] = sys.version.split()[0]
-'''
+
