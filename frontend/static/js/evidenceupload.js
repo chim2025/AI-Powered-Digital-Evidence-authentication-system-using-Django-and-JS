@@ -1,7 +1,7 @@
 
 const modal = document.getElementById("taskWizardModal");
 const openModalBtn = document.querySelector(".task-button");
-const closeModalBtn = document.querySelector(".close-btn");
+const closeModalBtn = document.querySelector(".close-bt");
 const nextStepBtn = document.getElementById("nextStep");
 const prevStepBtn = document.getElementById("prevStep");
 const startAnalysisBtn = document.getElementById("startAnalysisBtn");
