@@ -61,3 +61,12 @@ Traceback (most recent call last):
   File "C:\Users\Digital Forensic\Music\AI_Forensics\backend\evidencemodule\ai_models\helpers\model_loader.py", line 45, in load_efficientnet_model
     raise FileNotFoundError(f"Checkpoint not found: {model_path}")
 FileNotFoundError: Checkpoint not found: C:\Users\Digital Forensic\Music\AI_Forensics\backend\evidencemodule\ai_models\helpers\..\checkpoints\efficientnet_b4_rwightman-7eb33cd5.pth
+2025-09-18 18:00:40,923 - INFO - ResNet18 model loaded in 161.25 ms
+2025-09-18 18:00:41,178 - INFO - EfficientNet-B4 loaded in 249.36 ms
+2025-09-18 18:00:44,237 - INFO - Hugging Face AI classifiers loaded in 3063.46 ms
+2025-09-18 18:01:39,032 - INFO - ResNet18 model loaded in 99.88 ms
+2025-09-18 18:01:39,238 - INFO - EfficientNet-B4 loaded in 197.22 ms
+2025-09-18 18:01:41,264 - INFO - Hugging Face AI classifiers loaded in 2025.7 ms
+2025-09-18 18:01:48,732 - INFO - ResNet18 model loaded in 103.61 ms
+2025-09-18 18:01:48,929 - INFO - EfficientNet-B4 loaded in 195.07 ms
+2025-09-18 18:01:51,118 - INFO - Hugging Face AI classifiers loaded in 2189.12 ms
