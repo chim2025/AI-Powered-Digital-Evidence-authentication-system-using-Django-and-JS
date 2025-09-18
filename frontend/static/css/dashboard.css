@@ -526,7 +526,7 @@ i{
   transition: width 0.3s ease;
 }
 
-.close-btn {
+.close-bt {
   position: absolute;
   top: 1px;
   margin-bottom: 10px;
@@ -536,7 +536,7 @@ i{
   cursor: pointer;
 }
 
-.close-btn:hover {
+.close-bt:hover {
   color: var(--primary-color);
 }
 
@@ -1914,6 +1914,9 @@ svg {
 .meta-highlight-box.location {
   background: #e3f2fd;
   border-left-color: var(--primary-color);
+}
+.none{
+  display: none;
 }
 
 
