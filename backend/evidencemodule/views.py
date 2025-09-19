@@ -1,6 +1,8 @@
 #####################################################################################
 #Imports, modules and API
 
+import subprocess
+import uuid
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse, StreamingHttpResponse
@@ -195,7 +197,10 @@ def analyze_evidence(request):
 
                 file_ext = os.path.splitext(file_path)[1].lower()
                 is_image = file_type.startswith("image/")
+                is_doc = file_ext in ['.pdf', '.docx', '.txt', '.doc']
+                is_memdump = file_ext in ['.dmp', '.raw', '.mem']
 
+                # 🖼️ Image analysis
                 if is_image:
                     yield 'data: {"progress": 40, "message": "Running deepfake detection..."}\n\n'
                     deepfake_result = analyze_deepfake(file_path)
@@ -214,12 +219,70 @@ def analyze_evidence(request):
                         yield line
                     result.update(forensic_result)
 
-                elif file_ext in ['.pdf', '.docx', '.txt', '.doc']:
+                # 📄 Document analysis
+                elif is_doc:
                     yield 'data: {"progress": 60, "message": "Running document authenticity check..."}\n\n'
                     doc_result = full_document_analysis(file_path)
                     result["text_detection"] = doc_result.get("detection_result")
                     result["report"] = doc_result.get("report")
 
+                # 🧠 Memory dump analysis
+                elif is_memdump:
+                    yield 'data: {"progress": 40, "message": "Running memory forensics with Volatility3..."}\n\n'
+
+                    # Pick available volatility command
+                    vol_cmds = [
+                        ["vol"],  # if installed globally
+                        ["vol.py"],  # if script
+                        [sys.executable, "-m", "volatility3"],  # python -m fallback
+                    ]
+                    vol_cmd = None
+                    for candidate in vol_cmds:
+                        try:
+                            subprocess.run(candidate + ["--help"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            vol_cmd = candidate
+                            break
+                        except Exception:
+                            continue
+
+                    if not vol_cmd:
+                        yield 'data: {"progress": 100, "message": "Volatility3 not found on server.", "error": true}\n\n'
+                        return
+
+                    # Define plugins
+                    plugins = ["windows.pslist", "windows.modules"]
+                    total = len(plugins)
+                    results = {}
+
+                    for i, plugin in enumerate(plugins, start=1):
+                        yield f'data: {json.dumps({"progress": 40 + i*20, "message": f"Running {plugin}..."})}\n\n'
+
+                        out_file = os.path.join(settings.MEDIA_ROOT, f"{uuid.uuid4()}_{plugin.replace('.', '_')}.txt")
+                        with open(out_file, "w", encoding="utf-8") as f:
+                            process = subprocess.Popen(
+                                vol_cmd + ["-f", file_path, plugin],
+                                stdout=f,
+                                stderr=subprocess.PIPE,
+                                text=True,
+                            )
+                            _, stderr = process.communicate()
+
+                        if process.returncode == 0:
+                            results[plugin] = {
+                                "output_url": settings.MEDIA_URL + os.path.basename(out_file),
+                                "summary": f"Completed {plugin}, output saved.",
+                            }
+                        else:
+                            results[plugin] = {
+                                "error": stderr.strip() or "Unknown error"
+                            }
+
+                    result["memdump"] = {
+                        "file": settings.MEDIA_URL + os.path.basename(file_path),
+                        "plugins": results,
+                    }
+
+                # 🔑 File hashes for all types
                 yield 'data: {"progress": 90, "message": "Computing file hashes..."}\n\n'
                 hash_result = compute_file_hashes(file_path)
                 result.update(json.loads(hash_result))
@@ -228,6 +291,7 @@ def analyze_evidence(request):
                 end_msg = f"Analysis ended at: {end_time.strftime('%H:%M:%S')}"
                 yield f'data: {json.dumps({"progress": 99, "message": end_msg})}\n\n'
                 yield f'data: {json.dumps({"progress": 100, "message": "Analysis complete", "result": result})}\n\n'
+
                 print(result)
 
                 if os.path.exists(file_path):
@@ -235,10 +299,11 @@ def analyze_evidence(request):
 
             except Exception as e:
                 yield f'data: {json.dumps({"progress": 100, "message": "Error: " + str(e), "error": True})}\n\n'
-                
+
         return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
 
     return HttpResponse(json.dumps({"error": "No file or invalid request."}), content_type="application/json")
+
 
 
 

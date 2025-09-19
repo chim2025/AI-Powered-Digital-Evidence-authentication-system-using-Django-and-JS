@@ -6,7 +6,6 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('analyze/', views.analyze_evidence, name='analyze_evidence'),
-    path("get_process/", views.get_process, name="get_process")
-   
+    path("get_process/", views.get_process, name="get_process")  
 ]
 
