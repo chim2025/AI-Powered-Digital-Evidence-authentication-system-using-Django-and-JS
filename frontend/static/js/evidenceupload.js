@@ -9,7 +9,6 @@ const step1 = document.getElementById("wizard-step-1");
 const step2 = document.getElementById("wizard-step-2");
 const progress = document.querySelector(".progress");
 
-
 const uploadArea = document.getElementById("uploadArea");
 const evidenceInput = document.getElementById("evidenceFiles");
 const evidencePreview = document.getElementById("evidencePreview");
@@ -346,7 +345,9 @@ function startEvidenceAnalysis() {
   localStorage.setItem("evidenceResults", JSON.stringify(json.result));
 
  
-  if (json.result.deepfake_detection || json.result.forgery_detection || json.result.metadata) {
+  if (json.result.memdump) {
+    renderMemdumpResults(json.result.memdump);
+  } else if (json.result.deepfake_detection || json.result.forgery_detection || json.result.metadata) {
     renderEvidenceResults(json.result);
   } else if (json.result.report && json.result.text_detection) {
     renderDocumentResults({
@@ -355,8 +356,9 @@ function startEvidenceAnalysis() {
       hashes: json.result.hashes
     });
   } else {
-    console.warn("Unknown evidence result format", result);
+    console.warn("Unknown evidence result format", json.result);
   }
+
 
   showToast("Analysis complete.");
 }
@@ -1002,6 +1004,49 @@ setTimeout(() => {
 });
 
 }
+
+function renderMemdumpResults(data) {
+  const section = document.getElementById("analytics_section");
+
+  section.innerHTML = `
+    <div class="analysis-container modern-analysis">
+      <h3 class="section-title">🧠 Memory Dump Analysis Results</h3>
+
+      <div class="card-grid">
+        <div class="result-card">
+          <h4><i class="fas fa-microchip"></i> Profile</h4>
+          <p>${data.profile || "Unknown"}</p>
+        </div>
+        <div class="result-card">
+          <h4><i class="fas fa-cogs"></i> Processes Found</h4>
+          <p>${data.process_count || 0}</p>
+        </div>
+        <div class="result-card">
+          <h4><i class="fas fa-shield-alt"></i> Suspicious Indicators</h4>
+          <p class="${data.suspicious && data.suspicious !== 'None' ? 'status-failed' : 'status-passed'}">
+            ${data.suspicious || "None"}
+          </p>
+        </div>
+      </div>
+
+      <h4 class="sub-title"><i class="fas fa-list"></i> Top Processes</h4>
+      <div class="card-grid">
+        ${data.top_processes?.map(p => `
+          <div class="result-card small-card">
+            <i class="fas fa-terminal"></i> ${p}
+          </div>
+        `).join("") || "<div class='result-card'>No processes detected</div>"}
+      </div>
+
+      <h4 class="sub-title"><i class="fas fa-file-alt"></i> Raw Report</h4>
+      <div class="result-card full-width">
+        <pre class="memdump-report">${data.raw_report || "No report available"}</pre>
+      </div>
+    </div>
+  `;
+}
+
+
 
 
 document.addEventListener('DOMContentLoaded', () => {

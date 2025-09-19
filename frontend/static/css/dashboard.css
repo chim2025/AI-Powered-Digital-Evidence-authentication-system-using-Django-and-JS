@@ -98,6 +98,28 @@ border-radius: 6px;
 transition: background-color 0.3s ease;
 }
 
+/* Memdump results */
+.memdump-report {
+  background: #1e1e2f;
+  color: #eaeaea;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 0.9em;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.result-card.small-card {
+  flex: 1 1 120px;
+  text-align: center;
+  font-size: 0.85em;
+}
+
+.result-card.full-width {
+  grid-column: 1 / -1;
+}
+
 
   .main-content {
     flex: 1;
