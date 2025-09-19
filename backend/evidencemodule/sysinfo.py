@@ -61,6 +61,15 @@ def get_antivirus_name():
 firewall_status = get_firewall_status()
 antivirus_name = get_antivirus_name()
 
+def detect_os():
+    version = sys.getwindowsversion()
+    build_number = version.build
+    if build_number >= 22000:
+        os_name = "Windows 11"
+    else:
+        os_name = "Windows 10"
+    return os_name
+
 system_info = {
         "cpu_model": cpu_model,
         "ram": f"{ram} GB",
