@@ -147,8 +147,8 @@ mark {
   font-size: 12px;
   color: #666;
 }
-.modal-box th.sortable.asc::after { content: '▲'; }
-.modal-box th.sortable.desc::after { content: '▼'; }
+.modal-box th.sortable.asc::after { content: 'â–²'; }
+.modal-box th.sortable.desc::after { content: 'â–¼'; }
 
 /* keep mark highlight visible and readable */
 mark { background: #ffeb3b; color: #000; padding: 0 2px; border-radius: 3px; }
@@ -360,7 +360,7 @@ mark { background: #ffeb3b; color: #000; padding: 0 2px; border-radius: 3px; }
 #processTable thead th {
   position: sticky;
   top: 0;
-  background: #f8f9fa; /* so they don’t become transparent */
+  background: #f8f9fa; /* so they donâ€™t become transparent */
   z-index: 2; /* keeps them above table rows */
   border-bottom: 2px solid #ddd;
 }
@@ -413,24 +413,58 @@ td.cmd {
 mark { background: green; color: #000; padding: 0 2px; border-radius:3px; }
 
 /* popup (submenu) */
-/* Popup (submenu) */
+/* Process Popup (Submodal) */
 .process-popup {
-  position: absolute;
-  min-width: 340px;
-  max-width: 480px;
-  width: auto;                 /* controlled by JS */
-  max-height: 80vh;            /* responsive height */
-  overflow-y: auto;
-  background: #fff;
-  border-radius: 10px;
-  padding: 12px;
-  border: 2px solid rgb(233, 224, 224);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2), 0 0 14px rgba(255,200,0,0.25);
-  z-index: 2000;
+  position: fixed; /* Changed to fixed for better positioning relative to viewport */
+  width: 40vw;
+  max-width: 500px;
+  min-width: 300px;
+  max-height: 85vh;
+  background: var(--popup-bg, #ffffff);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  z-index: 3000;
   opacity: 0;
-  transform: translateY(-8px) scale(0.99);
-  transition: all 0.18s ease;
-  cursor: default;
+  transform: translateY(-10px) scale(0.98);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text-color, #1a1a1a);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb, #888) var(--scrollbar-track, #f1f1f1);
+}
+
+/* Dark theme variables */
+:root {
+  --popup-bg: #ffffff;
+  --text-color: #1a1a1a;
+  --border-color: #e0e0e0;
+  --header-bg: #f5f5f5;
+  --table-bg: #fafafa;
+  --scrollbar-thumb: #888;
+  --scrollbar-track: #f1f1f1;
+  --button-bg: green;
+  --button-hover-bg: green;
+  --badge-safe: #28a745;
+  --badge-suspicious: #ff9800;
+  --badge-malicious: #dc3545;
+}
+
+[data-theme="dark"] {
+  --popup-bg: #1e1e1e;
+  --text-color: #e0e0e0;
+  --border-color: #444;
+  --header-bg: #2a2a2a;
+  --table-bg: #252525;
+  --scrollbar-thumb: #666;
+  --scrollbar-track: #333;
+  --button-bg: rgb(173, 184, 173);
+  --button-hover-bg:rgb(173, 184, 173);
+  --badge-safe: #2ecc71;
+  --badge-suspicious: #f39c12;
+  --badge-malicious: #e74c3c;
 }
 
 .process-popup.visible {
@@ -438,82 +472,317 @@ mark { background: green; color: #000; padding: 0 2px; border-radius:3px; }
   transform: translateY(0) scale(1);
 }
 
-/* Header */
-.process-popup .popup-header {
+.popup-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  padding: 6px;
-  background: #f0f0f0;
-  border-bottom: 1px solid #ccc;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--header-bg, #f5f5f5);
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 10px 10px 0 0;
   cursor: move;
-}
-
-.process-popup .menu-icon {
-  color: green;
   font-size: 16px;
+  font-weight: 600;
 }
 
-/* Popup content spacing */
-.process-popup .popup-content p {
-  margin: 4px 0;
+.popup-header .menu-icon i {
+  font-size: 14px;
+  color: var(--text-color, #1a1a1a);
 }
 
-/* Command line area */
-.process-popup .cmdline {
+.popup-content {
+  padding: 16px;
+}
+
+.popup-content p {
+  
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.popup-content strong {
+  font-weight: 600;
+  color: var(--text-color, #1a1a1a);
+}
+
+.cmdline, .executable, .executable_hash {
   display: flex;
-  flex-direction: column; /* stack button + code */
-  gap: 4px;
-  font-family: monospace;
-  font-size: 13px;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
 }
 
-.process-popup .cmdline code {
+.cmdline strong {
+  font-size: 14px;
+}
+
+.cmdline code {
   display: block;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 4px;
-  background: #f8f9fa;
-  border-radius: 4px;
+  padding: 10px;
+  background: var(--table-bg, #f1f3f5);
+  border-radius: 6px;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
   white-space: pre-wrap;
-  word-break: break-word;
-  overflow-x: auto;
-  max-height: 160px;
+  word-break: break-all;
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb, #888) var(--scrollbar-track, #f1f1f1);
+}
+.executable code,  .executable_hash code{
+  display: block;
+  padding: 10px;
+  background: var(--table-bg, #e4e9e3);
+  border-radius: 6px;
+  
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb, #888) var(--scrollbar-track, #f1f1f1);
 }
 
-/* Copy button */
-.process-popup .cmdline .copy-btn {
+
+.copy-btn {
   align-self: flex-start;
-  font-size: 11px;
-  padding: 2px 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--button-bg, green);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-/* Status icon alignment */
-.process-popup .status-indicator i {
-  vertical-align: middle;
+.copy-btn:hover {
+  background: var(--button-hover-bg, green);
+}
+
+.copy-btn i {
   margin-right: 4px;
 }
 
-/* Responsive */
+.network-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 12px 0;
+  background: var(--popup-bg, #ffffff);
+}
+
+.network-table th,
+.network-table td {
+  padding: 10px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  text-align: left;
+}
+
+.network-table th {
+  background: var(--header-bg, #f5f5f5);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.network-table tbody tr:nth-child(even) {
+  background: var(--table-bg, #fafafa);
+}
+
+.network-table tbody tr:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 12px;
+  color: #fff;
+  text-transform: capitalize;
+}
+
+.badge-safe {
+  background: var(--badge-safe, #28a745);
+}
+
+.badge-suspicious {
+  background: var(--badge-suspicious, #ff9800);
+}
+
+.badge-malicious {
+  background: var(--badge-malicious, #dc3545);
+}
+
+.popup-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+}
+
+.popup-content ul li {
+  font-size: 13px;
+  line-height: 1.6;
+  padding-left: 20px;
+  position: relative;
+}
+
+.popup-content ul li:before {
+  content: "â€¢";
+  position: absolute;
+  left: 0;
+  color: var(--text-color, #1a1a1a);
+}
+
+.theme-toggle {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: var(--button-bg, green);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.theme-toggle:hover {
+  background: var(--button-hover-bg, green);
+}
+
 @media (max-width: 900px) {
   .process-popup {
-    width: 320px;
+    width: 90vw;
+    max-width: 400px;
+    min-width: 280px;
   }
-  td.cmd {
-    max-width: 220px;
+
+  .popup-content p {
+    font-size: 13px;
+  }
+
+  .network-table {
+    font-size: 12px;
+  }
+
+  .network-table th,
+  .network-table td {
+    padding: 8px;
   }
 }
-.loading-overlay {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(255,255,255,0.8);
+
+@media (max-width: 600px) {
+  .process-popup {
+    max-height: 90vh;
+    padding: 12px;
+  }
+
+  .popup-header {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .cmdline code {
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  .copy-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+/* Custom scrollbar for Webkit browsers */
+.process-popup::-webkit-scrollbar,
+.cmdline code::-webkit-scrollbar {
+  width: 8px;
+}
+
+.process-popup::-webkit-scrollbar-track,
+.cmdline code::-webkit-scrollbar-track {
+  background: var(--scrollbar-track, #f1f1f1);
+}
+
+.process-popup::-webkit-scrollbar-thumb,
+.cmdline code::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, #888);
+  border-radius: 4px;
+}
+
+.process-popup::-webkit-scrollbar-thumb:hover,
+.cmdline code::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb, #666);
+}
+@media (max-width: 900px) {
+  .process-popup { width: 90vw; }
+}
+
+
+/* Add to existing CSS */
+.executable,
+.executable-hash {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.executable strong,
+.executable-hash strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.executable span,
+.executable-hash span {
+  display: inline-block;
+  max-width: 100%;
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 8px;
+  background: var(--table-bg, #f1f3f5);
+  border-radius: 6px;
+  font-family: 'Fira Code', 'Consolas', monospace;
+}
+
+.executable span {
+  word-wrap: break-word; /* Wraps long paths at word boundaries (e.g., slashes) */
+}
+
+.executable-hash span {
+  word-break: break-all; /* Breaks long hashes anywhere to prevent overflow */
+  font-size: 12px; /* Slightly smaller for hash to fit better */
+}
+.risk-pending {
+  color: #6c757d;
+  font-weight: bold;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  z-index: 1000;
+  gap: 4px;
+}
+.badge-pending {
+  background: var(--scrollbar-thumb, #6c757d);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 600px) {
+  .executable span,
+  .executable-hash span {
+    font-size: 12px;
+    padding: 6px;
+  }
+
+  .executable-hash span {
+    font-size: 11px;
+  }
 }
 
 .spinner {
@@ -528,4 +797,798 @@ mark { background: green; color: #000; padding: 0 2px; border-radius:3px; }
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+.loading-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+/* Modern Loading Spinner for Modal Overlay */
+.modal-spinner-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 12px;
+}
+
+.modal-spinner-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 5px solid transparent;
+  border-top-color: #00cc00; /* Vibrant green */
+  border-left-color: #00cc00;
+  border-radius: 50%;
+  animation: modal-spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.modal-spinner-core {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #00cc00, #66ff66);
+  border-radius: 50%;
+  animation: modal-pulse 1.4s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(0, 204, 0, 0.6), 0 0 20px rgba(0, 204, 0, 0.3);
+}
+
+.modal-spinner-glow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 204, 0, 0.4) 0%, transparent 70%);
+  animation: modal-glow 1.8s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes modal-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes modal-pulse {
+  0% { transform: scale(0.85); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.85); opacity: 0.8; }
+}
+
+@keyframes modal-glow {
+  0% { opacity: 0.4; transform: scale(0.95); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+  100% { opacity: 0.4; transform: scale(0.95); }
+}
+
+/* Loading Overlay Styles */
+#loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: opacity 0.3s ease-in-out;
+}
+
+#loadingOverlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#loadingOverlay span {
+  font-size: 1.1em;
+  color: #333;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Existing styles for risk-pending and badge-pending */
+.risk-pending {
+  color: #6c757d;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  vertical-align: middle;
+}
+
+.badge-pending {
+  background: var(--scrollbar-thumb, #6c757d);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: white;
+  font-size: 0.9em;
+}
+
+.spinner-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.spinner-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 3px solid transparent;
+  border-top-color: #00cc00;
+  border-right-color: #00cc00;
+  border-radius: 50%;
+  animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.spinner-core {
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(45deg, #00cc00, #66ff66);
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(0, 204, 0, 0.5);
+}
+
+.spinner-glow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 204, 0, 0.3) 0%, transparent 70%);
+  animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.8); opacity: 0.7; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(0.8); opacity: 0.7; }
+}
+
+@keyframes glow {
+  0% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+  100% { opacity: 0.3; transform: scale(0.9); }
+}
+
+/* Existing modal and table styles */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-indicator .fa-circle {
+  font-size: 10px;
+}
+
+.process-popup .popup-content {
+  font-size: 0.95em;
+  line-height: 1.5;
+}
+
+.network-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.network-table th,
+.network-table td {
+  border: 1px solid #ddd;
+  padding: 6px;
+  text-align: left;
+}
+
+.network-table th {
+  background: #f4f4f4;
+}
+
+
+/********************************************************
+
+
+/* Modern Loading Spinner for Modal Overlay */
+.modal-spinner-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 12px;
+}
+
+.modal-spinner-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 5px solid transparent;
+  border-top-color: #00cc00; /* Vibrant green */
+  border-left-color: #00cc00;
+  border-radius: 50%;
+  animation: modal-spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.modal-spinner-core {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #00cc00, #66ff66);
+  border-radius: 50%;
+  animation: modal-pulse 1.4s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(0, 204, 0, 0.6), 0 0 20px rgba(0, 204, 0, 0.3);
+}
+
+.modal-spinner-glow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 204, 0, 0.4) 0%, transparent 70%);
+  animation: modal-glow 1.8s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes modal-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes modal-pulse {
+  0% { transform: scale(0.85); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.85); opacity: 0.8; }
+}
+
+@keyframes modal-glow {
+  0% { opacity: 0.4; transform: scale(0.95); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+  100% { opacity: 0.4; transform: scale(0.95); }
+}
+
+/* Loading Overlay Styles */
+#loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: opacity 0.3s ease-in-out;
+}
+
+#loadingOverlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#loadingOverlay span {
+  font-size: 1.1em;
+  color: #333;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Alerts Section Styling */
+.alerts-section {
+  margin: 12px 0;
+}
+
+.alerts-container {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.alerts-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.alerts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.alert-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border-radius: 4px;
+  border-left: 4px solid;
+  font-size: 0.9em;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.alert-item:hover {
+  background: #f1f3f5;
+  transform: scale(1.02);
+}
+
+.alert-item.info {
+  border-left-color: green;
+}
+
+.alert-item.warning {
+  border-left-color: #ffc107;
+}
+
+.alert-item.critical {
+  border-left-color: #dc3545;
+}
+
+.alert-item .fa {
+  font-size: 1.1em;
+}
+
+.alert-item.info .fa {
+  color: rgb(25, 46, 25);
+}
+
+.alert-item.warning .fa {
+  color: #ffc107;
+}
+
+.alert-item.critical .fa {
+  color: #dc3545;
+}
+
+.alerts-section em {
+  color: #6c757d;
+  font-style: italic;
+}
+
+
+
+
+/* Existing modal and table styles */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-indicator .fa-circle {
+  font-size: 10px;
+}
+
+
+
+/**********************************************
+
+
+
+
+/* Existing styles for risk-pending and badge-pending */
+.risk-pending {
+  color: #6c757d;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  vertical-align: middle;
+}
+
+.badge-pending {
+  background: var(--scrollbar-thumb, #6c757d);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: white;
+  font-size: 0.9em;
+}
+
+.spinner-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.spinner-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 3px solid transparent;
+  border-top-color: #00cc00;
+  border-right-color: #00cc00;
+  border-radius: 50%;
+  animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.spinner-core {
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(45deg, #00cc00, #66ff66);
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(0, 204, 0, 0.5);
+}
+
+.spinner-glow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 204, 0, 0.3) 0%, transparent 70%);
+  animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.8); opacity: 0.7; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(0.8); opacity: 0.7; }
+}
+
+@keyframes glow {
+  0% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+  100% { opacity: 0.3; transform: scale(0.9); }
+}
+
+/* Process Popup Styling */
+.process-popup {
+  position: absolute;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  width: 500px;
+  max-width: 90%;
+}
+
+.process-popup.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.process-popup .popup-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #dee2e6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.process-popup .popup-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  font-size: 0.95em;
+  line-height: 1.5;
+}
+
+/* Ensure scrollable content has proper spacing */
+.process-popup .popup-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.process-popup .popup-content::-webkit-scrollbar-thumb {
+  background: #6c757d;
+  border-radius: 4px;
+}
+
+.process-popup .popup-content::-webkit-scrollbar-track {
+  background: #f1f3f5;
+}
+
+/* Existing modal and table styles */
+/* Run Full Scan Button Styling within process_details, compatible with dashboard.css */
+
+/* Reuse dashboard.css root variables */
+:root {
+  --primary-color: #00cc00; /* Vibrant green from spinner */
+  --text-color: #1a1a1a; /* Default text color */
+  --background-color: #f8f9fa; /* Light background from dashboard.css */
+  --border-color: #dee2e6; /* Border color from tables */
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.2); /* Consistent with process-popup */
+  --border-radius: 8px; /* Matches modal-box */
+  --button-bg: green; /* Default button background */
+  --button-hover-bg: green; /* Hover state */
+}
+
+/* Dark theme adjustments (aligned with dashboard.css) */
+[data-theme="dark"] {
+  --text-color: #e0e0e0;
+  --background-color: #252525;
+  --border-color: #444;
+  --button-bg: rgb(173, 184, 173); /* Dark theme button */
+  --button-hover-bg: rgb(173, 184, 173); /* Dark theme hover */
+}
+
+/* Process Details Section (unchanged, assumed from previous) */
+.process_details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  padding: 20px;
+  width: 100%;
+  flex: 2 1 600px;
+}
+
+/* Individual Process Detail Cards (unchanged, assumed) */
+.process_details > div {
+  flex: 1 1 220px;
+  max-width: 280px;
+  background: var(--background-color);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-height: 150px;
+}
+
+.process_details > div:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+/* Run Full Scan Button Container */
+.process_details .run_full_scan {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  width: 100%; /* Full width of card */
+}
+
+/* Redesigned Scan Now Button */
+.process_details .run_full_scan #button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px; /* Space between icon and text */
+  padding: 12px 24px; /* Larger padding for prominence */
+  font-size: 1.1em; /* Slightly larger for readability */
+  font-weight: 600; /* Bold for emphasis */
+  color: #fff; /* White text for contrast */
+  background: var(--button-bg); /* Green background */
+  border: none;
+  border-radius: 6px; /* Matches dashboard.css buttons */
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  width: 100%; /* Full width within card */
+  max-width: 240px; /* Cap width for balance */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
+
+.process_details .run_full_scan #button:hover {
+  background: var(--button-hover-bg); /* Darker green on hover */
+  transform: translateY(-3px); /* Lift effect */
+  box-shadow: 0 4px 12px rgba(0, 204, 0, 0.3); /* Enhanced shadow */
+}
+
+.process_details .run_full_scan #button::before {
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  content: "\f002"; /* fa-search icon */
+  font-size: 1.3em; /* Larger icon */
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .process_details .run_full_scan #button {
+    padding: 10px 20px; /* Slightly reduced padding for mobile */
+    font-size: 1em; /* Adjusted font size */
+    max-width: 200px; /* Narrower on mobile */
+  }
+}
+/* Process Details Section and Children, compatible with dashboard.css */
+
+/* Reuse dashboard.css root variables */
+:root {
+  --primary-color: #00cc00; /* Vibrant green from spinner */
+  --text-color: #1a1a1a; /* Default text color */
+  --background-color: #f8f9fa; /* Light background from dashboard.css */
+  --border-color: #dee2e6; /* Border color from tables */
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.2); /* Consistent with process-popup */
+  --border-radius: 8px; /* Matches modal-box */
+}
+
+/* Dark theme adjustments (aligned with dashboard.css) */
+[data-theme="dark"] {
+  --text-color: #e0e0e0;
+  --background-color: #252525;
+  --border-color: #444;
+}
+
+/* Process Details Section */
+.process_details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px; /* Increased gap for clarity */
+  justify-content: center;
+  padding: 20px;
+  width: 100%;
+  flex: 2 1 600px; /* Grow more than first_info, min 600px */
+}
+
+/* Individual Process Detail Cards */
+.process_details > div {
+  flex: 1 1 220px; /* Slightly wider for clear text */
+  max-width: 280px; /* Cap width for larger screens */
+  background: var(--background-color);
+  border: 2px solid var(--border-color); /* Thicker border for visibility */
+  border-radius: var(--border-radius);
+  padding: 20px; /* Increased padding for breathing room */
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-height: 150px; /* Minimum height for consistency */
+}
+
+.process_details > div:hover {
+  transform: translateY(-5px); /* Slightly more lift for emphasis */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+/* Icons for Each Card */
+.process_details .current_processes::before,
+.process_details .malicious_process::before,
+.process_details .virus_total_flagged::before,
+.process_details .yara_rules_malicious::before,
+.process_details .run_full_scan::before {
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  font-size: 2em; /* Larger icons for clarity */
+  color: var(--primary-color);
+  margin-bottom: 12px; /* More space below icon */
+}
+
+.process_details .current_processes::before {
+  content: "\f085"; /* fa-cogs for processes */
+}
+
+.process_details .malicious_process::before {
+  content: "\f071"; /* fa-exclamation-triangle for malicious */
+  color: var(--badge-malicious, #dc3545); /* Red for warning */
+}
+
+.process_details .virus_total_flagged::before {
+  content: "\f3c5"; /* fa-shield-alt for virus total */
+}
+
+.process_details .yara_rules_malicious::before {
+  content: "\f0c3"; /* fa-filter for YARA rules */
+}
+
+
+
+.process_details > div {
+    position: relative; /* Ensure child positioning works */
+}
+
+/* Remove ::after rules if using span fallback */
+/*
+.process_details > div::after {
+    content: attr(data-content, "");
+    font-size: 1.1em;
+    color: var(--text-color);
+    margin-top: 12px;
+}
+.process_details .current_processes::after {
+    content: "Total Processes: 0";
+    font-weight: 600;
+}
+.process_details .malicious_process::after {
+    content: "Malicious Processes: 0";
+    font-weight: 600;
+}
+.process_details .virus_total_flagged::after {
+    content: "VirusTotal Flagged: 0";
+    font-weight: 600;
+}
+.process_details .yara_rules_malicious::after {
+    content: "Open Threat: 0";
+    font-weight: 600;
+}
+*/
+
+.process_details .run_full_scan::after {
+    /* Descriptive text for button context */
+    font-weight: 600;
+    color: var(--primary-color); /* Green to indicate action */
+}
+
+/* Run Full Scan Button Styling */
+.process_details .run_full_scan {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.process_details .run_full_scan button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px; /* More space between icon and text */
+  padding: 12px 24px; /* Larger padding for prominence */
+  font-size: 1em;
+  font-weight: 600;
+  color: #fff;
+  background: var(--button-bg, green);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.process_details .run_full_scan button:hover {
+  background: var(--button-hover-bg, green);
+  transform: translateY(-3px);
+}
+
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .process_details {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .process_details > div {
+    max-width: 100%;
+    width: 100%;
+    min-height: 120px; /* Adjusted for mobile */
+  }
 }

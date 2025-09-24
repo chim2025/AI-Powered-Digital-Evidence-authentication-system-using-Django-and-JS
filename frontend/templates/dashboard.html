@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EvideGuard Dashboard</title>
+  <title>EvideHub Dashboard</title>
   <link rel="stylesheet" href="/static/css/process.css" />
 
   <link rel="stylesheet" href="/static/css/dashboard.css" />
@@ -21,12 +21,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <!-- Add this in your <head> -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
   
 </head>
 <body>
   <div class="sidebar">
-    <h1 id="title-header">🔍 EvidenceGuard</h1>
+    <h1 id="title-header">EvidenceGuard</h1>
     <div class="nav-link active" data-section="home">
         <i class="fas fa-home"></i> Home
       </div>
@@ -36,7 +39,6 @@
       <div class="nav-link" data-section="analytics">
         <i class="fas fa-chart-line"></i> Analytics
       </div>
-      <!-- This removes the redundant buttons in the side bar -->
       <!-- <div class="nav-link" data-section="recent-tasks">
         <i class="fas fa-clock"></i> Recent Tasks
       </div>
@@ -55,7 +57,7 @@
       <div class="nav-link" data-section="support">
         <i class="fas fa-tools"></i> Support
       </div>
-      <!-- 🔹 Added Logout -->
+      <!-- ðŸ”¹ Added Logout -->
         <a href="{% url 'logout' %}" class="nav-link">
           <i class="fas fa-sign-out-alt"></i> Logout
         </a>
@@ -156,11 +158,24 @@
           <i class="fas fa-user-circle"></i>
         </div>
       </div>
+    <div class="first_flex">
       
-    
+    <div class="first_info">
     <div class="welcome">Welcome, {{user.last_name}} {{user.first_name}}!</div>
     <div class="description">Gain insights into your digital evidence.</div>
     <button class="task-button"><i class="fas fa-compass"></i>Launch Task Wizard</button>
+    </div>
+    <div class="process_details">
+      <div class="current_processes"></div>
+      <div class="malicious_process"></div>
+      <div class="virus_total_flagged"></div>
+      <div class="yara_rules_malicious open_threats_num"></div>
+      <div class="run_full_scan">
+        <button id="button">Scan now</button>
+      </div>
+
+    </div>
+    </div>
     <div id="taskWizardModal" class="modal">
       <div class="modal-content">
         <div class="progress-bar">
@@ -171,7 +186,7 @@
     
         <!-- Step 1 -->
         <div id="wizard-step-1" class="wizard-step active">
-          <h2 id="info">📝 Task Information</h2>
+          <h2 id="info">Task Information</h2>
         
           <div class="form-group">
             <label for="taskName" id="nameLabel">
@@ -292,37 +307,42 @@
     </div>
     <div id="running_process" class="hidden">
       <div id="loadingOverlay" class="loading-overlay hidden">
-  <div class="spinner"></div>
-  <span>Fetching process data, please wait...</span>
+  <div class="modal-spinner-container">
+  <div class="modal-spinner-ring"></div>
+  <div class="modal-spinner-core"></div>
+  <div class="modal-spinner-glow"></div>
+</div>
+  <span>Getting all your Computer Processes ready...</br>
+  <small>It can take two minutes</small></span>
 </div>
 
     </div>
-<button id="button" style="float:right;">Check Running Processes</button>
+
 
   </div>
   
   <section id="settings" class="content-section">
-    <h2>⚙️ Settings</h2>
+    <h2>âš™ï¸ Settings</h2>
     <p>Configure your system preferences below.</p>
   
     <div class="setting-option">
-      <h3>🎨 Theme Selection</h3>
+      <h3>ðŸŽ¨ Theme Selection</h3>
         <p>Select your preferred theme:</p>
       
       <div class="theme-toggle">
         <label class="toggle-switch">
           <input type="radio" id="theme-light" name="theme" value="light" checked>
-          <span>🌞 Light</span>
+          <span>ðŸŒž Light</span>
         </label>
         <label class="toggle-switch">
           <input type="radio" id="theme-dark" name="theme" value="dark">
-          <span>🌙 Dark</span>
+          <span>ðŸŒ™ Dark</span>
         </label>
       </div>
     </div>
   
     <div class="setting-option">
-      <h3>🔔 Notification Preferences</h3>
+      <h3>ðŸ”” Notification Preferences</h3>
         <p>Choose your notification preferences:</p>
       <label class="checkbox-wrap">
         <input type="checkbox" id="email-notifications" checked>
@@ -340,7 +360,7 @@
     </div>
   
     <div class="setting-option">
-      <h3>🔐 Account Settings</h3>
+      <h3>ðŸ” Account Settings</h3>
       <label class="checkbox-wrap">
         <input type="checkbox" id="email-notifications" checked>
         <span>Apply Profile Change Feature</span>
@@ -355,11 +375,11 @@
     </div>
   
     <div class="setting-option">
-      <h3>🌐 Language Selection</h3>
+      <h3>ðŸŒ Language Selection</h3>
       <select id="language">
         <option value="en">English</option>
-        <option value="es">Español</option>
-        <option value="fr">Français</option>
+        <option value="es">EspaÃ±ol</option>
+        <option value="fr">FranÃ§ais</option>
         <option value="de">Deutsch</option>
       </select>
     </div>
@@ -502,12 +522,14 @@
   </div>
 </section>
 
+
   
 
   <script type="module" src="/static/js/dashboard.js"></script>
   <script type="module" src="/static/js/evidenceupload.js"></script>
   <script type="module" src="/static/js/renderevidence.js"></script>
   <script type="module" src="/static/js/process.js"></script>
+  <script type="module" src="/static/js/process_metrics.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
