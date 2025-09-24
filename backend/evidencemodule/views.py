@@ -1,6 +1,7 @@
 #####################################################################################
 #Imports, modules and API
 
+import logging
 import subprocess
 import uuid
 from django.shortcuts import render, redirect
@@ -18,12 +19,15 @@ import sys
 import numpy as np
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
+
+from .process_folder.process_metrics import get_process_metrics
+from .process_folder.processes import get_enriched_results, get_local_processes
 from .utils.file_utils import save_uploaded_file
 from .ai_models.analysis_layer import image
 from .ai_models.deepfake_detector import analyze_deepfake
 from .ai_models.utils import full_image_forensic_analysis
 from .ai_models.filehash import compute_file_hashes
-from evidencemodule.document_authentication.run_pipeline import full_document_analysis
+from .document_authentication.run_pipeline import full_document_analysis
 from .models import User
 from .sysinfo import system_info
 from .processes import get_all_processes
@@ -200,7 +204,7 @@ def analyze_evidence(request):
                 is_doc = file_ext in ['.pdf', '.docx', '.txt', '.doc']
                 is_memdump = file_ext in ['.dmp', '.raw', '.mem']
 
-                # 🖼️ Image analysis
+                
                 if is_image:
                     yield 'data: {"progress": 40, "message": "Running deepfake detection..."}\n\n'
                     deepfake_result = analyze_deepfake(file_path)
@@ -219,14 +223,14 @@ def analyze_evidence(request):
                         yield line
                     result.update(forensic_result)
 
-                # 📄 Document analysis
+                
                 elif is_doc:
                     yield 'data: {"progress": 60, "message": "Running document authenticity check..."}\n\n'
                     doc_result = full_document_analysis(file_path)
                     result["text_detection"] = doc_result.get("detection_result")
                     result["report"] = doc_result.get("report")
 
-                # 🧠 Memory dump analysis
+                
                 elif is_memdump:
                     yield 'data: {"progress": 40, "message": "Running memory forensics with Volatility3..."}\n\n'
 
@@ -249,7 +253,7 @@ def analyze_evidence(request):
                         yield 'data: {"progress": 100, "message": "Volatility3 not found on server.", "error": true}\n\n'
                         return
 
-                    # Define plugins
+                    
                     plugins = ["windows.pslist", "windows.modules"]
                     total = len(plugins)
                     results = {}
@@ -282,7 +286,7 @@ def analyze_evidence(request):
                         "plugins": results,
                     }
 
-                # 🔑 File hashes for all types
+                
                 yield 'data: {"progress": 90, "message": "Computing file hashes..."}\n\n'
                 hash_result = compute_file_hashes(file_path)
                 result.update(json.loads(hash_result))
@@ -308,15 +312,39 @@ def analyze_evidence(request):
 
 
 
-########################################################################################
-#Other modules including process analysis, virus and malware
+
+
+# def get_process(request):
+#     """
+#     Endpoint to analyze running processes and return JSON
+#     """
+#     try:
+#         process_data = get_all_processes()
+#         return JsonResponse(process_data)
+#     except Exception as e:
+#         return JsonResponse({"error": str(e)}, status=500)
 
 def get_process(request):
     """
     Endpoint to analyze running processes and return JSON
     """
     try:
-        process_data = get_all_processes()
-        return JsonResponse(process_data)
+        process_data = get_local_processes()
+        return JsonResponse(process_data, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+def get_enriched(request):
+    try:
+        return JsonResponse(get_enriched_results(), safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+    
+def process_metrics_view(request):
+    try:
+        metrics = get_process_metrics()
+        return JsonResponse(metrics)
+    except Exception as e:
+        logging.error(f"Error in process_metrics_view: {e}", exc_info=True)
+        return JsonResponse({
+            "error": str(e)
+        }, status=200) 
