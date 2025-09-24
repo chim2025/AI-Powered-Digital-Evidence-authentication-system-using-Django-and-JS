@@ -141,3 +141,4 @@ backend/evidencemodule/ai_models/checkpoints/*.pth
 backend/forgery_maps
 backend/received_files/files
 backend/evidencemodule/process_folder/feeds_cache/
+yararules/rule
