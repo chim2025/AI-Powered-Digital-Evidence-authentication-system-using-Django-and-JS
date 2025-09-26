@@ -4,6 +4,7 @@ from evidencemodule.ai_models.helpers.metadata_parser_test import extract_metada
 from evidencemodule.ai_models.metadata_inconsistency_detector import extract_metadata_with_exiftool
 
 
+
 def full_image_forensic_analysis(image_path, streamer=None):
     result = {}
 
@@ -48,5 +49,6 @@ def full_image_forensic_analysis(image_path, streamer=None):
     except Exception as e:
          result["inconsistency"]=metadata_inconsistency
          stream("Metadata inconsistency failed but not a problem returned", 99)
+    
 
     return result

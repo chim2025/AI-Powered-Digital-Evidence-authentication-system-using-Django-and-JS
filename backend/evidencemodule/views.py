@@ -27,6 +27,7 @@ from .process_folder.processes import get_enriched_results, get_local_processes
 
 from .ai_models.analysis_layer import image
 from .ai_models.deepfake_detector import analyze_deepfake
+from .ai_models.stegonagraphydetector import detect_steganography
 from .ai_models.utils import full_image_forensic_analysis
 from .ai_models.filehash import compute_file_hashes
 from .document_authentication.run_pipeline import full_document_analysis
@@ -208,12 +209,15 @@ def analyze_evidence(request):
 
                 
                 if is_image:
-                    yield 'data: {"progress": 40, "message": "Running deepfake detection..."}\n\n'
+                    yield 'data: {"progress": 20, "message": "Running deepfake detection..."}\n\n'
                     deepfake_result = analyze_deepfake(file_path)
                     result["deepfake"] = deepfake_result
                     time.sleep(0.5)
+                    yield 'data:{"progress":40, "message":"Running Steganographic detection"}\n\n'
+                    steg_detector= detect_steganography(file_path)
+                    result["steganographic_detection"]= steg_detector
 
-                    yield 'data: {"progress": 60, "message": "Running full forensic image analysis..."}\n\n'
+                    yield 'data: {"progress": 70, "message": "Running full forensic image analysis..."}\n\n'
                     stream_list = []
 
                     def collector(update):
