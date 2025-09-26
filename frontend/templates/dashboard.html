@@ -306,15 +306,19 @@
       </table>
     </div>
     <div id="running_process" class="hidden">
-      <div id="loadingOverlay" class="loading-overlay hidden">
+      <div id="loadingOverlay" class="loading-overlay hidden" role="status" aria-live="assertive" aria-busy="true">
   <div class="modal-spinner-container">
-  <div class="modal-spinner-ring"></div>
-  <div class="modal-spinner-core"></div>
-  <div class="modal-spinner-glow"></div>
+    <div class="modal-spinner-ring"></div>
+    <div class="modal-spinner-core"></div>
+    <div class="modal-spinner-glow"></div>
+  </div>
+  <span>Getting Computer Processes Ready for Presentation<br><small>It can take up to two minutes</small>
+  </span>
+  
+  
+  <div class="modern-quote-box"></div>
 </div>
-  <span>Getting all your Computer Processes ready...</br>
-  <small>It can take two minutes</small></span>
-</div>
+      
 
     </div>
 
@@ -322,11 +326,11 @@
   </div>
   
   <section id="settings" class="content-section">
-    <h2>âš™ï¸ Settings</h2>
+    <h2>Settings</h2>
     <p>Configure your system preferences below.</p>
   
     <div class="setting-option">
-      <h3>ðŸŽ¨ Theme Selection</h3>
+      <h3> Theme Selection</h3>
         <p>Select your preferred theme:</p>
       
       <div class="theme-toggle">
@@ -342,7 +346,7 @@
     </div>
   
     <div class="setting-option">
-      <h3>ðŸ”” Notification Preferences</h3>
+      <h3> Notification Preferences</h3>
         <p>Choose your notification preferences:</p>
       <label class="checkbox-wrap">
         <input type="checkbox" id="email-notifications" checked>
@@ -394,6 +398,9 @@
   </section>
 
   <section id="analytics" class="content-section">
+  
+
+    </div>
     <div id="analytics_section" class="section">
     <div class="no-process">
         <i class="fas fa-clock"></i>

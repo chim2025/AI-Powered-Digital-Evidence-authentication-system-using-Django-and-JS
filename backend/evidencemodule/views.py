@@ -20,9 +20,11 @@ import numpy as np
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 
+from .utils.file_utils import save_uploaded_file
+
 from .process_folder.process_metrics import get_process_metrics
 from .process_folder.processes import get_enriched_results, get_local_processes
-from .utils.file_utils import save_uploaded_file
+
 from .ai_models.analysis_layer import image
 from .ai_models.deepfake_detector import analyze_deepfake
 from .ai_models.utils import full_image_forensic_analysis
@@ -221,6 +223,7 @@ def analyze_evidence(request):
                     forensic_result = full_image_forensic_analysis(file_path, streamer=collector)
                     for line in stream_list:
                         yield line
+                    
                     result.update(forensic_result)
 
                 
@@ -296,7 +299,7 @@ def analyze_evidence(request):
                 yield f'data: {json.dumps({"progress": 99, "message": end_msg})}\n\n'
                 yield f'data: {json.dumps({"progress": 100, "message": "Analysis complete", "result": result})}\n\n'
 
-                print(result)
+                
 
                 if os.path.exists(file_path):
                     os.remove(file_path)
@@ -344,7 +347,7 @@ def process_metrics_view(request):
         metrics = get_process_metrics()
         return JsonResponse(metrics)
     except Exception as e:
-        logging.error(f"Error in process_metrics_view: {e}", exc_info=True)
+        
         return JsonResponse({
             "error": str(e)
         }, status=200) 

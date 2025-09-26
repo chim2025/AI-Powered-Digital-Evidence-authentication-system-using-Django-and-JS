@@ -60,7 +60,7 @@ def parent_child_check(proc):
             p_name = (proc.name() or "").lower()
             parent_name = (parent_info["name"] or "").lower()
         except Exception as e:
-            logging.warning(f"Parent name error for PID {proc.pid}: {e}")
+            
             return {"alerts": alerts, "parent": parent_info}
 
         # suspicious combos

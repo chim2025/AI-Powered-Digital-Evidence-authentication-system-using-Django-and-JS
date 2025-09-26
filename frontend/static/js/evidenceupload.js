@@ -253,45 +253,99 @@ function getCookie(name) {
 function startEvidenceAnalysis() {
   const evidenceInput = document.getElementById("evidenceFiles");
   const file = evidenceInput.files[0];
-
   if (!file) {
     showToast("Please upload a file before starting analysis.");
     return;
   }
 
- 
+  // Hide the modal and clean up
   modal.style.display = "none";
   document.body.classList.remove('modal-open');
   document.querySelector('.modal-backdrop')?.remove();
 
+  // Navigate to analytics section
   if (typeof showSection === 'function') {
     showSection("analytics");
+  } else {
+    console.warn("showSection function not found, analytics section may not display correctly");
   }
 
+  // Set up analytics section
   const analyticsSection = document.getElementById("analytics_section");
+  if (!analyticsSection) {
+    console.error("analytics_section element not found");
+    showToast("Error: Analytics section not found.");
+    return;
+  }
   document.querySelector(".no-process")?.remove();
 
+  // Auto-generate loading overlay within analytics_section with unique progress bar class
   analyticsSection.innerHTML = `
-    <div class="overlay-loader" role="status" aria-live="assertive" aria-busy="true">
-      <div class="horizontal-bar">
-        <div class="bar bar1"></div>
-        <div class="bar bar2"></div>
-        <div class="bar bar3"></div>
-        <div class="bar bar4"></div>
+    <div class="analysis-loading-overlay" role="status" aria-live="assertive" aria-busy="true" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; transition: opacity 0.3s ease-in-out;">
+      <div class="modal-spinner-container" style="display: flex; align-items: center; justify-content: center; position: relative; width: 60px; height: 60px; margin: 0 auto 12px;">
+        <div class="modal-spinner-ring" style="position: absolute; width: 100%; height: 100%; border: 5px solid transparent; border-top-color: #00cc00; border-left-color: #00cc00; border-radius: 50%; animation: modal-spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;"></div>
+        <div class="modal-spinner-core" style="width: 36px; height: 36px; background: linear-gradient(135deg, #00cc00, #66ff66); border-radius: 50%; animation: modal-pulse 1.4s ease-in-out infinite; box-shadow: 0 0 12px rgba(0, 204, 0, 0.6), 0 0 20px rgba(0, 204, 0, 0.3);"></div>
+        <div class="modal-spinner-glow" style="position: absolute; width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle, rgba(0, 204, 0, 0.4) 0%, transparent 70%); animation: modal-glow 1.8s ease-in-out infinite;"></div>
       </div>
-      <div class="spinner-box">
-        <div class="modern-spinner"></div>
-        <p class="loading-text">Analyzing evidence... please wait.</p>
+      <span style="font-size: 1.1em; color: #333; font-weight: 500; text-align: center;">Analyzing evidence... please wait.<br><small>It can take up to two minutes</small></span>
+      <div class="upload-progress-container" style="width: 80%; max-width: 500px; height: 10px; background: #222; border-radius: 5px; overflow: hidden; margin-top: 20px;">
+        <div class="analysis-progress-bar" style="height: 100%; background-color: #b3ffb3 !important; width: 0%; transition: width 0.3s ease;"></div>
       </div>
-      <div class="modern-quote-box">⌛ Initializing forensic modules...</div>
+      <div id="percent-text" style="margin-top: 10px; font-size: 1.1em; font-weight: 500; color: #333; text-align: center; visibility: visible;">Progress: 0%</div>
+      <div class="modern-quote-box" style="margin-top: 15px; font-size: 14px; color: #666; text-align: center; opacity: 0; transition: opacity 0.3s ease;"></div>
     </div>
+    <style>
+      @keyframes modal-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      @keyframes modal-pulse {
+        0% { transform: scale(0.85); opacity: 0.8; }
+        50% { transform: scale(1.15); opacity: 1; }
+        100% { transform: scale(0.85); opacity: 0.8; }
+      }
+      @keyframes modal-glow {
+        0% { opacity: 0.4; transform: scale(0.95); }
+        50% { opacity: 0.7; transform: scale(1.1); }
+        100% { opacity: 0.4; transform: scale(0.95); }
+      }
+      .analysis-loading-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .modern-quote-box.show {
+        opacity: 1 !important;
+      }
+      .analysis-progress-bar {
+        background-color: #b3ffb3 !important; /* Light green fill */
+        transition: width 0.3s ease, background-color 0.3s ease !important;
+      }
+    </style>
   `;
 
-  cycleQuotes(); 
+  // Cache DOM elements
+  const loadingOverlay = analyticsSection.querySelector(".analysis-loading-overlay");
+  const loadingText = loadingOverlay.querySelector("span");
+  const progressBar = analyticsSection.querySelector(".analysis-progress-bar");
+  const percentDisplay = loadingOverlay.querySelector("#percent-text");
+  const quoteBox = loadingOverlay.querySelector(".modern-quote-box");
 
+  // Debug element presence and initial styles
+  console.log("Generated overlay elements:", {
+    loadingOverlay: !!loadingOverlay,
+    loadingText: !!loadingText,
+    progressBar: !!progressBar,
+    progressBarBackground: progressBar ? window.getComputedStyle(progressBar).backgroundColor : null,
+    percentDisplay: !!percentDisplay,
+    quoteBox: !!quoteBox
+  });
+
+  // Start cycling quotes
+  cycleQuotes();
+
+  // Fetch analysis
   const formData = new FormData();
   formData.append('file', file);
-
   fetch("/evidence/analyze/", {
     method: "POST",
     headers: {
@@ -299,99 +353,96 @@ function startEvidenceAnalysis() {
     },
     body: formData
   }).then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");
-
     function readChunk({ done, value }) {
-      if (done) return;
-
+      if (done) {
+        loadingOverlay.classList.add("hidden");
+        console.log("Streaming done, hiding analysis-loading-overlay");
+        return;
+      }
       const chunk = decoder.decode(value, { stream: true });
+      console.log("Received chunk:", chunk); // Debug streaming data
       const messages = chunk.split("\n\n").filter(Boolean);
-
       messages.forEach(msg => {
         if (msg.startsWith("data:")) {
-          const json = JSON.parse(msg.slice(5));
+          let json;
+          try {
+            json = JSON.parse(msg.slice(5));
+            console.log("Parsed JSON:", json); // Debug parsed data
+          } catch (e) {
+            console.error("Failed to parse JSON:", msg, e);
+            return;
+          }
           const progress = json.progress || 0;
           const message = json.message || "Processing...";
-
-          const progressBar = document.querySelector(".upload-progress-bar");
           if (progressBar) {
             progressBar.style.width = `${progress}%`;
-            let percentDisplay = document.getElementById("percent-text");
-            if (!percentDisplay) {
-                percentDisplay = document.createElement("div");
-                percentDisplay.id = "percent-text";
-                percentDisplay.style.marginTop = "10px";
-                percentDisplay.style.fontWeight = "bold";
-                percentDisplay.style.color = "#fff";
-                 document.querySelector(".overlay-loader").appendChild(percentDisplay);
-            }
-            percentDisplay.textContent = `Progress: ${progress}%`;
-
+            progressBar.style.backgroundColor = "#b3ffb3 !important"; // Reinforce light fill color
+            console.log("Updated progressBar:", {
+              width: progressBar.style.width,
+              backgroundColor: window.getComputedStyle(progressBar).backgroundColor,
+              inlineStyle: progressBar.getAttribute("style")
+            });
           } else {
-            const bar = document.createElement("div");
-            bar.className = "upload-progress-bar";
-            bar.style.width = `${progress}%`;
-            document.querySelector(".overlay-loader").appendChild(bar);
+            console.warn("analysis-progress-bar not found during update");
           }
-
-          const loadingText = document.querySelector(".loading-text");
+          if (percentDisplay) {
+            percentDisplay.textContent = `Progress: ${progress}%`;
+            console.log("Updated percentDisplay to:", `Progress: ${progress}%`);
+          } else {
+            console.warn("percent-text not found during update");
+          }
           if (loadingText) {
-            loadingText.textContent = message;
+            loadingText.innerHTML = `${message}<br><small>It can take up to two minutes</small>`;
+            console.log("Updated loadingText to:", message);
+          } else {
+            console.warn("loadingText not found during update");
           }
-
           if (json.result) {
-  
-  localStorage.setItem("evidenceResults", JSON.stringify(json.result));
-
- 
-  if (json.result.memdump) {
-    renderMemdumpResults(json.result.memdump);
-  } else if (json.result.deepfake_detection || json.result.forgery_detection || json.result.metadata) {
-    renderEvidenceResults(json.result);
-  } else if (json.result.report && json.result.text_detection) {
-    renderDocumentResults({
-      text_detection: json.result.text_detection,
-      report: json.result.report,
-      hashes: json.result.hashes
-    });
-  } else {
-    console.warn("Unknown evidence result format", json.result);
-  }
-
-
-  showToast("Analysis complete.");
-}
-
-
+            localStorage.setItem("evidenceResults", JSON.stringify(json.result));
+            if (json.result.memdump) {
+              renderMemdumpResults(json.result.memdump);
+            } else if (json.result.deepfake_detection || json.result.forgery_detection || json.result.metadata) {
+              renderEvidenceResults(json.result);
+            } else if (json.result.report && json.result.text_detection) {
+              renderDocumentResults({
+                text_detection: json.result.text_detection,
+                report: json.result.report,
+                hashes: json.result.hashes
+              });
+            } else {
+              console.warn("Unknown evidence result format", json.result);
+            }
+            showToast("Analysis complete.");
+          }
           if (json.error) {
-            const loadingText = document.querySelector(".loading-text");
             if (loadingText) {
-                  loadingText.innerHTML = ` ${json.message} <br><small>But it’s not a problem, continuing analysis...</small>`;
-               }
-               showToast("Notice: " + json.message);
+              loadingText.innerHTML = `${json.message}<br><small>But it’s not a problem, continuing analysis...</small>`;
+            }
+            showToast("Notice: " + json.message);
           }
         }
       });
-
       return reader.read().then(readChunk);
     }
-
     return reader.read().then(readChunk);
   }).catch(err => {
     console.error("Streaming fetch error:", err);
-    analyticsSection.innerHTML = `<p class="text-danger">An error occurred during analysis.</p>`;
+    loadingOverlay.classList.add("hidden");
+    analyticsSection.innerHTML = `<p class="text-danger">An error occurred during analysis: ${err.message}</p>`;
     showToast("Streaming error occurred.");
   });
 
-  
   try {
     new Audio('/static/audio/processing-start.mp3').play();
   } catch (err) {
     console.warn("Audio failed:", err);
   }
 }
-
 
 
 document.addEventListener("DOMContentLoaded", () => {
