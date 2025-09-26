@@ -2,7 +2,7 @@ import time
 from .processes import get_local_processes, get_enriched_results
 
 def get_process_metrics():
-    print("Starting get_process_metrics")
+    
     process_data = get_local_processes()
     if not process_data or "processes" not in process_data:
         print("No process data available")
@@ -12,10 +12,10 @@ def get_process_metrics():
             "virus_total_flagged": 0,
             "open_threat_matches": 0
         }
-    print(f"Process data: {process_data}")
+    
     processes = process_data.get("processes", [])
     enriched_results = get_enriched_results()
-    print(f"Enriched results: {enriched_results}")
+    
     total_processes = len(processes)
     malicious_count = 0
     vt_flagged_count = 0
@@ -38,7 +38,7 @@ def get_process_metrics():
         "virus_total_flagged": vt_flagged_count,
         "open_threat_matches": open_threat_count
     }
-    print(f"Returning metrics: {metrics}")
+    
     return metrics
 
 def update_frontend_metrics():
@@ -50,4 +50,4 @@ def update_frontend_metrics():
     while True:
         metrics = get_process_metrics()
         # For real-time, you'd push via Django Channels; here, rely on polling
-        time.sleep(20)  # Update every 20 seconds
+        time.sleep(100)  # Update every 20 seconds
