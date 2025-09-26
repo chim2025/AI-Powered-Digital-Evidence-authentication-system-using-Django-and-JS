@@ -1821,34 +1821,325 @@ svg {
     margin-bottom: 10px;
     word-break: break-word;
 }
+/* Hex Editor Popup */
+
+
+.hex-editor-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) translate3d(0, 0, 0);
+  width: 720px;
+  height: 480px;
+  background: rgba(30, 30, 46, 0.95);
+  backdrop-filter: blur(10px);
+  color: #e0e0e0;
+  border-radius: 16px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.hex-editor-popup.open {
+  opacity: 1;
+  transform: translate(-50%, -50%) translate3d(0, 0, 0);
+  display: flex;
+}
+
+.hex-editor-popup.fullscreen {
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  transform: none;
+  border-radius: 0;
+}
+
+/* Header */
+.hex-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(42, 42, 60, 0.95);
+  backdrop-filter: blur(5px);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: move;
+}
+
+.hex-editor-header h5 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+}
+
+.hex-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
+/* Header Controls */
+#searchHex {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 13px;
+  width: 160px;
+  transition: background 0.2s ease;
+}
+
+#searchHex:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+#fontSize {
+  width: 48px;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 13px;
+  text-align: center;
+}
+
+#fontSize:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.hex-controls span {
+  font-size: 13px;
+  color: #ffffff;
+}
+
+#zoomIn, #zoomOut, #themeToggle, #fullscreenHex, #copyHexBtn, #saveRawBtn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+#zoomIn {
+  background: linear-gradient(135deg, #4CAF50, #388E3C);
+}
+
+#zoomIn:hover {
+  background: linear-gradient(135deg, #388E3C, #2E7D32);
+  transform: translateY(-1px);
+}
+
+#zoomOut {
+  background: linear-gradient(135deg, #FF5722, #D84315);
+}
+
+#zoomOut:hover {
+  background: linear-gradient(135deg, #D84315, #BF360C);
+  transform: translateY(-1px);
+}
+
+#themeToggle {
+  background: linear-gradient(135deg, #0288D1, #0277BD);
+}
+
+#themeToggle:hover {
+  background: linear-gradient(135deg, #0277BD, #01579B);
+  transform: translateY(-1px);
+}
+
+#fullscreenHex {
+  background: linear-gradient(135deg, #AB47BC, #8E24AA);
+}
+
+#fullscreenHex:hover {
+  background: linear-gradient(135deg, #8E24AA, #7B1FA2);
+  transform: translateY(-1px);
+}
+
+#copyHexBtn {
+  background: linear-gradient(135deg, #FFB300, #F57C00);
+}
+
+#copyHexBtn:hover {
+  background: linear-gradient(135deg, #F57C00, #EF6C00);
+  transform: translateY(-1px);
+}
+
+#saveRawBtn {
+  background: linear-gradient(135deg, #0288D1, #0277BD);
+}
+
+#saveRawBtn:hover {
+  background: linear-gradient(135deg, #0277BD, #01579B);
+  transform: translateY(-1px);
+}
+
+#closeHexEditor {
+  background: none;
+  border: none;
+  color: #FF5252;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px;
+  transition: color 0.2s ease;
+}
+
+#closeHexEditor:hover {
+  color: #FF8A80;
+}
+
+/* Content */
+.hex-editor-content {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background: rgba(30, 30, 46, 0.95);
+  backdrop-filter: blur(5px);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e0e0e0;
+}
+
 #hexView {
-    background: #f8f8f8;
-    border: 1px solid #ddd;
-    padding: 10px;
-    font-family: monospace;
-    font-size: 12px;
-    overflow: auto;
-    max-height: 400px;
-    white-space: pre-wrap;
-    word-wrap: break-word;
+  white-space: pre;
+  margin: 0;
 }
+
+.hex-offset {
+  color: #78909C;
+}
+
+.hex-byte {
+  color: #29B6F6;
+}
+
+.hex-ascii {
+  color: #66BB6A;
+}
+
+.search-highlight {
+  background: #FFD600;
+  color: #000000;
+}
+
+#hexView::selection {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* Light Theme */
+.light-theme {
+  background: rgba(245, 245, 245, 0.95);
+  color: #212121;
+}
+
+.light-theme .hex-editor-header {
+  background: rgba(230, 230, 230, 0.95);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.light-theme .hex-editor-content {
+  background: rgba(245, 245, 245, 0.95);
+  color: #212121;
+}
+
+.light-theme #hexView {
+  color: #212121;
+}
+
+.light-theme .hex-offset {
+  color: #546E7A;
+}
+
+.light-theme .hex-byte {
+  color: #1976D2;
+}
+
+.light-theme .hex-ascii {
+  color: #388E3C;
+}
+
+.light-theme .search-highlight {
+  background: #FFEA00;
+  color: #000000;
+}
+
+.light-theme #searchHex,
+.light-theme #fontSize
+.light-theme .hex-editor-header h5 {
+  background: rgba(0, 0, 0, 0.1);
+  color: #212121;
+}
+
+.light-theme #searchHex:focus,
+.light-theme #fontSize:focus {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.light-theme .hex-controls span {
+  color: #212121;
+}
+
+/* View Raw Button */
 #viewRawBtn {
-    margin: 10px 0;
-    padding: 8px 16px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+  margin: 12px 0;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #4CAF50, #388E3C);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
 }
+
 #viewRawBtn:hover {
-    background-color: #45a049;
+  background: linear-gradient(135deg, #388E3C, #2E7D32);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+#viewRawBtn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
 
+/* Toast Notification */
+.hex-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 1001;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
 
-
-
-
-
-
+.hex-toast.show {
+  opacity: 1;
+}

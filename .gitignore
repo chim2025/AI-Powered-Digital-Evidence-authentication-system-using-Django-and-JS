@@ -142,3 +142,6 @@ backend/forgery_maps
 backend/received_files/files
 backend/evidencemodule/process_folder/feeds_cache/
 yararules/rule
+evidence_env
+frontend/node_modules
+test_env
