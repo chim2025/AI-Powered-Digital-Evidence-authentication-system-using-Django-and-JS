@@ -18,7 +18,7 @@ function updateMetrics() {
         console.log("Response text:", text);
         try {
             const data = JSON.parse(text);
-            console.log("Parsed data:", data);
+            
             const mappings = {
                 '.current_processes': 'total_processes',
                 '.malicious_process': 'malicious_processes',
