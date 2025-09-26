@@ -23,6 +23,22 @@ const forensicQuotes = [
   "💡 <b>‘No data is useless</b> — every detail matters.’",
 ];
 
+
+function loadHexy(callback) {
+    if (window.hexy) {
+        callback(window.hexy);
+        return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/hexy@0.3.3/lib/hexy.js";
+    script.onload = () => callback(window.hexy);
+    script.onerror = () => {
+        console.error("Failed to load hexy from CDN");
+        callback(null);
+    };
+    document.head.appendChild(script);
+}
+
 function cycleQuotes() {
   const quoteBox = document.querySelector(".modern-quote-box");
   if (!quoteBox) return;
@@ -38,6 +54,8 @@ function cycleQuotes() {
     }, 300);
   }, 6000); 
 }
+
+
 
 
 let currentStep = 1;
@@ -406,7 +424,13 @@ function startEvidenceAnalysis() {
             localStorage.setItem("evidenceResults", JSON.stringify(json.result));
             if (json.result.memdump) {
               renderMemdumpResults(json.result.memdump);
-            } else if (json.result.deepfake_detection || json.result.forgery_detection || json.result.metadata) {
+            }  else if (json.result.steganographic_detection) {
+                    renderEvidenceResults({
+                        ...json.result,
+                        stego: json.result.steganographic_detection  // Map to 'stego' for renderEvidenceResults
+                    });
+                }
+            else if (json.result.deepfake_detection || json.result.forgery_detection || json.result.metadata) {
               renderEvidenceResults(json.result);
             } else if (json.result.report && json.result.text_detection) {
               renderDocumentResults({
@@ -466,22 +490,25 @@ function renderEvidenceResults(data) {
   const forgery = data.forgery_detection || {};
   const meta = data.metadata_tags || {};
   const hashes = data.hashes || {};
-  console.log(hashes);
+  const stego = data.stego || {}; 
+  
   const imageurl=document.getElementsByClassName("preview-image");
 
   section.innerHTML = `
     <div class="analysis-container modern-analysis">
-      <h3 class="section-title">🧪 Evidence Analysis Results</h3>
+      <h3 class="section-title">Evidence Analysis Results</h3>
 
       <div class="tabs">
         <button class="tab-button active" data-tab="summaryTab">Summary</button>
         <button class="tab-button" data-tab="deepfakeTab">Deepfake Analysis</button>
         <button class="tab-button" data-tab="forgeryTab">Forgery Detection</button>
         <button class="tab-button" data-tab="metadataTab">Metadata Details</button>
+        <button class="tab-button" data-tab="stegoTab">Steganography</button>
       </div>
 
       <div class="tab-content active" id="summaryTab">
         <div class="card-grid">
+        
           <div class="result-card">
             <h4>General Model Score</h4>
             <p>${df.verdict}</p>
@@ -506,6 +533,10 @@ function renderEvidenceResults(data) {
             <h4>Metadata Verdict</h4>
             <p>${meta.verdict}</p>
           </div>
+           <div class="result-card">
+              <h4>Steganography Presence</h4>
+              <p>${stego.stego_detected ? "Detected" : "Not Detected"}</p>
+            </div>
         </div>
            <div class="heatmap-container">
            <p>${data.file_path || "NA"}</p>
@@ -684,10 +715,49 @@ function renderEvidenceResults(data) {
     </div>
   </div>
 </div>
-
+<div class="tab-content stego-section" id="stegoTab">
+        <h4 class="section-title"><i class="fas fa-eye-slash"></i> Steganography Analysis</h4>
+        <div class="stego-grid">
+          <div class="stego-card">
+            <h5><i class="fas fa-check-circle"></i> Detection Status</h5>
+            <p><strong>Status:</strong>
+              <span class="${stego.stego_detected ? 'badge-fake' : 'badge-real'}">
+                <i class="fas ${stego.stego_detected ? 'fa-times-circle' : 'fa-check-circle'}"></i>
+                ${stego.stego_detected ? "Detected" : "Not Detected"}
+              </span>
+            </p>
+          </div>
+          ${stego.extracted_data && stego.extracted_data.length > 0 ? `
+            <div class="stego-card">
+              <h5><i class="fas fa-file-alt"></i> Extracted Data</h5>
+              <ul class="stego-list">
+                ${stego.extracted_data.map(data => `<li>${data}</li>`).join("")}
+              </ul>
+            </div>
+          ` : ""}
+          ${stego.message ? `
+            <div class="stego-card">
+              <h5><i class="fas fa-info-circle"></i> Message</h5>
+              <p>${stego.message}</p>
+            </div>
+          ` : ""}
+          ${stego.error ? `
+            <div class="stego-card">
+              <h5><i class="fas fa-exclamation-triangle"></i> Error</h5>
+              <p>${stego.error}</p>
+            </div>
+          ` : ""}
+          ${stego.raw_output || stego.hex_output ? `
+            <div class="stego-card">
+              <h5><i class="fas fa-code"></i> Raw Data</h5>
+              <button id="viewRawBtn" aria-label="Toggle raw hex view">View Raw Data as Hex</button>
+              <pre id="hexView" style="display: none; background: #f8f8f8; border: 1px solid #ddd; padding: 10px; font-family: monospace; font-size: 12px; overflow: auto; max-height: 400px; white-space: pre-wrap; word-wrap: break-word;"></pre>
+            </div>
+          ` : ""}
+        </div>
+      </div>
     </div>
     
-
   `;
 
   
@@ -707,6 +777,25 @@ function renderEvidenceResults(data) {
     circle.style.setProperty('--progress', `${degrees}deg`);
   });
 }, 300);
+const viewRawBtn = document.getElementById("viewRawBtn");
+    if (viewRawBtn) {
+        if (!window.hexy) {
+            document.getElementById("hexView").textContent = "Error: Hex viewer library not loaded.";
+            console.error("hexy.js not loaded");
+            return;
+        }
+        viewRawBtn.addEventListener("click", () => {
+            const hexView = document.getElementById("hexView");
+            if (hexView.style.display === "none") {
+                renderRawStegoData(stego, hexView, window.hexy);
+                hexView.style.display = "block";
+                viewRawBtn.textContent = "Hide Raw Hex View";
+            } else {
+                hexView.style.display = "none";
+                viewRawBtn.textContent = "View Raw Data as Hex";
+            }
+        });
+    }
 
  
 setTimeout(() => {
@@ -810,6 +899,44 @@ setTimeout(() => {
     }
   }, 500);
 }
+ // renderRawStegoData (unchanged)
+function renderRawStegoData(stegoData, containerElement, hexy) {
+    if (!stegoData.raw_output ) {
+        containerElement.textContent = "No raw data available.";
+        return;
+    }
+
+    let hexInput = stegoData.hex_data && stegoData.hex_data.length > 0
+        ? stegoData.hex_data.join("")
+        : stegoData.hex_output || stegoData.raw_output || "";
+
+    let dataBuffer;
+    try {
+        dataBuffer = new Uint8Array(
+            hexInput.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
+        );
+    } catch (e) {
+        containerElement.textContent = "Error: Invalid hex data.";
+        console.error("Failed to parse hex data:", e);
+        return;
+    }
+
+    const hexDump = hexy(dataBuffer, {
+        width: 16,
+        numbering: 'hex',
+        format: 'twos',
+        caps: 'upper',
+        annotate: 'ascii',
+        prefix: '',
+        indent: 0,
+        html: false
+    });
+
+    const maxLength = 10000;
+    const truncatedDump = hexDump.length > maxLength ? hexDump.slice(0, maxLength) + "\n... (Truncated - Full data too large)" : hexDump;
+    containerElement.textContent = truncatedDump;
+}
+
 
 
 function renderDocumentResults(data) {
