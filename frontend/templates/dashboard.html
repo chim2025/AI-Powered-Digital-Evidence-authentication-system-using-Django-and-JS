@@ -25,7 +25,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
-  
 </head>
 <body>
   <div class="sidebar">
@@ -33,7 +32,7 @@
     <div class="nav-link active" data-section="home">
         <i class="fas fa-home"></i> Home
       </div>
-      <div class="nav-link" data-section="task-wizard">
+      <div class="nav-link task-wizard-trigger">
         <i class="fas fa-compass"></i> Task Wizard
       </div>
       <div class="nav-link" data-section="analytics">
@@ -163,7 +162,7 @@
     <div class="first_info">
     <div class="welcome">Welcome, {{user.last_name}} {{user.first_name}}!</div>
     <div class="description">Gain insights into your digital evidence.</div>
-    <button class="task-button"><i class="fas fa-compass"></i>Launch Task Wizard</button>
+    <button class="task-button task-wizard-trigger"><i class="fas fa-compass"></i>Launch Task Wizard</button>
     </div>
     <div class="process_details">
       <div class="current_processes"></div>
@@ -176,6 +175,7 @@
 
     </div>
     </div>
+    <!-- starting point  -->
     <div id="taskWizardModal" class="modal">
       <div class="modal-content">
         <div class="progress-bar">
@@ -233,7 +233,7 @@
         </div>
       </div>
     </div>
-    
+    <!-- Ending here  -->
 
     
 
