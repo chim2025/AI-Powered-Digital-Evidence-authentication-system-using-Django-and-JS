@@ -62,3 +62,13 @@ Hi, I’m Chimenka Goodluck Uchechi, the developer behind this project. I’m pa
 
 You can connect with me on GitHub: github.com/chim2025
 
+##Extra Programming language:
+Rust
+For Steganographic detection to work properly:
+1. Download RUST and add it to your system path
+2. 
+Install Zsteg
+
+Powershell Installation:
+Note: To use zst
+
