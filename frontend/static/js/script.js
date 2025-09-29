@@ -30,3 +30,19 @@ sidebarToggle.addEventListener("click", () => {
         localStorage.setItem("status", "open");
     }
 })
+
+document.addEventListener("DOMContentLoaded", () => {
+  const sidebar = document.querySelector("nav, .sidebar");
+  
+  function checkScreenSize() {
+    if (window.innerWidth <= 768) {
+      sidebar.classList.add("close");
+    } else {
+      sidebar.classList.remove("close");
+    }
+  }
+
+  // Run on load and resize
+  checkScreenSize();
+  window.addEventListener("resize", checkScreenSize);
+});
