@@ -2143,3 +2143,33 @@ svg {
 .hex-toast.show {
   opacity: 1;
 }
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 70px; 
+    padding: 20px 5px;
+  }
+
+  .sidebar h1 {
+    display: none; 
+  }
+
+  .sidebar .nav-link {
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .sidebar .nav-link i {
+    font-size: 18px;
+  }
+
+  .sidebar .nav-link span,
+  .sidebar .nav-link:not(:has(i)) {
+    display: none; 
+  }
+
+  
+  .main-content {
+    padding: 20px;
+  }
+}
