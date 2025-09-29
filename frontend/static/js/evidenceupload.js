@@ -63,9 +63,7 @@ let currentStep = 1;
 openModalBtn.addEventListener("click", () => {
   modal.style.display = "block";
   updateProgress();
-})
-
-
+});
 
 closeModalBtn.addEventListener("click", () => {
   modal.style.display = "none";
@@ -361,114 +359,160 @@ function startEvidenceAnalysis() {
 
   // Start cycling quotes
   cycleQuotes();
-
-  // Fetch analysis
-  const formData = new FormData();
-  formData.append('file', file);
-  fetch("/evidence/analyze/", {
-    method: "POST",
-    headers: {
-      "X-CSRFToken": getCookie("csrftoken")
-    },
-    body: formData
-  }).then(response => {
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-    function readChunk({ done, value }) {
-      if (done) {
-        loadingOverlay.classList.add("hidden");
-        console.log("Streaming done, hiding analysis-loading-overlay");
-        return;
-      }
-      const chunk = decoder.decode(value, { stream: true });
-      console.log("Received chunk:", chunk); // Debug streaming data
-      const messages = chunk.split("\n\n").filter(Boolean);
-      messages.forEach(msg => {
-        if (msg.startsWith("data:")) {
-          let json;
-          try {
-            json = JSON.parse(msg.slice(5));
-            console.log("Parsed JSON:", json); // Debug parsed data
-          } catch (e) {
-            console.error("Failed to parse JSON:", msg, e);
-            return;
-          }
-          const progress = json.progress || 0;
-          const message = json.message || "Processing...";
-          if (progressBar) {
-            progressBar.style.width = `${progress}%`;
-            progressBar.style.backgroundColor = "#b3ffb3 !important"; // Reinforce light fill color
-            console.log("Updated progressBar:", {
-              width: progressBar.style.width,
-              backgroundColor: window.getComputedStyle(progressBar).backgroundColor,
-              inlineStyle: progressBar.getAttribute("style")
-            });
-          } else {
-            console.warn("analysis-progress-bar not found during update");
-          }
-          if (percentDisplay) {
-            percentDisplay.textContent = `Progress: ${progress}%`;
-            console.log("Updated percentDisplay to:", `Progress: ${progress}%`);
-          } else {
-            console.warn("percent-text not found during update");
-          }
-          if (loadingText) {
-            loadingText.innerHTML = `${message}<br><small>It can take up to two minutes</small>`;
-            console.log("Updated loadingText to:", message);
-          } else {
-            console.warn("loadingText not found during update");
-          }
-          if (json.result) {
-            localStorage.setItem("evidenceResults", JSON.stringify(json.result));
-            if (json.result.memdump) {
-              renderMemdumpResults(json.result.memdump);
-            }  else if (json.result.steganographic_detection) {
-                    renderEvidenceResults({
-                        ...json.result,
-                        stego: json.result.steganographic_detection  // Map to 'stego' for renderEvidenceResults
-                    });
-                }
-            else if (json.result.deepfake_detection || json.result.forgery_detection || json.result.metadata) {
-              renderEvidenceResults(json.result);
-            } else if (json.result.report && json.result.text_detection) {
-              renderDocumentResults({
-                text_detection: json.result.text_detection,
-                report: json.result.report,
-                hashes: json.result.hashes
-              });
-            } else {
-              console.warn("Unknown evidence result format", json.result);
-            }
-            showToast("Analysis complete.");
-          }
-          if (json.error) {
-            if (loadingText) {
-              loadingText.innerHTML = `${json.message}<br><small>But it’s not a problem, continuing analysis...</small>`;
-            }
-            showToast("Notice: " + json.message);
-          }
-        }
-      });
-      return reader.read().then(readChunk);
-    }
-    return reader.read().then(readChunk);
-  }).catch(err => {
-    console.error("Streaming fetch error:", err);
-    loadingOverlay.classList.add("hidden");
-    analyticsSection.innerHTML = `<p class="text-danger">An error occurred during analysis: ${err.message}</p>`;
-    showToast("Streaming error occurred.");
-  });
-
-  try {
-    new Audio('/static/audio/processing-start.mp3').play();
-  } catch (err) {
-    console.warn("Audio failed:", err);
+// Fetch analysis
+const formData = new FormData();
+formData.append('file', file);
+fetch("/evidence/analyze/", {
+  method: "POST",
+  headers: {
+    "X-CSRFToken": getCookie("csrftoken")
+  },
+  body: formData
+}).then(response => {
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
-}
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = ""; // Buffer to accumulate partial chunks
 
+  function readChunk({ done, value }) {
+    if (done) {
+      // Process remaining buffer
+      if (buffer) {
+        processBuffer(buffer);
+      }
+      loadingOverlay.classList.add("hidden");
+      console.log("Streaming done, hiding analysis-loading-overlay");
+      return;
+    }
+
+    // Decode and append to buffer
+    const chunk = decoder.decode(value, { stream: true });
+    console.log("Received chunk:", chunk); // Debug streaming data
+    buffer += chunk;
+
+    // Process complete messages
+    processBuffer(buffer);
+
+    return reader.read().then(readChunk);
+  }
+
+  function processBuffer(currentBuffer) {
+    let lastValidIndex = 0;
+    let i = 0;
+    while (i < currentBuffer.length) {
+      if (currentBuffer.substr(i, 5) === "data:") {
+        const endIndex = currentBuffer.indexOf("\n\n", i + 5);
+        if (endIndex !== -1) {
+          const msg = currentBuffer.substring(i, endIndex);
+          processMessage(msg);
+          i = endIndex + 2;
+          lastValidIndex = i;
+        } else {
+          // Partial message, keep in buffer
+          break;
+        }
+      } else {
+        // Skip invalid data
+        i++;
+      }
+    }
+    buffer = currentBuffer.substring(lastValidIndex);
+  }
+
+  function processMessage(msg) {
+    let json;
+    try {
+      json = JSON.parse(msg.slice(5));
+      console.log("Parsed JSON:", json); // Debug parsed data
+      console.log("Stego data:", json.result?.steganographic_detection); // Debug stego data
+    } catch (e) {
+      console.error("Failed to parse JSON:", msg, e);
+      showToast("Error parsing analysis data, continuing...");
+      return; // Skip invalid message
+    }
+
+    const progress = json.progress || 0;
+    const message = json.message || "Processing...";
+    if (progressBar) {
+      progressBar.style.width = `${progress}%`;
+      progressBar.style.backgroundColor = "#b3ffb3 !important";
+      console.log("Updated progressBar:", {
+        width: progressBar.style.width,
+        backgroundColor: window.getComputedStyle(progressBar).backgroundColor,
+        inlineStyle: progressBar.getAttribute("style")
+      });
+    } else {
+      console.warn("analysis-progress-bar not found during update");
+    }
+    if (percentDisplay) {
+      percentDisplay.textContent = `Progress: ${progress}%`;
+      console.log("Updated percentDisplay to:", `Progress: ${progress}%`);
+    } else {
+      console.warn("percent-text not found during update");
+    }
+    if (loadingText) {
+      loadingText.innerHTML = `${message}<br><small>It can take up to two minutes</small>`;
+      console.log("Updated loadingText to:", message);
+    } else {
+      console.warn("loadingText not found during update");
+    }
+    if (json.result) {
+      localStorage.setItem("evidenceResults", JSON.stringify(json.result));
+      try {
+        if (json.result.memdump) {
+          renderMemdumpResults(json.result.memdump);
+        } else if (json.result.steganographic_detection) {
+          renderEvidenceResults({
+            ...json.result,
+            stego: json.result.steganographic_detection // Map to 'stego' for renderEvidenceResults
+          });
+        } else if (json.result.deepfake_detection || json.result.forgery_detection || json.result.metadata) {
+          renderEvidenceResults(json.result);
+        } else if (json.result.report && json.result.text_detection) {
+          renderDocumentResults({
+            text_detection: json.result.text_detection,
+            report: json.result.report,
+            hashes: json.result.hashes
+          });
+        } else {
+          console.warn("Unknown evidence result format", json.result);
+        }
+        showToast("Analysis complete.");
+      } catch (e) {
+        console.error("Error rendering results:", e);
+        const analyticsSection = document.getElementById("analytics_section");
+        if (analyticsSection) {
+          analyticsSection.innerHTML = `<p class="text-danger">Rendering error: ${e.message}</p>`;
+        }
+        showToast("Error rendering analysis results");
+      }
+    }
+    if (json.error) {
+      if (loadingText) {
+        loadingText.innerHTML = `${json.message}<br><small>But it’s not a problem, continuing analysis...</small>`;
+      }
+      showToast("Notice: " + json.message);
+    }
+  }
+
+  return reader.read().then(readChunk);
+}).catch(err => {
+  console.error("Streaming fetch error:", err);
+  loadingOverlay.classList.add("hidden");
+  const analyticsSection = document.getElementById("analytics_section");
+  if (analyticsSection) {
+    analyticsSection.innerHTML = `<p class="text-danger">An error occurred during analysis: ${err.message}</p>`;
+  }
+  showToast("Streaming error occurred.");
+});
+try {
+  new Audio('/static/audio/processing-start.mp3').play();
+} catch (err) {
+  console.warn("Audio failed:", err);
+}}
+  
 
 document.addEventListener("DOMContentLoaded", () => {
     console.log("Is showSection available?", typeof showSection);
@@ -498,7 +542,7 @@ function renderEvidenceResults(data) {
   const imageurl = document.getElementsByClassName("preview-image");
   section.innerHTML = `
     <div class="analysis-container modern-analysis">
-      <h3 class="section-title">🧪 Evidence Analysis Results</h3>
+      <h3 class="section-title">Evidence Analysis Results</h3>
       <div class="tabs">
         <button class="tab-button active" data-tab="summaryTab">Summary</button>
         <button class="tab-button" data-tab="deepfakeTab">Deepfake Analysis</button>
@@ -538,7 +582,7 @@ function renderEvidenceResults(data) {
           </div>
         </div>
         <div class="heatmap-container">
-          <p>${data.file_path || "NA"}</p>
+          <img src="">
           <div class="hash-grid">
             ${Object.entries(hashes || {}).map(([key, value]) => `
               <div class="hash-card">
@@ -684,6 +728,13 @@ function renderEvidenceResults(data) {
               </span>
             </p>
           </div>
+         
+        ${stego.is_encrypted ? `
+          <div class="stego-card">
+            <h5><i class="fas fa-lock"></i> Encryption Status</h5>
+            <p>Password protection: <span class="badge-fake">Detected</span></p>
+          </div>
+        ` : ""}
           ${stego.extracted_data && stego.extracted_data.length > 0 ? `
             <div class="stego-card">
               <h5><i class="fas fa-file-alt"></i> Extracted Data</h5>
@@ -1079,51 +1130,155 @@ function renderEvidenceResults(data) {
 }
 
 function renderRawStegoData(stegoData, containerElement, hexy) {
-  if (!stegoData.raw_output && !stegoData.hex_output) {
-    containerElement.textContent = "No raw data available.";
-    return;
-  }
+    if (!stegoData.raw_output && !stegoData.hex_output && !stegoData.lsb_output) {
+        containerElement.textContent = "No raw data available.";
+        showToast("No data available to display in hex editor.", 3000);
+        return;
+    }
 
-  let hexInput = stegoData.hex_data && stegoData.hex_data.length > 0
-    ? stegoData.hex_data.join("")
-    : stegoData.hex_output || stegoData.raw_output || "";
+    // Prioritize lsb_output, then hex_output, then raw_output
+    let hexInput = stegoData.lsb_output || stegoData.hex_output || stegoData.raw_output;
+    if (!hexInput) {
+        containerElement.textContent = "No raw data available.";
+        showToast("No data available to display in hex editor.", 3000);
+        return;
+    }
 
-  if (!hexInput) {
-    containerElement.textContent = "No raw data available.";
-    return;
-  }
+    // Convert hex to binary
+    let dataBuffer;
+    try {
+        dataBuffer = new Uint8Array(
+            hexInput.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || 
+            new TextEncoder().encode(stegoData.raw_output || "")
+        );
+    } catch (e) {
+        containerElement.textContent = "Error: Invalid hex data.";
+        console.error("Failed to parse hex data:", e);
+        showToast("Error processing hex data.", 3000);
+        return;
+    }
 
-  let dataBuffer;
-  try {
-    dataBuffer = new Uint8Array(
-      hexInput.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
-    );
-  } catch (e) {
-    containerElement.textContent = "Error: Invalid hex data.";
-    console.error("Failed to parse hex data:", e);
-    return;
-  }
+    // Pagination settings
+    const pageSize = 4096; // Bytes per page
+    let currentPage = 0;
+    const totalPages = Math.ceil(dataBuffer.length / pageSize);
 
-  const hexDump = hexy(dataBuffer, {
-    width: 16,
-    numbering: 'hex',
-    format: 'twos',
-    caps: 'upper',
-    annotate: 'ascii',
-    prefix: '',
-    indent: 0,
-    html: false
-  });
+    // Function to render a specific page
+    function renderPage(page) {
+        const start = page * pageSize;
+        const end = Math.min(start + pageSize, dataBuffer.length);
+        const pageData = dataBuffer.slice(start, end);
 
-  const maxLength = 10000;
-  const truncatedDump = hexDump.length > maxLength ? hexDump.slice(0, maxLength) + "\n... (Truncated - Full data too large)" : hexDump;
+        // Use hexy.js to format the data
+        let hexDump = hexy(pageData, {
+            width: 16,
+            numbering: 'hex_bytes',
+            format: 'twos',
+            caps: 'upper',
+            annotate: 'ascii',
+            prefix: '',
+            indent: 0,
+            html: false
+        });
 
-  // Colorize the hex dump
-  const colorizedDump = truncatedDump.replace(/([0-9a-f]{8}:)/gi, '<span class="hex-offset">$1</span>')
-    .replace(/([0-9A-F]{2})/gi, '<span class="hex-byte">$1</span>')
-    .replace(/([^\s].*)$/gm, '<span class="hex-ascii">$1</span>');
+        // Highlight Python keywords
+        hexDump = hexDump.replace(
+            /(def |import |class |print\(|input\()/g,
+            '<span class="python-keyword">$1</span>'
+        );
 
-  containerElement.innerHTML = colorizedDump;
+        // Colorize offsets, bytes, and ASCII
+        const colorizedDump = hexDump
+            .replace(/([0-9a-fA-F]{8}:)/gi, '<span class="hex-offset">$1</span>')
+            .replace(/([0-9A-F]{2})/gi, '<span class="hex-byte">$1</span>')
+            .replace(/([^\s].*)$/gm, '<span class="hex-ascii">$1</span>');
+
+        containerElement.innerHTML = colorizedDump;
+
+        // Update pagination controls
+        updatePaginationControls(page, totalPages);
+    }
+
+    // Pagination controls
+    function updatePaginationControls(page, totalPages) {
+        let controls = document.querySelector('.hex-pagination');
+        if (!controls) {
+            controls = document.createElement('div');
+            controls.className = 'hex-pagination';
+            containerElement.parentElement.appendChild(controls);
+        }
+        controls.innerHTML = `
+            <button id="prevPage" ${page === 0 ? 'disabled' : ''}>Previous</button>
+            <span>Page ${page + 1} of ${totalPages}</span>
+            <button id="nextPage" ${page >= totalPages - 1 ? 'disabled' : ''}>Next</button>
+        `;
+
+        const prevButton = controls.querySelector('#prevPage');
+        const nextButton = controls.querySelector('#nextPage');
+        if (prevButton) {
+            prevButton.addEventListener('click', () => {
+                if (currentPage > 0) {
+                    currentPage--;
+                    renderPage(currentPage);
+                }
+            });
+        }
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (currentPage < totalPages - 1) {
+                    currentPage++;
+                    renderPage(currentPage);
+                }
+            });
+        }
+    }
+
+    // Try decoding as Python code
+    let decodedText = '';
+    try {
+        // Attempt base64 or gzip decoding
+        const decoded = new TextDecoder('utf-8', { fatal: false }).decode(dataBuffer);
+        if (decoded.includes('def ') || decoded.includes('import ') || decoded.includes('class ')) {
+            decodedText = decoded;
+        } else {
+            // Try base64 + gzip
+            try {
+                const base64Decoded = atob(decoded);
+                const gzipDecoded = pako.ungzip(new Uint8Array(base64Decoded.split('').map(c => c.charCodeAt(0))));
+                decodedText = new TextDecoder('utf-8').decode(gzipDecoded);
+            } catch (e) {
+                console.warn("Decoding as base64/gzip failed:", e);
+            }
+        }
+    } catch (e) {
+        console.warn("Decoding as text failed:", e);
+    }
+
+    // If Python code is found, display it
+    if (decodedText && (decodedText.includes('def ') || decodedText.includes('import '))) {
+        const codeCard = document.createElement('div');
+        codeCard.className = 'stego-card';
+        codeCard.innerHTML = `
+            <h5><i class="fas fa-code"></i> Extracted Python Code</h5>
+            <pre class="python-code">${decodedText}</pre>
+        `;
+        document.querySelector('.stego-grid').prepend(codeCard);
+    }
+
+    // Initial render
+    renderPage(currentPage);
+
+    // Update saveRawBtn to save full data
+    const saveRawBtn = document.getElementById('saveRawBtn');
+    saveRawBtn.addEventListener('click', () => {
+        const blob = new Blob([dataBuffer], { type: 'application/octet-stream' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'raw_stego_data.bin';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        showToast('Raw data saved!');
+    });
 }
 
 
