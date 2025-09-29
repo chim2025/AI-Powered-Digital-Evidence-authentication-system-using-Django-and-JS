@@ -2141,8 +2141,6 @@ svg {
 .hex-toast.show {
   opacity: 1;
 }
-
-<<<<<<< HEAD
 /* Add to the end of styles.css */
 .stego-data-container {
     max-height: 300px;
@@ -2205,34 +2203,3 @@ svg {
     background: rgba(0, 0, 0, 0.1);
     color: #212121;
 }
-=======
-@media (max-width: 768px) {
-  .sidebar {
-    width: 70px; 
-    padding: 20px 5px;
-  }
-
-  .sidebar h1 {
-    display: none; 
-  }
-
-  .sidebar .nav-link {
-    justify-content: center;
-    padding: 12px;
-  }
-
-  .sidebar .nav-link i {
-    font-size: 18px;
-  }
-
-  .sidebar .nav-link span,
-  .sidebar .nav-link:not(:has(i)) {
-    display: none; 
-  }
-
-  
-  .main-content {
-    padding: 20px;
-  }
-}
->>>>>>> a764a08ce5d82f8e6376b908905937ffb07cdc92
