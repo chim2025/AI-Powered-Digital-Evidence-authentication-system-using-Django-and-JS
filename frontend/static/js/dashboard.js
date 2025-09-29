@@ -35,11 +35,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
     
     navLinks.forEach(link => {
-        link.addEventListener('click', function () {
-            const sectionId = this.getAttribute('data-section');
-            showSection(sectionId);
-        });
+    link.addEventListener('click', function (e) {
+        const sectionId = this.getAttribute('data-section');
+        if (sectionId === "task-wizard") {
+            e.preventDefault();
+            const modal = document.getElementById("taskWizardModal");
+            if (modal) {
+                modal.style.display = "block";
+                if (typeof updateProgress === "function") {
+                    updateProgress();
+                }
+            }
+            return; 
+        }
+        showSection(sectionId);
     });
+});
 });
 
 
@@ -132,4 +143,3 @@ function updateDateTime() {
         return "Unknown Browser";
       }
       document.querySelector("#browser-name b").textContent = getBrowserName();
-      
