@@ -140,6 +140,8 @@ LOGGING = {
 
 LOGIN_URL = '/login/'
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'forgery_maps')
+FILES_URL= '/files/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'uploaded_files')
+FILES_ROOT=os.path.join(BASE_DIR, "files")
 print(f"MEDIA_ROOT: {MEDIA_ROOT}")
 
