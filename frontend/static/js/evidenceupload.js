@@ -1,6 +1,6 @@
 
 const modal = document.getElementById("taskWizardModal");
-const openModalBtns = document.querySelectorAll(".task-wizard-trigger");
+const openModalBtn = document.querySelector(".task-button");
 const closeModalBtn = document.querySelector(".close-bt");
 const nextStepBtn = document.getElementById("nextStep");
 const prevStepBtn = document.getElementById("prevStep");
@@ -61,22 +61,12 @@ function cycleQuotes() {
 let currentStep = 1;
 
 
+openModalBtn.addEventListener("click", () => {
+  modal.style.display = "block";
+  updateProgress();
+})
 
-// openModalBtns.forEach(btn => {
-//   btn.addEventListener("click", () => {
-//     modal.style.display = "block";
-//     updateProgress();
-//   });
-// });
 
-openModalBtns.forEach(btn => {
-  btn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation(); 
-    modal.style.display = "block";
-    updateProgress();
-  });
-});
 
 closeModalBtn.addEventListener("click", () => {
   modal.style.display = "none";
