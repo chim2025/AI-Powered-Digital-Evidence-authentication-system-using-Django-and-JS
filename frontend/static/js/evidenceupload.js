@@ -1,4 +1,3 @@
-
 const modal = document.getElementById("taskWizardModal");
 const openModalBtn = document.querySelector(".task-button");
 const closeModalBtn = document.querySelector(".close-bt");
