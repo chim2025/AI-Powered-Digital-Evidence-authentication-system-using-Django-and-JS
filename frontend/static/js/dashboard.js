@@ -143,4 +143,3 @@ function updateDateTime() {
         return "Unknown Browser";
       }
       document.querySelector("#browser-name b").textContent = getBrowserName();
-      

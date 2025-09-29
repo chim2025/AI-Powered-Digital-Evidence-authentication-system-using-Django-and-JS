@@ -1821,8 +1821,6 @@ svg {
     margin-bottom: 10px;
     word-break: break-word;
 }
-/* Hex Editor Popup */
-
 
 .hex-editor-popup {
   position: fixed;
