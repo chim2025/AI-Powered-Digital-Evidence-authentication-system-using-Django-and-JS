@@ -305,8 +305,7 @@ def analyze_evidence(request):
 
                 
 
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+                
 
             except Exception as e:
                 yield f'data: {json.dumps({"progress": 100, "message": "Error: " + str(e), "error": True})}\n\n'
