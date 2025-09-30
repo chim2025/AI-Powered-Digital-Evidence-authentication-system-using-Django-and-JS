@@ -146,3 +146,5 @@ evidence_env
 frontend/node_modules
 test_env
 evidence_env
+myvenv
+*env
