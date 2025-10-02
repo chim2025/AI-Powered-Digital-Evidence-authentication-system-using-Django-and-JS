@@ -152,4 +152,5 @@ backend/analysis_results
 backend/files
 backend/response
 backend/uploaded_files/face_maps
+roberta-base-openai-detector/pytorch_model.bin
 
