@@ -333,7 +333,16 @@
   </section>
 
   <section id="task" class="content-section">
-    <button class="task-button task-wizard-trigger"><i class="fas fa-compass"></i>Launch Task Wizard</button>
+    <!--  <button class="task-button task-wizard-trigger"><i class="fas fa-compass"></i>Launch Task Wizard</button>-->
+      <div class="task-display-text">
+        <h3> Let's Start Automated Scans for You</h3>
+      </div>
+      <div class="task-display-button">
+    <button class="task-button task-wizard-trigger"><span class="fas fa-plus"></span> New Task</button>
+    <button><span class="fas fa-code-compare"></span> Comparator </button>
+    <button><span class="fas fa-tools"></span> Other Task</button>
+  </div>
+
     <div id="taskWizardModal" class="modal">
       <div class="modal-content">
         <div class="progress-bar">
@@ -368,7 +377,7 @@
           </div>
         
           <div class="wizard-navigation">
-            <button id="nextStep">Next</button>
+            <button id="nextStep">Next  <span class="fas fa-arrow-right"></span></button>
           </div>
         </div>
         
@@ -385,8 +394,9 @@
           <div id="evidencePreview" class="preview-container"></div>
     
           <div class="wizard-navigation">
-            <button id="prevStep">Previous</button>
-            <button id="startAnalysisBtn" class="start-analysis-btn">Start Analysis</button>
+            <button id="prevStep"><span class="fas fa-arrow-left"></span>  Previous</button>
+            
+            <button id="startAnalysisBtn" class="start-analysis-btn"> Start Analysis  <span class="fas fa-play"></span></button>
           </div>
         </div>
       </div>
@@ -396,12 +406,18 @@
   <section id="analytics" class="content-section">
   
 
-    </div>
+    
     <div id="analytics_section" class="section">
+
     <div class="no-process">
         <i class="fas fa-clock"></i>
         <p>No analysis currently running.</p>
     </div>
+</div>
+<div id="heatmapModal" class="modal">
+  <span class="close" onclick="closeHeatmapModal()">&times;</span>
+  <img id="heatmapModalImg" class="modal-content">
+  <div class="modal-caption">Enlarged Evidence Image</div>
 </div>
 
   </section>

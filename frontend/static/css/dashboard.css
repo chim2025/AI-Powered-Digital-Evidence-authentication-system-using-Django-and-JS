@@ -151,17 +151,6 @@ transition: background-color 0.3s ease;
     margin-bottom: 20px;
   }
 
-  .task-button {
-    background-color:var(--primary-color);
-    padding: 10px 20px;
-    border: none;
-    color: var(--bg-color);
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    margin-bottom: 30px;
-  }
-
   .stats {
     display: flex;
     gap: 20px;
@@ -242,7 +231,7 @@ transition: background-color 0.3s ease;
   
 .content-section {
   padding: 30px;
-  background-color: var(--bg-color);
+  background-color: var(--card-bg);
 
   
  
@@ -327,20 +316,7 @@ input[type="checkbox"] {
 }
 
 
-button {
-  padding: 10px 20px;
-  font-size: 16px;
-  border: none;
-  background-color: var(--primary-color);
-  color: #fff;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.3s ease, transform 0.2s ease;
-}
 
-button:hover {
-  opacity: 0.4;
-}
 
 
 
@@ -497,7 +473,8 @@ i{
   z-index: 1000;
   left: 0; top: 0;
   width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
+  background: rgba(240, 237, 237, 0.5);
+  backdrop-filter: blur(5px);
   overflow: auto;
 }
 
@@ -567,6 +544,7 @@ i{
   display: none;
 }
 
+
 .wizard-step.active {
   display: block;
 }
@@ -584,7 +562,10 @@ input[type="text"], textarea {
   outline: none;
   transition: border-color 0.3s;
   
-  
+
+}
+input:hover, textarea:hover{
+border: 2px solid var(--primary-color)
 }
 input[type="date"]{
   background-color:gray !important;
@@ -674,20 +655,7 @@ display: block;
 }
 
 
-button {
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  margin-top: 20px;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-size: 16px;
-}
 
-button:hover {
-  opacity: 0.8;
-}
 
 .start-analysis-btn {
   opacity: 0.8;
@@ -701,6 +669,18 @@ button:hover {
 .wizard-navigation {
   float: right;
   text-align: center;
+}
+.wizard-navigation button {
+  padding: 8px 10px;
+  background: var(--primary-color);
+  color: var(--card-bg);
+  outline: none;
+  border: none;
+}
+
+.wizard-navigation button:focus {
+  outline: none;
+  border: none;
 }
 #wizard-step-2 h2{
 margin-bottom: 10px;
@@ -731,11 +711,11 @@ animation: fadeIn 0.5s ease forwards;
   position: fixed;
   bottom: 30px; 
   right: 30px;  
-  background-color: black !important;
-  color: white;
-  text-align: center;
+  background-color: rgb(196, 192, 192) !important;
+  color: black;
+ 
   border-radius: 8px;
-  padding: 10px 16px;
+  padding: 20px 35px;
   font-size: 14px;
   opacity: 0;
   z-index: 10001; 
@@ -743,6 +723,12 @@ animation: fadeIn 0.5s ease forwards;
   display: inline-block;
   white-space: nowrap;
 }
+.fas fa-info-circle {
+  color: var(--primary-color);
+  font-size: 20px;
+  margin-right: 8px;
+}
+
 
 #toast.show {
   visibility: visible;
@@ -2202,4 +2188,145 @@ svg {
 .light-theme .raw-json {
     background: rgba(0, 0, 0, 0.1);
     color: #212121;
+}
+.task-display-text {
+  margin-top: 50px !important;
+  text-align: center !important;
+}
+
+.task-display-text h3 {
+  color: #333;
+  font-size: 24px;
+}
+
+.task-display-button {
+  margin-top: 30px;
+  display: flex;
+  gap: 20px;
+}
+
+.task-display-button button {
+  background-color: #00cc00;
+  color: #fff;
+  border: none;
+  padding: 40px 80px;
+  font-size: 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  
+  gap: 10px;
+}
+
+.task-display-button button:hover {
+  background-color: #00b300;
+}
+
+.task-display-button button span {
+  font-size: 24px;
+}
+.evidence-info-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) 2fr; /* Image on left, content on right */
+  gap: 20px;
+  padding: 20px;
+  background: var(--background-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  width: 100%; /* Ensure the grid respects its container width */
+}
+
+.evidence-info-item {
+  padding: 20px;
+  background: var(--background-color);
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+  max-width: 100%; /* Prevent item from exceeding container */
+  word-wrap: break-word; /* Break long words */
+  overflow-wrap: break-word; /* Modern equivalent of word-wrap */
+  overflow: hidden; /* Hide any overflow */
+}
+
+.evidence-info-item p {
+  margin: 0;
+  font-size: 14px;
+  color: #b0b0b0;
+  line-height: 1.4;
+  max-width: 100%; /* Ensure paragraphs stay within item */
+  word-break: break-all; /* Break all words if necessary */
+  overflow-wrap: break-word; /* Allow wrapping */
+}
+
+.evidence-info-item:hover {
+  transform: translateY(-2px);
+}
+
+.evidence-info-item h4 {
+  margin: 0 0 5px;
+  font-size: 15px;
+  color: var(--text-color);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.evidence-info-item p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-color);
+  line-height: 1.4;
+}
+
+.evidence-image-container {
+  grid-column: 1; /* Left column */
+  text-align: center;
+  padding: 15px;
+  background: var(--bg-color);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.evidence-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  object-fit: contain;
+  max-height: 300px; /* Limit height for better control */
+}
+
+.evidence-info-content {
+  grid-column: 2; /* Right column */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+@media (max-width: 768px) {
+  .evidence-info-grid {
+    grid-template-columns: 1fr; /* Stack on smaller screens */
+  }
+  .evidence-image-container {
+    grid-column: 1; /* Image on top */
+    padding: 10px;
+  }
+  .evidence-info-content {
+    grid-column: 1; /* Content below image */
+  }
+  .evidence-image {
+    max-height: 200px; /* Smaller height on mobile */
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .evidence-info-grid {
+    grid-template-columns: minmax(250px, 1fr) 2fr; /* Adjust for tablets */
+  }
+  .evidence-image {
+    max-height: 250px;
+  }
 }

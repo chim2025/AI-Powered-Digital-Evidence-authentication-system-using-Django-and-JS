@@ -149,3 +149,7 @@ evidence_env
 myvenv
 *env
 backend/analysis_results
+backend/files
+backend/response
+backend/uploaded_files/face_maps
+

@@ -205,15 +205,15 @@ fileInfo.innerHTML = `
     <div class="file-details">
       <div class="detail">
         <span class="label"><i class="fas fa-file-alt"></i> File Name:</span>
-        <span class="value">${file.name}</span>
+        <span id="filename_" class="value">${file.name}</span>
       </div>
       <div class="detail">
         <span class="label"><i class="fas fa-tags"></i> Type:</span>
-        <span class="value">${file.type || 'Unknown'}</span>
+        <span id="filetype_" class="value">${file.type || 'Unknown'}</span>
       </div>
       <div class="detail">
         <span class="label"><i class="fas fa-weight-hanging"></i> Size:</span>
-        <span class="value">${formatFileSize(file.size)}</span>
+        <span id="filesize_" class="value">${formatFileSize(file.size)}</span>
       </div>
       <div class="detail">
         <span class="label"><i class="fas fa-calendar-alt"></i> Last Modified:</span>
@@ -264,13 +264,14 @@ function showToast(message) {
   const toast = document.getElementById("toast");
   if (!toast) {
     console.warn("Toast element not found.");
-    alert(message); 
+    alert(message);
     return;
   }
-
-  toast.innerText = message;
+  toast.innerHTML = `<div class="Information">
+    <div class="init-text"><p> <span class="fas fa-info-circle"></span>  Information Center</p></div></br>
+    <p>${message}</p>
+  </div>`;
   toast.classList.add("show");
-
   setTimeout(() => {
     toast.classList.remove("show");
   }, 30000);
@@ -289,6 +290,29 @@ function getCookie(name) {
     }
   }
   return cookieValue;
+}
+function get_task_data() {
+  const task_data = {};
+  let task_name = document.getElementById("taskName")?.value || ""; // Use optional chaining and default to empty string
+  let task_description = document.getElementById("taskDescription")?.value || "";
+  let file_type = document.getElementById("filetype_")?.value || "";
+  let file_name = document.getElementById("filename_")?.value || "";
+  let file_size = document.getElementById("filesize_")?.value || "";
+
+  // Validate required fields
+  if (!task_name.trim() || !task_description.trim()) {
+    console.warn("Task name and description are required.");
+    return null; // Return null to indicate failure
+  }
+
+  // Populate task_data
+  task_data.task_name = task_name;
+  task_data.task_description = task_description;
+  task_data.file_type = file_type;
+  task_data.file_name = file_name;
+  task_data.file_size = file_size;
+
+  return task_data; // Return the populated object
 }
 
 function startEvidenceAnalysis() {
@@ -386,6 +410,13 @@ function startEvidenceAnalysis() {
 // Fetch analysis
 const formData = new FormData();
 formData.append('file', file);
+const taskData=get_task_data()
+if (taskData){
+  for(const[key, value] of Object.entries(taskData)){
+    formData.append( `task_${key}`, value)
+  }
+}
+console.log("FormData entries:", [...formData.entries()]);
 fetch("/evidence/analyze/", {
   method: "POST",
   headers: {
@@ -556,7 +587,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function renderEvidenceResults(data) {
   const section = document.getElementById("analytics_section");
+  const filepath= data.file_path
+  const fileName = filepath.substring(filepath.lastIndexOf('\\') + 1);
   const df = data.deepfake || {};
+  const task=data.task_data || {}
   const forgery = data.forgery_detection || {};
   const meta = data.metadata_tags || {};
   const hashes = data.hashes || {};
@@ -575,6 +609,49 @@ function renderEvidenceResults(data) {
         <button class="tab-button" data-tab="stegoTab">Steganography</button>
       </div>
       <div class="tab-content active" id="summaryTab">
+      <p>Image Summary Contents</p>
+     <div class="Image description">
+  <div class="evidence-info-grid">
+  
+    <div class="evidence-image-container">
+     
+      <img src="/evidence/files/${fileName}" alt="Evidence Image" class="evidence-image" onclick="openHeatmapModal('/evidence/files/${fileName}')" >
+      
+    </div>
+    <div class="evidence-info-content">
+      <div class="evidence-info-item">
+        <h4>Evidence Name</h4>
+        <p>${task.task_name || ""}</p>
+      </div>
+      <div class="evidence-info-item">
+        <h4>Evidence Description</h4>
+        <p>${task.task_description || "No description for this case"}</p>
+      </div>
+      <div class="evidence-info-item">
+        <h4>File Name</h4>
+        <p>${task.file_name || ""}</p>
+      </div>
+      <div class="evidence-info-item">
+        <h4>File Type</h4>
+        <p> ${task.file_type} (${fileName.split('.').pop().toUpperCase()})</p>
+      </div>
+      <div class="evidence-info-item">
+        <h4>File Size</h4>
+        <p>${formatFileSize(task.file_size || 0)}</p>
+      </div>
+      <div class="evidence-info-item">
+        <h4>Analysis Timing</h4>
+        <p>${(df.timing_ms?.total / 1000).toFixed(2)} seconds</p>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="heatmapModal" class="modal">
+  <span class="close" onclick="closeHeatmapModal()">&times;</span>
+  <img id="heatmapModalImg" class="modal-content">
+  <div class="modal-caption">Enlarged Evidence Image</div>
+</div>
+<p>General Model Scoring</p>
         <div class="card-grid">
           <div class="result-card">
             <h4>General Model Score</h4>
@@ -605,8 +682,10 @@ function renderEvidenceResults(data) {
             <p>${stego.stego_detected ? "Detected" : "Not Detected"}</p>
           </div>
         </div>
+
+        <p> File Hash Computation</p>
         <div class="heatmap-container">
-          <img src="">
+          
           <div class="hash-grid">
             ${Object.entries(hashes || {}).map(([key, value]) => `
               <div class="hash-card">
@@ -620,7 +699,7 @@ function renderEvidenceResults(data) {
               </div>
             `).join("")}
           </div>
-          <small><i class="fas fa-search-plus"></i> Click to enlarge</small>
+         
         </div>
       </div>
       <div class="tab-content deepfake-section" id="deepfakeTab">
