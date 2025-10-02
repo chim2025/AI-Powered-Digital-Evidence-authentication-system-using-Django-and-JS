@@ -141,6 +141,9 @@ LOGGING = {
 LOGIN_URL = '/login/'
 MEDIA_URL = '/media/'
 FILES_URL= '/files/'
+RESPONSE_URL= '/response/steganography/'
+RESPONSE_ROOT= os.path.join(BASE_DIR,'response')
+
 MEDIA_ROOT = os.path.join(BASE_DIR, 'uploaded_files')
 FILES_ROOT=os.path.join(BASE_DIR, "files")
 print(f"MEDIA_ROOT: {MEDIA_ROOT}")
