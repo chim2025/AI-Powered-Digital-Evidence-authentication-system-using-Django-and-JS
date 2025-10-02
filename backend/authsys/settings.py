@@ -139,9 +139,17 @@ LOGGING = {
 }
 
 LOGIN_URL = '/login/'
-MEDIA_URL = '/media/'
-FILES_URL= '/files/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'uploaded_files')
-FILES_ROOT=os.path.join(BASE_DIR, "files")
-print(f"MEDIA_ROOT: {MEDIA_ROOT}")
 
+# Media & File storage
+MEDIA_URL = '/media/'
+FILES_URL = '/files/'
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'uploaded_files')
+FILES_ROOT = os.path.join(BASE_DIR, "files")
+
+# Directory for storing analysis JSON results
+ANALYSIS_RESULTS_DIR = os.path.join(BASE_DIR, "analysis_results")
+os.makedirs(ANALYSIS_RESULTS_DIR, exist_ok=True)
+
+print(f"MEDIA_ROOT: {MEDIA_ROOT}")
+print(f"ANALYSIS_RESULTS_DIR: {ANALYSIS_RESULTS_DIR}")
