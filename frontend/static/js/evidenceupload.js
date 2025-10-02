@@ -54,7 +54,39 @@ function cycleQuotes() {
   }, 6000); 
 }
 
+function saveAnalysisResult(result) {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const filename = `analysis_result_${timestamp}.json`;
 
+  fetch("/save_analysis_result/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filename, data: result })
+  })
+  .then(r => r.json())
+  .then(resp => console.log("Saved analysis result:", resp))
+  .catch(err => console.error("Error saving analysis result:", err));
+}
+
+
+function listAnalysisResults() {
+  return fetch("/list_analysis_results/")
+    .then(r => r.json())
+    .catch(err => {
+      console.error("Error listing analysis results:", err);
+      return [];
+    });
+}
+
+
+function getAnalysisResult(filename) {
+  return fetch(`/get_analysis_result/${filename}`)
+    .then(r => r.json())
+    .catch(err => {
+      console.error("Error loading analysis result:", err);
+      return null;
+    });
+}
 
 
 let currentStep = 1;
@@ -490,7 +522,7 @@ fetch("/evidence/analyze/", {
       console.warn("loadingText not found during update");
     }
     if (json.result) {
-      localStorage.setItem("evidenceResults", JSON.stringify(json.result));
+      saveAnalysisResult(json.result)
       try {
         if (json.result.memdump) {
           renderMemdumpResults(json.result.memdump);
@@ -1651,21 +1683,27 @@ function renderMemdumpResults(data) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-  const storedData = localStorage.getItem('evidenceResults');
-  if (storedData) {
-    const parsed = JSON.parse(storedData);
+  listAnalysisResults().then(files => {
+    if (files.length > 0) {
+      // Load the latest result
+      const latestFile = files[files.length - 1];
+      getAnalysisResult(latestFile).then(parsed => {
+        if (!parsed) return;
 
-    if (parsed.deepfake_detection || parsed.forgery_detection || parsed.metadata_tags) {
-      renderEvidenceResults(parsed);  // For image/video analysis
-    } 
-    else if (parsed.text_detection && parsed.report) {
-      renderDocumentResults({
-        text_detection: parsed.text_detection,
-        report: parsed.report,
-        hashes: parsed.hashes
-      });  // For document/text analysis
+        if (parsed.deepfake_detection || parsed.forgery_detection || parsed.metadata_tags) {
+          renderEvidenceResults(parsed);
+        } else if (parsed.text_detection && parsed.report) {
+          renderDocumentResults({
+            text_detection: parsed.text_detection,
+            report: parsed.report,
+            hashes: parsed.hashes
+          });
+        } else if (parsed.memdump) {
+          renderMemdumpResults(parsed.memdump);
+        }
+      });
     }
-  }
+  });
 });
 function openHeatmapModal(src) {
   document.getElementById("heatmapModal").style.display = "block";
