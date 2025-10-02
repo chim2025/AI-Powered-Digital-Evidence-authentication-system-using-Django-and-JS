@@ -139,12 +139,19 @@ LOGGING = {
 }
 
 LOGIN_URL = '/login/'
+
+# Media & File storage
 MEDIA_URL = '/media/'
 FILES_URL= '/files/'
 RESPONSE_URL= '/response/steganography/'
 RESPONSE_ROOT= os.path.join(BASE_DIR,'response')
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'uploaded_files')
-FILES_ROOT=os.path.join(BASE_DIR, "files")
-print(f"MEDIA_ROOT: {MEDIA_ROOT}")
+FILES_ROOT = os.path.join(BASE_DIR, "files")
 
+# Directory for storing analysis JSON results
+ANALYSIS_RESULTS_DIR = os.path.join(BASE_DIR, "analysis_results")
+os.makedirs(ANALYSIS_RESULTS_DIR, exist_ok=True)
+
+print(f"MEDIA_ROOT: {MEDIA_ROOT}")
+print(f"ANALYSIS_RESULTS_DIR: {ANALYSIS_RESULTS_DIR}")
