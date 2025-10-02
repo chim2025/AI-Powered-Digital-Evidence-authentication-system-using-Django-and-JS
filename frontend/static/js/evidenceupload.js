@@ -54,9 +54,6 @@ function cycleQuotes() {
   }, 6000); 
 }
 
-let currentStep = 1;
-
-
 function saveAnalysisResult(result) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const filename = `analysis_result_${timestamp}.json`;
@@ -90,6 +87,9 @@ function getAnalysisResult(filename) {
       return null;
     });
 }
+
+
+let currentStep = 1;
 
 
 openModalBtn.addEventListener("click", () => {
@@ -1697,7 +1697,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
-
 function openHeatmapModal(src) {
   document.getElementById("heatmapModal").style.display = "block";
   document.getElementById("heatmapModalImg").src = src;
