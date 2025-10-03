@@ -8,24 +8,8 @@ from PIL import Image  # For image conversion
 import shutil  # For cleanup
 import sys
 import json
-import binascii 
-from django.conf import settings
-import uuid
-def ensure_response_dir():
-    upload_dir = settings.RESPONSE_ROOT
-    os.makedirs(upload_dir, exist_ok=True)
-    return upload_dir
+import binascii  # For hex encoding
 
-def save_result_as_json(result: Dict) -> str:
-    """Save the steganography result as a JSON file and return the filename."""
-    upload_dir = os.path.join(ensure_response_dir(), "steganography")
-    os.makedirs(upload_dir, exist_ok=True)
-    unique_filename = f"{uuid.uuid4().hex}.json"
-    file_path = os.path.join(upload_dir, unique_filename)
-    with open(file_path, 'w', encoding='utf-8') as f:
-        json.dump(result, f, ensure_ascii=False, indent=4)
-    logger.info(f"Saved steganography result to: {file_path}")
-    return unique_filename
 logger = logging.getLogger(__name__)
 
 def find_zsteg_executable() -> str:
@@ -168,8 +152,8 @@ def detect_steganography(image_path: str) -> Dict:
 
         result = detect_zsteg_steganography(image_path)
         print("----------------Ended Steganography---------------------")
-        filename = save_result_as_json(result)
-        return {"filename": filename}
+        print(result)
+        return result
     finally:
         # Clean up converted file
         if converted_path and os.path.exists(converted_path):
@@ -179,9 +163,10 @@ def detect_steganography(image_path: str) -> Dict:
             except PermissionError:
                 logger.warning(f"Permission denied when deleting {converted_path}")
 
+# Example usage
 if __name__ == "__main__":
     import sys
-    logging.basicConfig(level=logging.DEBUG)  
+    logging.basicConfig(level=logging.DEBUG)  # Enable debug logging
     if len(sys.argv) > 1:
         result = detect_steganography(sys.argv[1])
         print(result)

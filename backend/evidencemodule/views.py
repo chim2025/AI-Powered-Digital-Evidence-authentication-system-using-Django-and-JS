@@ -212,20 +212,10 @@ def safe_serialize(obj):
 
 @csrf_exempt
 def analyze_evidence(request):
-    if request.method == "POST":
-        form_data = request.POST
+    if request.method == "POST" and request.FILES.get("file"):
         evidence_file = request.FILES["file"]
         file_path = save_uploaded_file(evidence_file)
         file_type = evidence_file.content_type
-        file_name = evidence_file.name  # e.g., "IMG_20250902_150719_764.jpg"
-        file_size = evidence_file.size
-        task_data = {
-            'task_name': form_data.get('task_task_name', ''),
-            'task_description': form_data.get('task_task_description', ''),
-            'file_type': file_type,
-            'file_name': file_name,
-            'file_size': file_size
-        }
 
         def event_stream():
             try:
@@ -235,7 +225,6 @@ def analyze_evidence(request):
                 start_time = datetime.datetime.now()
                 yield sse({"progress": 1, "message": f"Analysis started at {start_time.isoformat()}"})
 
-<<<<<<< HEAD
                 result = {
                     "meta": {
                         "original_filename": evidence_file.name,
@@ -246,15 +235,6 @@ def analyze_evidence(request):
                     "plugins": {},
                     "summary": {}
                 }
-=======
-                yield 'data: {"progress": 5, "message": "Uploading file..."}\n\n'
-                time.sleep(0.5)
-
-                yield 'data: {"progress": 15, "message": "Initializing analysis..."}\n\n'
-                result = {}
-                result["task_data"] = task_data  # Corrected key to "task_data" (not "taskdata")
-                print("Task Data:", task_data)
->>>>>>> 50f3def3ffbe7ea0a92495596e971010644d655a
 
                 file_ext = os.path.splitext(file_path)[1].lower()
                 is_image = file_type.startswith("image/")
@@ -265,16 +245,8 @@ def analyze_evidence(request):
                 if is_image:
                     yield sse({"progress": 20, "message": "Running deepfake detection..."})
                     deepfake_result = analyze_deepfake(file_path)
-<<<<<<< HEAD
                     deepfake_url = save_analysis_json(deepfake_result, prefix="deepfake")
                     result["plugins"]["deepfake"] = {"summary": "Deepfake detection done", "url": deepfake_url}
-=======
-                    result["deepfake"] = deepfake_result
-                    time.sleep(0.5)
-                    yield 'data:{"progress":45, "message":"Running Steganographic detection"}\n\n'
-                    steg_detector= detect_steganography(file_path)
-                    result["steganographic_detection"]= steg_detector
->>>>>>> 50f3def3ffbe7ea0a92495596e971010644d655a
 
                     yield sse({"progress": 40, "message": "Running steganography detection..."})
                     steg_result = detect_steganography(file_path)

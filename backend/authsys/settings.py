@@ -142,9 +142,7 @@ LOGIN_URL = '/login/'
 
 # Media & File storage
 MEDIA_URL = '/media/'
-FILES_URL= '/files/'
-RESPONSE_URL= '/response/steganography/'
-RESPONSE_ROOT= os.path.join(BASE_DIR,'response')
+FILES_URL = '/files/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'uploaded_files')
 FILES_ROOT = os.path.join(BASE_DIR, "files")
