@@ -231,7 +231,7 @@ transition: background-color 0.3s ease;
   
 .content-section {
   padding: 30px;
-  background-color: var(--background-color);
+  background-color: var(--card-bg);
 
   
  
