@@ -3,7 +3,7 @@ from .inference.detector import load_detector, classify_text
 from .utils.metadata_reader import extract_metadata
 from .utils.metadata_validator import detect_metadata_inconsistencies
 
-MODEL_DIR = "C:/Users/Digital Forensic/Music/AI_Forensics/roberta-base-openai-detector"
+MODEL_DIR = "roberta-base-openai-detector"
 
 # MODEL_DIR = "Use the path to roberta-base-openai-detector"
 def full_document_analysis(file_path):

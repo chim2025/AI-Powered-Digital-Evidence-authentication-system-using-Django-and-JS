@@ -138,3 +138,19 @@ GitHub.sublime-settings
 .history
 
 backend/evidencemodule/ai_models/checkpoints/*.pth
+backend/forgery_maps
+backend/received_files/files
+backend/evidencemodule/process_folder/feeds_cache/
+yararules/rule
+evidence_env
+frontend/node_modules
+test_env
+evidence_env
+myvenv
+*env
+backend/analysis_results
+backend/files
+backend/response
+backend/uploaded_files/face_maps
+roberta-base-openai-detector/pytorch_model.bin
+
