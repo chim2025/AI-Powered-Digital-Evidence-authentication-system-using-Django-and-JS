@@ -1,6 +1,7 @@
-from django.urls import path
+from django.urls import path, include
+from django.conf import settings
 from . import views
-
+from django.conf.urls.static import static
 urlpatterns = [
     path('', views.index, name='index'),
     path('validate/', views.validate_field, name='validate-field'),
@@ -13,3 +14,6 @@ urlpatterns = [
     path('analysis_results/list/', views.list_analysis_results, name='analysis_results_list'),
     path('analysis_results/get/<str:filename>/', views.get_analysis_result, name='get_analysis_result'),
 ]
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.FILES_URL, document_root=settings.FILES_ROOT)
+urlpatterns+= static(settings.RESPONSE_URL, document_root=settings.RESPONSE_ROOT)
