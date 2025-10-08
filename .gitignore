@@ -153,4 +153,6 @@ backend/files
 backend/response
 backend/uploaded_files/face_maps
 roberta-base-openai-detector/pytorch_model.bin
-
+backend/db.sqlite3
+backend/mediapipe_env/
+backend/model_loader.log
