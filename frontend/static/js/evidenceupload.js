@@ -514,6 +514,7 @@ fetch("/evidence/analyze/", {
       console.warn("loadingText not found during update");
     }
     if (json.result) {
+      localStorage.setItem("evidenceResults", JSON.stringify(json.result));
       saveAnalysisResult(json.result)
       try {
         if (json.result.memdump) {
@@ -585,694 +586,732 @@ window.addEventListener('DOMContentLoaded', () => {
   });
   
 
-function renderEvidenceResults(data) {
-  const section = document.getElementById("analytics_section");
-  const filepath= data.file_path
-  const fileName = filepath.substring(filepath.lastIndexOf('\\') + 1);
-  const df = data.deepfake || {};
-  const task=data.task_data || {}
-  const forgery = data.forgery_detection || {};
-  const meta = data.metadata_tags || {};
-  const hashes = data.hashes || {};
-  const stego = data.stego || {};
-  console.log(hashes);
-
-  const imageurl = document.getElementsByClassName("preview-image");
-  section.innerHTML = `
-    <div class="analysis-container modern-analysis">
-      <h3 class="section-title">Evidence Analysis Results</h3>
-      <div class="tabs">
-        <button class="tab-button active" data-tab="summaryTab">Summary</button>
-        <button class="tab-button" data-tab="deepfakeTab">Deepfake Analysis</button>
-        <button class="tab-button" data-tab="forgeryTab">Forgery Detection</button>
-        <button class="tab-button" data-tab="metadataTab">Metadata Details</button>
-        <button class="tab-button" data-tab="stegoTab">Steganography</button>
-      </div>
-      <div class="tab-content active" id="summaryTab">
-      <p>Image Summary Contents</p>
-     <div class="Image description">
-  <div class="evidence-info-grid">
-  
-    <div class="evidence-image-container">
-     
-      <img src="/evidence/files/${fileName}" alt="Evidence Image" class="evidence-image" onclick="openHeatmapModal('/evidence/files/${fileName}')" >
-      
-    </div>
-    <div class="evidence-info-content">
-      <div class="evidence-info-item">
-        <h4>Evidence Name</h4>
-        <p>${task.task_name || ""}</p>
-      </div>
-      <div class="evidence-info-item">
-        <h4>Evidence Description</h4>
-        <p>${task.task_description || "No description for this case"}</p>
-      </div>
-      <div class="evidence-info-item">
-        <h4>File Name</h4>
-        <p>${task.file_name || ""}</p>
-      </div>
-      <div class="evidence-info-item">
-        <h4>File Type</h4>
-        <p> ${task.file_type} (${fileName.split('.').pop().toUpperCase()})</p>
-      </div>
-      <div class="evidence-info-item">
-        <h4>File Size</h4>
-        <p>${formatFileSize(task.file_size || 0)}</p>
-      </div>
-      <div class="evidence-info-item">
-        <h4>Analysis Timing</h4>
-        <p>${(df.timing_ms?.total / 1000).toFixed(2)} seconds</p>
-      </div>
-    </div>
-  </div>
-</div>
-<div id="heatmapModal" class="modal">
-  <span class="close" onclick="closeHeatmapModal()">&times;</span>
-  <img id="heatmapModalImg" class="modal-content">
-  <div class="modal-caption">Enlarged Evidence Image</div>
-</div>
-<p>General Model Scoring</p>
-        <div class="card-grid">
-          <div class="result-card">
-            <h4>General Model Score</h4>
-            <p>${df.verdict}</p>
-            <div class="progress-circle" data-percentage="${(df.confidence_score).toFixed(0)}">
-              <span class="progress-value">${(df.confidence_score).toFixed(0)}%</span>
+const RESPONSE_URL = '/response/steganography/';
+async function renderEvidenceResults(data) {
+    console.log('renderEvidenceResults called with data:', data); // Log 1: Input data
+    const section = document.getElementById("analytics_section");
+    const filepath = data.file_path || '';
+    const fileName = filepath.substring(filepath.lastIndexOf('\\') + 1);
+    const df = data.deepfake || {};
+    const task = data.task_data || {};
+    const forgery = data.forgery_detection || {};
+    const meta = data.metadata_tags || {};
+    const hashes = data.hashes || {};
+    const stego_file = data.steganographic_detection?.filename || '';
+    console.log('Stego file path:', stego_file); // Log 2: Stego filename
+    let stego = { stego_detected: false, message: 'Loading Steganography Results...', loading: true };
+    // Render initial HTML with placeholder for stegoTab
+    section.innerHTML = `
+        <div class="analysis-container modern-analysis">
+            <h3 class="section-title">Evidence Analysis Results</h3>
+            <div class="tabs">
+                <button class="tab-button active" data-tab="summaryTab">Summary</button>
+                <button class="tab-button" data-tab="deepfakeTab">Deepfake Analysis</button>
+                <button class="tab-button" data-tab="forgeryTab">Forgery Detection</button>
+                <button class="tab-button" data-tab="metadataTab">Metadata Details</button>
+                <button class="tab-button" data-tab="stegoTab">Steganography</button>
             </div>
-            <small>Confidence Score</small>
-          </div>
-          <div class="result-card">
-            <h4>Deepfake/AI Verdict</h4>
-            <p>${df.ai_generated}</p>
-            <div class="progress-circle" data-percentage="${(df.ai_generated_confidence).toFixed(0)}">
-              <span class="progress-value">${(df.ai_generated_confidence).toFixed(0)}%</span>
-            </div>
-            <small>Confidence Score</small>
-          </div>
-          <div class="result-card">
-            <h4>Forgery Verdict</h4>
-            <p>${forgery.verdict}</p>
-          </div>
-          <div class="result-card">
-            <h4>Metadata Verdict</h4>
-            <p>${meta.verdict}</p>
-          </div>
-          <div class="result-card">
-            <h4>Steganography Presence</h4>
-            <p>${stego.stego_detected ? "Detected" : "Not Detected"}</p>
-          </div>
-        </div>
-
-        <p> File Hash Computation</p>
-        <div class="heatmap-container">
-          
-          <div class="hash-grid">
-            ${Object.entries(hashes || {}).map(([key, value]) => `
-              <div class="hash-card">
-                <div class="hash-icon">
-                  <i class="fas ${key.includes('md5') ? 'fa-fingerprint' : key.includes('sha1') ? 'fa-shield-alt' : key.includes('sha256') ? 'fa-lock' : 'fa-key'}"></i>
+            <div class="tab-content active" id="summaryTab">
+                <p>Image Summary Contents</p>
+                <div class="Image description">
+                    <div class="evidence-info-grid">
+                        <div class="evidence-image-container">
+                            <img src="/evidence/files/${fileName}" alt="Evidence Image" class="evidence-image" onclick="openHeatmapModal('/evidence/files/${fileName}')">
+                        </div>
+                        <div class="evidence-info-content">
+                            <div class="evidence-info-item">
+                                <h4>Evidence Name</h4>
+                                <p>${task.task_name || ""}</p>
+                            </div>
+                            <div class="evidence-info-item">
+                                <h4>Evidence Description</h4>
+                                <p>${task.task_description || "No description for this case"}</p>
+                            </div>
+                            <div class="evidence-info-item">
+                                <h4>File Name</h4>
+                                <p>${task.file_name || ""}</p>
+                            </div>
+                            <div class="evidence-info-item">
+                                <h4>File Type</h4>
+                                <p>${task.file_type || ""} (${fileName.split('.').pop().toUpperCase()})</p>
+                            </div>
+                            <div class="evidence-info-item">
+                                <h4>File Size</h4>
+                                <p>${formatFileSize(task.file_size || 0)}</p>
+                            </div>
+                            <div class="evidence-info-item">
+                                <h4>Analysis Timing</h4>
+                                <p>${(df.timing_ms?.total / 1000 || 0).toFixed(2)} seconds</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="hash-info">
-                  <h6>${key.toUpperCase()}</h6>
-                  <code class="hash-value">${value}</code>
+                <p>General Model Scoring</p>
+                <div class="card-grid">
+                    <div class="result-card">
+                        <h4>General Model Score</h4>
+                        <p>${df.verdict || "N/A"}</p>
+                        <div class="progress-circle" data-percentage="${(df.confidence_score || 0).toFixed(0)}">
+                            <span class="progress-value">${(df.confidence_score || 0).toFixed(0)}%</span>
+                        </div>
+                        <small>Confidence Score</small>
+                    </div>
+                    <div class="result-card">
+                        <h4>Deepfake/AI Verdict</h4>
+                        <p>${df.ai_generated || "N/A"}</p>
+                        <div class="progress-circle" data-percentage="${(df.ai_generated_confidence || 0).toFixed(0)}">
+                            <span class="progress-value">${(df.ai_generated_confidence || 0).toFixed(0)}%</span>
+                        </div>
+                        <small>Confidence Score</small>
+                    </div>
+                    <div class="result-card">
+                        <h4>Forgery Verdict</h4>
+                        <p>${forgery.verdict || "N/A"}</p>
+                    </div>
+                    <div class="result-card">
+                        <h4>Metadata Verdict</h4>
+                        <p>${meta.verdict || "N/A"}</p>
+                    </div>
+                    <div class="result-card">
+                        <h4>Steganography Presence</h4>
+                        <p id="stegoPresence">${stego.stego_detected ? "Detected" : "Not Detected"}</p>
+                    </div>
                 </div>
-              </div>
-            `).join("")}
-          </div>
-         
-        </div>
-      </div>
-      <div class="tab-content deepfake-section" id="deepfakeTab">
-        <h4 class="section-title"><i class="fas fa-brain"></i> Deepfake Detection Summary</h4>
-        <div class="deepfake-grid">
-          <div class="df-card">
-            <h5><i class="fas fa-user-check"></i> Face Detection</h5>
-            <p><strong>Regions Detected:</strong> ${df.detected_regions}</p>
-            <p><strong>Faces Count:</strong> ${df.face_count || "NA"}</p>
-            <p><strong>Content Type:</strong> ${df.content_type}</p>
-          </div>
-          <div class="df-card">
-            <h5><i class="fas fa-random"></i> Manipulation</h5>
-            <p><strong>Type:</strong> ${df.manipulation_type}</p>
-            <p><strong>Tampering:</strong>
-              <span class="${df.tampering_detected ? 'badge-fake' : 'badge-real'}">
-                <i class="fas ${df.tampering_detected ? 'fa-times-circle' : 'fa-check-circle'}"></i>
-                ${df.tampering_detected ? "Detected" : "Not Detected"}
-              </span>
-            </p>
-          </div>
-          <div class="df-card">
-            <h5><i class="fas fa-robot"></i> AI Verdict</h5>
-            <p><strong>AI Verdict:</strong> ${df.ai_generated_label || "Unknown"}</p>
-            <p><strong>Confidence:</strong> <span class="conf-bar">
-              <span class="conf-fill" style="width:${df.ai_generated_confidence}%;"></span>
-            </span> ${df.ai_generated_confidence}%</p>
-          </div>
-          <div class="df-card">
-            <h5><i class="fas fa-microchip"></i> Models Used</h5>
-            <ul class="df-list">
-              ${df.models_used?.map(m => `<li><i class="fas fa-cogs"></i> ${m}</li>`).join("")}
-            </ul>
-          </div>
-          <div class="df-card">
-            <h5><i class="fas fa-percentage"></i> Model Scores</h5>
-            <p><strong>ResNet-18:</strong> ${df.model_scores?.resnet18 || "NA"}%</p>
-            <p><strong>EfficientNet:</strong> ${df.model_scores?.efficientnet || "NA"}%</p>
-            <p><strong>Overall Confidence:</strong> ${df.confidence_score || "NA"}%</p>
-          </div>
-          <div class="df-card verdict-box">
-            <h5><i class="fas fa-balance-scale"></i> Final Verdict</h5>
-            <p class="verdict-text ${df.verdict === 'Authentic' ? 'verdict-real' : 'verdict-fake'}">
-              ${df.verdict}
-            </p>
-          </div>
-        </div>
-        <canvas id="dfChart"></canvas>
-      </div>
-      <div class="tab-content forgery-section" id="forgeryTab">
-        <h4 class="section-title"><i class="fas fa-search-dollar"></i> Forgery Detection Summary</h4>
-        <div class="forgery-grid">
-          <div class="forgery-card">
-            <h5><i class="fas fa-tools"></i> Methods Used</h5>
-            <ul class="method-list">
-              ${forgery.methods_used?.map(method => `<li><i class="fas fa-check-circle"></i> ${method}</li>`).join("") || "<li>None</li>"}
-            </ul>
-          </div>
-          <div class="forgery-card">
-            <h5><i class="fas fa-copy"></i> Copy-Move Detection</h5>
-            <p><strong>Score:</strong> ${forgery.copy_move?.score || "N/A"}</p>
-            <p><strong>Flagged:</strong>
-              <span class="${forgery.copy_move?.flagged ? 'badge-fake' : 'badge-real'}">
-                ${forgery.copy_move?.flagged ? "Yes" : "No"}
-              </span>
-            </p>
-          </div>
-          <div class="forgery-card">
-            <h5><i class="fas fa-vector-square"></i> Edge & Blur Analysis</h5>
-            <p><strong>Edge Density:</strong> ${forgery.edges?.edge_density || "N/A"}</p>
-            <p><strong>Edge Flagged:</strong> ${forgery.edges?.edge_flagged ? "Yes" : "No"}</p>
-            <p><strong>Blur Score:</strong> ${forgery.edges?.blur_score || "N/A"}</p>
-            <p><strong>Blur Flagged:</strong> ${forgery.edges?.blur_flagged ? "Yes" : "No"}</p>
-          </div>
-          <div class="forgery-card">
-            <h5><i class="fas fa-paint-brush"></i> ELA (Error Level Analysis)</h5>
-            <p><strong>ELA Score:</strong> ${forgery.ela?.ela_score}</p>
-            <p><strong>ELA Flagged:</strong> ${forgery.ela?.ela_flagged ? "Yes" : "No"}</p>
-            <p><strong>Histogram Std:</strong> ${forgery.ela?.histogram_std || "N/A"}</p>
-          </div>
-          <div class="forgery-card">
-            <h5><i class="fas fa-signal"></i> Noise Pattern Analysis</h5>
-            <p><strong>Laplacian Variance:</strong> ${forgery.noise?.laplacian_variance || "N/A"}</p>
-            <p><strong>Flagged:</strong> ${forgery.noise?.noise_flagged ? "Yes" : "No"}</p>
-          </div>
-          <div class="forgery-card verdict-box">
-            <h5><i class="fas fa-balance-scale"></i> Verdict</h5>
-            <p class="verdict-text ${forgery.verdict === 'Forged' ? 'verdict-fake' : 'verdict-real'}">
-              ${forgery.verdict}
-            </p>
-          </div>
-        </div>
-        <canvas id="elaChart"></canvas>
-      </div>
-      <div class="tab-content metadata-tab" id="metadataTab">
-        <h4 class="meta-section-title"><i class="fas fa-info-circle"></i> Metadata Findings</h4>
-        <div class="meta-highlight-box">
-          <p><i class="fas fa-tools meta-icon"></i> <strong>Software Used:</strong> ${meta.software_used || "Not Detected"}</p>
-        </div>
-        <div class="meta-highlight-box warning">
-          <p><i class="fas fa-exclamation-triangle"></i> Inconsistencies:
-          ${meta.metadata_inconsistencies?.join(", ") || "None found"}</p>
-        </div>
-        <div class="meta-highlight-box location">
-          <p><i class="fas fa-map-marker-alt"></i> GPS Location:
-          ${meta.gps_coordinates?.latitude}, ${meta.gps_coordinates?.longitude}</p>
-        </div>
-        <div class="meta-subsection">
-          <h5><i class="fas fa-camera-retro"></i> EXIF Data</h5>
-          <div class="exif-grid">
-            ${Object.entries(meta.exif_data || {}).map(([k, v]) => `
-              <div class="exif-card">
-                <p class="exif-key"><i class="fas fa-tag"></i> ${k}</p>
-                <p class="exif-value">${v}</p>
-              </div>
-            `).join("")}
-          </div>
-        </div>
-      </div>
-      <div class="tab-content stego-section" id="stegoTab">
-        <h4 class="section-title"><i class="fas fa-eye-slash"></i> Steganography Analysis</h4>
-        <div class="stego-grid">
-          <div class="stego-card">
-            <h5><i class="fas fa-check-circle"></i> Detection Status</h5>
-            <p><strong>Status:</strong>
-              <span class="${stego.stego_detected ? 'badge-fake' : 'badge-real'}">
-                <i class="fas ${stego.stego_detected ? 'fa-times-circle' : 'fa-check-circle'}"></i>
-                ${stego.stego_detected ? "Detected" : "Not Detected"}
-              </span>
-            </p>
-          </div>
-         
-        ${stego.is_encrypted ? `
-          <div class="stego-card">
-            <h5><i class="fas fa-lock"></i> Encryption Status</h5>
-            <p>Password protection: <span class="badge-fake">Detected</span></p>
-          </div>
-        ` : ""}
-          ${stego.extracted_data && stego.extracted_data.length > 0 ? `
-            <div class="stego-card">
-              <h5><i class="fas fa-file-alt"></i> Extracted Data</h5>
-              <ul class="stego-list">
-                ${stego.extracted_data.map(data => `<li>${data}</li>`).join("")}
-              </ul>
+                <p>File Hash Computation</p>
+                <div class="heatmap-container">
+                    <div class="hash-grid">
+                        ${Object.entries(hashes || {}).map(([key, value]) => `
+                            <div class="hash-card">
+                                <div class="hash-icon">
+                                    <i class="fas ${key.includes('md5') ? 'fa-fingerprint' : key.includes('sha1') ? 'fa-shield-alt' : key.includes('sha256') ? 'fa-lock' : 'fa-key'}"></i>
+                                </div>
+                                <div class="hash-info">
+                                    <h6>${key.toUpperCase()}</h6>
+                                    <code class="hash-value">${value}</code>
+                                </div>
+                            </div>
+                        `).join("")}
+                    </div>
+                </div>
             </div>
-          ` : ""}
-          ${stego.message ? `
-            <div class="stego-card">
-              <h5><i class="fas fa-info-circle"></i> Message</h5>
-              <p>${stego.message}</p>
+            <div class="tab-content deepfake-section" id="deepfakeTab">
+                <h4 class="section-title"><i class="fas fa-brain"></i> Deepfake Detection Summary</h4>
+                <div class="deepfake-grid">
+                    <div class="df-card">
+                        <h5><i class="fas fa-user-check"></i> Face Detection</h5>
+                        <p><strong>Regions Detected:</strong> ${df.detected_regions || "N/A"}</p>
+                        <p><strong>Faces Count:</strong> ${df.face_count || "N/A"}</p>
+                        <p><strong>Content Type:</strong> ${df.content_type || "N/A"}</p>
+                    </div>
+                    <div class="df-card">
+                        <h5><i class="fas fa-random"></i> Manipulation</h5>
+                        <p><strong>Type:</strong> ${df.manipulation_type || "N/A"}</p>
+                        <p><strong>Tampering:</strong>
+                            <span class="${df.tampering_detected ? 'badge-fake' : 'badge-real'}">
+                                <i class="fas ${df.tampering_detected ? 'fa-times-circle' : 'fa-check-circle'}"></i>
+                                ${df.tampering_detected ? "Detected" : "Not Detected"}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="df-card">
+                        <h5><i class="fas fa-robot"></i> AI Verdict</h5>
+                        <p><strong>AI Verdict:</strong> ${df.ai_generated_label || "Unknown"}</p>
+                        <p><strong>Confidence:</strong> <span class="conf-bar">
+                            <span class="conf-fill" style="width:${df.ai_generated_confidence || 0}%;"></span>
+                        </span> ${df.ai_generated_confidence || 0}%</p>
+                    </div>
+                    <div class="df-card">
+                        <h5><i class="fas fa-microchip"></i> Models Used</h5>
+                        <ul class="df-list">
+                            ${df.models_used?.map(m => `<li><i class="fas fa-cogs"></i> ${m}</li>`).join("") || "<li>None</li>"}
+                        </ul>
+                    </div>
+                    <div class="df-card">
+                        <h5><i class="fas fa-percentage"></i> Model Scores</h5>
+                        <p><strong>ResNet-18:</strong> ${df.model_scores?.resnet18 || "N/A"}%</p>
+                        <p><strong>EfficientNet:</strong> ${df.model_scores?.efficientnet || "N/A"}%</p>
+                        <p><strong>Overall Confidence:</strong> ${df.confidence_score || "N/A"}%</p>
+                    </div>
+                    <div class="df-card verdict-box">
+                        <h5><i class="fas fa-balance-scale"></i> Final Verdict</h5>
+                        <p class="verdict-text ${df.verdict === 'Authentic' ? 'verdict-real' : 'verdict-fake'}">
+                            ${df.verdict || "N/A"}
+                        </p>
+                    </div>
+                </div>
+                <canvas id="dfChart"></canvas>
             </div>
-          ` : ""}
-          ${stego.error ? `
-            <div class="stego-card">
-              <h5><i class="fas fa-exclamation-triangle"></i> Error</h5>
-              <p>${stego.error}</p>
+            <div class="tab-content forgery-section" id="forgeryTab">
+                <h4 class="section-title"><i class="fas fa-search-dollar"></i> Forgery Detection Summary</h4>
+                <div class="forgery-grid">
+                    <div class="forgery-card">
+                        <h5><i class="fas fa-tools"></i> Methods Used</h5>
+                        <ul class="method-list">
+                            ${forgery.methods_used?.map(method => `<li><i class="fas fa-check-circle"></i> ${method}</li>`).join("") || "<li>None</li>"}
+                        </ul>
+                    </div>
+                    <div class="forgery-card">
+                        <h5><i class="fas fa-copy"></i> Copy-Move Detection</h5>
+                        <p><strong>Score:</strong> ${forgery.copy_move?.score || "N/A"}</p>
+                        <p><strong>Flagged:</strong>
+                            <span class="${forgery.copy_move?.flagged ? 'badge-fake' : 'badge-real'}">
+                                ${forgery.copy_move?.flagged ? "Yes" : "No"}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="forgery-card">
+                        <h5><i class="fas fa-vector-square"></i> Edge & Blur Analysis</h5>
+                        <p><strong>Edge Density:</strong> ${forgery.edges?.edge_density || "N/A"}</p>
+                        <p><strong>Edge Flagged:</strong> ${forgery.edges?.edge_flagged ? "Yes" : "No"}</p>
+                        <p><strong>Blur Score:</strong> ${forgery.edges?.blur_score || "N/A"}</p>
+                        <p><strong>Blur Flagged:</strong> ${forgery.edges?.blur_flagged ? "Yes" : "No"}</p>
+                    </div>
+                    <div class="forgery-card">
+                        <h5><i class="fas fa-paint-brush"></i> ELA (Error Level Analysis)</h5>
+                        <p><strong>ELA Score:</strong> ${forgery.ela?.ela_score || "N/A"}</p>
+                        <p><strong>ELA Flagged:</strong> ${forgery.ela?.ela_flagged ? "Yes" : "No"}</p>
+                        <p><strong>Histogram Std:</strong> ${forgery.ela?.histogram_std || "N/A"}</p>
+                    </div>
+                    <div class="forgery-card">
+                        <h5><i class="fas fa-signal"></i> Noise Pattern Analysis</h5>
+                        <p><strong>Laplacian Variance:</strong> ${forgery.noise?.laplacian_variance || "N/A"}</p>
+                        <p><strong>Flagged:</strong> ${forgery.noise?.noise_flagged ? "Yes" : "No"}</p>
+                    </div>
+                    <div class="forgery-card verdict-box">
+                        <h5><i class="fas fa-balance-scale"></i> Verdict</h5>
+                        <p class="verdict-text ${forgery.verdict === 'Forged' ? 'verdict-fake' : 'verdict-real'}">
+                            ${forgery.verdict || "N/A"}
+                        </p>
+                    </div>
+                </div>
+                <canvas id="elaChart"></canvas>
             </div>
-          ` : ""}
-          ${(stego.raw_output) ? `
-            <div class="stego-card">
-              <h5><i class="fas fa-code"></i> Raw Data</h5>
-              <button id="viewRawBtn" aria-label="View raw data in hex editor">View in Hex Editor</button>
+            <div class="tab-content metadata-tab" id="metadataTab">
+                <h4 class="meta-section-title"><i class="fas fa-info-circle"></i> Metadata Findings</h4>
+                <div class="meta-highlight-box">
+                    <p><i class="fas fa-tools meta-icon"></i> <strong>Software Used:</strong> ${meta.software_used || "Not Detected"}</p>
+                </div>
+                <div class="meta-highlight-box warning">
+                    <p><i class="fas fa-exclamation-triangle"></i> Inconsistencies: ${meta.metadata_inconsistencies?.join(", ") || "None found"}</p>
+                </div>
+                <div class="meta-highlight-box location">
+                    <p><i class="fas fa-map-marker-alt"></i> GPS Location: ${meta.gps_coordinates?.latitude || "N/A"}, ${meta.gps_coordinates?.longitude || "N/A"}</p>
+                </div>
+                <div class="meta-subsection">
+                    <h5><i class="fas fa-camera-retro"></i> EXIF Data</h5>
+                    <div class="exif-grid">
+                        ${Object.entries(meta.exif_data || {}).map(([k, v]) => `
+                            <div class="exif-card">
+                                <p class="exif-key"><i class="fas fa-tag"></i> ${k}</p>
+                                <p class="exif-value">${v}</p>
+                            </div>
+                        `).join("")}
+                    </div>
+                </div>
             </div>
-          ` : ""}
+            <div class="tab-content stego-section" id="stegoTab">
+                <h4 class="section-title"><i class="fas fa-eye-slash"></i> Steganography Analysis</h4>
+                <div class="stego-grid">
+                    <div class="stego-card">
+                        <h5><i class="fas fa-check-circle"></i> Detection Status</h5>
+                        <p><strong>Status:</strong>
+                            <span id="stegoStatus" class="${stego.stego_detected ? 'badge-fake' : 'badge-real'}">
+                                <i class="fas ${stego.stego_detected ? 'fa-times-circle' : 'fa-check-circle'}"></i>
+                                ${stego.stego_detected ? "Detected" : "Not Detected"}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="stego-card" id="stegoLoading">
+                        <h5><i class="fas fa-spinner"></i> Loading</h5>
+                        <div class="loading-indicator">
+                            <div class="spinner"></div>
+                            <p>Loading Steganography Results...</p>
+                        </div>
+                    </div>
+                    <div class="stego-card" id="stegoDetails" style="display: none;">
+                        ${stego.is_encrypted ? `
+                            <h5><i class="fas fa-lock"></i> Encryption Status</h5>
+                            <p>Password protection: <span class="badge-fake">Detected</span></p>
+                        ` : ""}
+                        ${stego.extracted_data && stego.extracted_data.length > 0 ? `
+                            <h5><i class="fas fa-file-alt"></i> Extracted Data</h5>
+                            <ul class="stego-list">
+                                ${stego.extracted_data.map(data => `<li>${data}</li>`).join("")}
+                            </ul>
+                        ` : ""}
+                        ${stego.message ? `
+                            <h5><i class="fas fa-info-circle"></i> Message</h5>
+                            <p>${stego.message}</p>
+                        ` : ""}
+                        ${stego.error ? `
+                            <h5><i class="fas fa-exclamation-triangle"></i> Error</h5>
+                            <p>${stego.error}</p>
+                        ` : ""}
+                        ${(stego.raw_output) ? `
+                            <h5><i class="fas fa-code"></i> Raw Data</h5>
+                            <button id="viewRawBtn" aria-label="View raw data in hex editor">View in Hex Editor</button>
+                        ` : ""}
+                    </div>
+                </div>
+            </div>
+            <div id="hexEditorPopup" class="hex-editor-popup">
+                <div class="hex-editor-header">
+                    <h5>Hex Editor</h5>
+                    <div class="hex-controls">
+                        <input type="text" id="searchHex" placeholder="Search hex..." aria-label="Search hex">
+                        <input type="number" id="fontSize" min="10" max="20" value="12" aria-label="Font size">
+                        <span>px</span>
+                        <button id="zoomIn">+</button>
+                        <button id="zoomOut">-</button>
+                        <button id="themeToggle">Theme</button>
+                        <button id="fullscreenHex">Full Screen</button>
+                        <button id="copyHexBtn">Copy Hex</button>
+                        <button id="saveRawBtn">Save</button>
+                    </div>
+                    <button id="closeHexEditor" aria-label="Close hex editor">✖</button>
+                </div>
+                <div class="hex-editor-content">
+                    <pre id="hexView"></pre>
+                </div>
+            </div>
         </div>
-      </div>
-      <div id="hexEditorPopup" class="hex-editor-popup">
-        <div class="hex-editor-header">
-          <h5>Hex Editor</h5>
-          <div class="hex-controls">
-            <input type="text" id="searchHex" placeholder="Search hex..." aria-label="Search hex">
-            <input type="number" id="fontSize" min="10" max="20" value="12" aria-label="Font size">
-            <span>px</span>
-            <button id="zoomIn">+</button>
-            <button id="zoomOut">-</button>
-            <button id="themeToggle">Theme</button>
-            <button id="fullscreenHex">Full Screen</button>
-            <button id="copyHexBtn">Copy Hex</button>
-            <button id="saveRawBtn">Save</button>
-          </div>
-          <button id="closeHexEditor" aria-label="Close hex editor">✖</button>
-        </div>
-        <div class="hex-editor-content">
-          <pre id="hexView"></pre>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // Tab switching logic
-  document.querySelectorAll(".tab-button").forEach(btn => {
-    btn.addEventListener("click", function () {
-      document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
-      document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
-      this.classList.add("active");
-      document.getElementById(this.dataset.tab).classList.add("active");
-    });
-  });
-
-  // Progress circle animation
-  setTimeout(() => {
-    document.querySelectorAll('.progress-circle').forEach(circle => {
-      const percentage = parseInt(circle.getAttribute('data-percentage')) || 0;
-      const degrees = (percentage / 100) * 360;
-      circle.style.setProperty('--progress', `${degrees}deg`);
-    });
-  }, 300);
-
-  // Hex editor popup toggle
-  const hexEditorPopup = document.getElementById("hexEditorPopup");
-  const viewRawBtn = document.getElementById("viewRawBtn");
-  const closeHexEditor = document.getElementById("closeHexEditor");
-  const hexView = document.getElementById("hexView");
-  const searchHex = document.getElementById("searchHex");
-  const fontSize = document.getElementById("fontSize");
-  const zoomIn = document.getElementById("zoomIn");
-  const zoomOut = document.getElementById("zoomOut");
-  const themeToggle = document.getElementById("themeToggle");
-  const fullscreenHex = document.getElementById("fullscreenHex");
-  const copyHexBtn = document.getElementById("copyHexBtn");
-  const saveRawBtn = document.getElementById("saveRawBtn");
-
-  if (viewRawBtn && hexEditorPopup && closeHexEditor) {
-    if (!window.hexy) {
-      hexView.textContent = "Error: Hex viewer library not loaded.";
-      console.error("hexy.js not loaded");
-      return;
-    }
-
-    const toggleHexEditor = () => {
-      if (hexEditorPopup.classList.contains("open")) {
-        hexEditorPopup.classList.remove("open");
-        viewRawBtn.textContent = "View in Hex Editor";
-      } else {
-        renderRawStegoData(stego, hexView, window.hexy);
-        hexEditorPopup.classList.add("open");
-        viewRawBtn.textContent = "Hide Hex Editor";
-      }
-    };
-
-    viewRawBtn.addEventListener("click", toggleHexEditor);
-    closeHexEditor.addEventListener("click", () => {
-      hexEditorPopup.classList.remove("open");
-      viewRawBtn.textContent = "View in Hex Editor";
-    });
-
-    // Ctrl+Q keyboard shortcut
-    document.addEventListener("keydown", (e) => {
-      if (e.ctrlKey && e.key === "q" && (stego.raw_output || stego.hex_output)) {
-        e.preventDefault();
-        toggleHexEditor();
-      }
-    });
-
-    // Drag functionality for popup
-    const header = hexEditorPopup.querySelector(".hex-editor-header");
-    let isDragging = false;
-    let currentX;
-    let currentY;
-    let initialX;
-    let initialY;
-    let xOffset = 0;
-    let yOffset = 0;
-
-    header.addEventListener("mousedown", dragStart);
-    document.addEventListener("mousemove", drag);
-    document.addEventListener("mouseup", dragEnd);
-
-    function dragStart(e) {
-      initialX = e.clientX - xOffset;
-      initialY = e.clientY - yOffset;
-
-      if (e.target === header || e.target.classList.contains("hex-editor-header")) {
-        isDragging = true;
-      }
-    }
-
-    function drag(e) {
-      if (isDragging) {
-        e.preventDefault();
-        currentX = e.clientX - initialX;
-        currentY = e.clientY - initialY;
-        xOffset = currentX;
-        yOffset = currentY;
-        setTranslate(currentX, currentY, hexEditorPopup);
-      }
-    }
-
-    function dragEnd(e) {
-      initialX = currentX;
-      initialY = currentY;
-      isDragging = false;
-    }
-
-    function setTranslate(xPos, yPos, el) {
-      if (!el.classList.contains("fullscreen")) {
-        el.style.transform = `translate(-50%, -50%) translate3d(${xPos}px, ${yPos}px, 0)`;
-      }
-    }
-
-    // Debounce function for search
-    function debounce(func, wait) {
-      let timeout;
-      return function executedFunction(...args) {
-        const later = () => {
-          clearTimeout(timeout);
-          func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-      };
-    }
-
-    // Search functionality
-    const originalHexContent = { value: "" }; // Store original hex content
-    const performSearch = debounce((searchValue) => {
-      let hexText = originalHexContent.value;
-      if (!hexText) {
-        hexText = hexView.textContent;
-        originalHexContent.value = hexText; // Cache original content
-      }
-      if (searchValue) {
-        const regex = new RegExp(searchValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-        const highlighted = hexText.replace(regex, (match) => `<span class="search-highlight">${match}</span>`);
-        hexView.innerHTML = highlighted;
-      } else {
-        hexView.innerHTML = originalHexContent.value.replace(/([0-9a-f]{8}:)/gi, '<span class="hex-offset">$1</span>')
-          .replace(/([0-9A-F]{2})/gi, '<span class="hex-byte">$1</span>')
-          .replace(/([^\s].*)$/gm, '<span class="hex-ascii">$1</span>');
-      }
-    }, 300);
-
-    searchHex.addEventListener("input", (e) => {
-      performSearch(e.target.value.toLowerCase());
-    });
-
-    // Font size adjustment
-    fontSize.addEventListener("input", (e) => {
-      hexView.style.fontSize = `${e.target.value}px`;
-    });
-
-    zoomIn.addEventListener("click", () => {
-      let currentSize = parseInt(fontSize.value) || 12;
-      currentSize = Math.min(currentSize + 1, 20);
-      fontSize.value = currentSize;
-      hexView.style.fontSize = `${currentSize}px`;
-    });
-
-    zoomOut.addEventListener("click", () => {
-      let currentSize = parseInt(fontSize.value) || 12;
-      currentSize = Math.max(currentSize - 1, 10);
-      fontSize.value = currentSize;
-      hexView.style.fontSize = `${currentSize}px`;
-    });
-
-    // Theme toggle
-    themeToggle.addEventListener("click", () => {
-      hexEditorPopup.classList.toggle("light-theme");
-      themeToggle.textContent = hexEditorPopup.classList.contains("light-theme") ? "Dark Theme" : "Light Theme";
-    });
-
-    // Full screen toggle
-    fullscreenHex.addEventListener("click", () => {
-      if (!document.fullscreenElement) {
-        hexEditorPopup.requestFullscreen().then(() => {
-          hexEditorPopup.classList.add("fullscreen");
-          fullscreenHex.textContent = "Exit Full Screen";
-          // Reset transform to avoid dragging issues in full screen
-          hexEditorPopup.style.transform = "none";
-        }).catch(err => {
-          console.error("Fullscreen error:", err);
-          showToast("Failed to enter full screen");
+    `;
+    // Tab switching logic
+    document.querySelectorAll(".tab-button").forEach(btn => {
+        btn.addEventListener("click", function () {
+            console.log('Tab clicked:', this.dataset.tab); // Log 3: Tab switch
+            document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
+            this.classList.add("active");
+            document.getElementById(this.dataset.tab).classList.add("active");
         });
-      } else {
-        document.exitFullscreen().then(() => {
-          hexEditorPopup.classList.remove("fullscreen");
-          fullscreenHex.textContent = "Full Screen";
-          // Restore centered position
-          xOffset = 0;
-          yOffset = 0;
-          hexEditorPopup.style.transform = "translate(-50%, -50%) translate3d(0, 0, 0)";
-        }).catch(err => {
-          console.error("Exit fullscreen error:", err);
-          showToast("Failed to exit full screen");
-        });
-      }
     });
-
-    // Handle full-screen change events
-    document.addEventListener("fullscreenchange", () => {
-      if (!document.fullscreenElement && hexEditorPopup.classList.contains("fullscreen")) {
-        hexEditorPopup.classList.remove("fullscreen");
-        fullscreenHex.textContent = "Full Screen";
-        xOffset = 0;
-        yOffset = 0;
-        hexEditorPopup.style.transform = "translate(-50%, -50%) translate3d(0, 0, 0)";
-      }
-    });
-
-    // Copy hex
-    copyHexBtn.addEventListener("click", () => {
-      navigator.clipboard.writeText(hexView.textContent).then(() => {
-        showToast("Hex dump copied to clipboard!");
-      }).catch(err => {
-        console.error("Copy failed", err);
-        showToast("Failed to copy hex dump");
-      });
-    });
-
-    // Save button
-    saveRawBtn.addEventListener("click", () => {
-      const blob = new Blob([hexView.textContent], { type: "text/plain" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "hex_dump.txt";
-      a.click();
-      URL.revokeObjectURL(a.href);
-      showToast("Hex dump saved!");
-    });
-  }
-
-  // Toast notification
-  function showToast(message) {
-    let toast = document.querySelector(".hex-toast");
-    if (!toast) {
-      toast = document.createElement("div");
-      toast.className = "hex-toast";
-      document.body.appendChild(toast);
-    }
-    toast.textContent = message;
-    toast.classList.add("show");
-    setTimeout(() => toast.classList.remove("show"), 3000);
-  }
-
-  // Charts (unchanged)
-  setTimeout(() => {
-    if (df.model_scores) {
-      const ctx = document.getElementById("dfChart").getContext("2d");
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: Object.keys(df.model_scores),
-          datasets: [{
-            label: 'Model Confidence',
-            data: Object.values(df.model_scores),
-            backgroundColor: [
-              'rgba(46, 204, 113, 0.7)',
-              'rgba(52, 152, 219, 0.7)',
-              'rgba(155, 89, 182, 0.7)',
-              'rgba(241, 196, 15, 0.7)'
-            ],
-            borderColor: [
-              'rgba(46, 204, 113, 1)',
-              'rgba(52, 152, 219, 1)',
-              'rgba(155, 89, 182, 1)',
-              'rgba(241, 196, 15, 1)'
-            ],
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              max: 100,
-              title: {
-                display: true,
-                text: 'Confidence %'
-              }
-            },
-            x: {
-              title: {
-                display: true,
-                text: 'Detection Models'
-              }
+    // Initialize hex editor elements
+    const hexEditorPopup = document.getElementById("hexEditorPopup");
+    const closeHexEditor = document.getElementById("closeHexEditor");
+    const hexView = document.getElementById("hexView");
+    const searchHex = document.getElementById("searchHex");
+    const fontSize = document.getElementById("fontSize");
+    const zoomIn = document.getElementById("zoomIn");
+    const zoomOut = document.getElementById("zoomOut");
+    const themeToggle = document.getElementById("themeToggle");
+    const fullscreenHex = document.getElementById("fullscreenHex");
+    const copyHexBtn = document.getElementById("copyHexBtn");
+    const saveRawBtn = document.getElementById("saveRawBtn");
+    // Fetch stego data asynchronously
+    if (stego_file) {
+        console.log('Fetching stego data from:', RESPONSE_URL + stego_file); // Log 4: Fetch start
+        try {
+            const response = await fetch(RESPONSE_URL + stego_file);
+            console.log('Fetch response status:', response.status); // Log 5: Fetch response
+            if (!response.ok) {
+                throw new Error(`Failed to fetch stego data: ${response.status}`);
             }
-          },
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return `${context.parsed.y}% confidence`;
+            stego = await response.json();
+            console.log('Fetched stego data:', stego); // Log 6: Fetched data
+            // Update stegoTab content
+            const stegoDetails = document.getElementById('stegoDetails');
+            const stegoLoading = document.getElementById('stegoLoading');
+            const stegoStatus = document.getElementById('stegoStatus');
+            if (stegoDetails && stegoLoading && stegoStatus) {
+                stegoStatus.innerHTML = `
+                    <i class="fas ${stego.stego_detected ? 'fa-times-circle' : 'fa-check-circle'}"></i>
+                    ${stego.stego_detected ? "Detected" : "Not Detected"}
+                `;
+                stegoStatus.className = stego.stego_detected ? 'badge-fake' : 'badge-real';
+                document.getElementById('stegoPresence').textContent = stego.stego_detected ? "Detected" : "Not Detected";
+                stegoDetails.innerHTML = `
+                    ${stego.is_encrypted ? `
+                        <h5><i class="fas fa-lock"></i> Encryption Status</h5>
+                        <p>Password protection: <span class="badge-fake">Detected</span></p>
+                    ` : ""}
+                    ${stego.extracted_data && stego.extracted_data.length > 0 ? `
+                        <h5><i class="fas fa-file-alt"></i> Extracted Data</h5>
+                        <ul class="stego-list">
+                            ${stego.extracted_data.map(data => `<li>${data}</li>`).join("")}
+                        </ul>
+                    ` : ""}
+                    ${stego.message ? `
+                        <h5><i class="fas fa-info-circle"></i> Message</h5>
+                        <p>${stego.message}</p>
+                    ` : ""}
+                    ${stego.error ? `
+                        <h5><i class="fas fa-exclamation-triangle"></i> Error</h5>
+                        <p>${stego.error}</p>
+                    ` : ""}
+                    ${(stego.raw_output || stego.hex_output || stego.lsb_output) ? `
+                        <h5><i class="fas fa-code"></i> Raw Data</h5>
+                        <button id="viewRawBtn" aria-label="View raw data in hex editor">View in Hex Editor</button>
+                    ` : ""}
+                `;
+                stegoLoading.style.display = 'none';
+                stegoDetails.style.display = 'block';
+                console.log('Stego content updated'); // Log 7: Content updated
+                // Initialize hex editor after stego data is fetched
+                const viewRawBtn = document.getElementById("viewRawBtn");
+                if (viewRawBtn && hexEditorPopup && closeHexEditor && hexView) {
+                    if (!window.hexy) {
+                        hexView.textContent = "Error: Hex viewer library not loaded.";
+                        console.error("hexy.js not loaded"); // Log 21: hexy.js missing
+                        showToast("Hex viewer library not loaded.", 3000);
+                        return;
+                    }
+                    console.log('Attaching hex editor listeners'); // Log 22: Listener setup
+                    const toggleHexEditor = () => {
+                        console.log('toggleHexEditor called, open:', hexEditorPopup.classList.contains("open")); // Log 23: Toggle state
+                        if (hexEditorPopup.classList.contains("open")) {
+                            hexEditorPopup.classList.remove("open");
+                            viewRawBtn.textContent = "View in Hex Editor";
+                        } else {
+                            renderRawStegoData(stego, hexView, window.hexy);
+                            hexEditorPopup.classList.add("open");
+                            hexEditorPopup.style.display = 'block'; // Ensure visibility
+                            viewRawBtn.textContent = "Hide Hex Editor";
+                            console.log('Hex editor opened, hexView content:', hexView.innerHTML.substring(0, 100)); // Log 24: Hex view content
+                        }
+                    };
+                    viewRawBtn.addEventListener("click", () => {
+                        console.log('View Raw button clicked'); // Log 8: Hex editor toggle
+                        toggleHexEditor();
+                    });
+                    closeHexEditor.addEventListener("click", () => {
+                        hexEditorPopup.classList.remove("open");
+                        hexEditorPopup.style.display = 'none';
+                        viewRawBtn.textContent = "View in Hex Editor";
+                        console.log('Hex editor closed'); // Log 25: Hex editor closed
+                    });
+                    // Ctrl+Q keyboard shortcut
+                    document.addEventListener("keydown", (e) => {
+                        if (e.ctrlKey && e.key === "q" && (stego.raw_output || stego.hex_output)) {
+                            e.preventDefault();
+                            toggleHexEditor();
+                            console.log('Ctrl+Q triggered'); // Log 26: Keyboard shortcut
+                        }
+                    });
+                    // Drag functionality for popup
+                    const header = hexEditorPopup.querySelector(".hex-editor-header");
+                    let isDragging = false;
+                    let currentX, currentY, initialX, initialY, xOffset = 0, yOffset = 0;
+                    header.addEventListener("mousedown", dragStart);
+                    document.addEventListener("mousemove", drag);
+                    document.addEventListener("mouseup", dragEnd);
+                    function dragStart(e) {
+                        initialX = e.clientX - xOffset;
+                        initialY = e.clientY - yOffset;
+                        if (e.target === header || e.target.classList.contains("hex-editor-header")) {
+                            isDragging = true;
+                        }
+                    }
+                    function drag(e) {
+                        if (isDragging) {
+                            e.preventDefault();
+                            currentX = e.clientX - initialX;
+                            currentY = e.clientY - initialY;
+                            xOffset = currentX;
+                            yOffset = currentY;
+                            setTranslate(currentX, currentY, hexEditorPopup);
+                        }
+                    }
+                    function dragEnd(e) {
+                        initialX = currentX;
+                        initialY = currentY;
+                        isDragging = false;
+                    }
+                    function setTranslate(xPos, yPos, el) {
+                        if (!el.classList.contains("fullscreen")) {
+                            el.style.transform = `translate(-50%, -50%) translate3d(${xPos}px, ${yPos}px, 0)`;
+                        }
+                    }
+                    // Debounce function for search
+                    function debounce(func, wait) {
+                        let timeout;
+                        return function executedFunction(...args) {
+                            const later = () => {
+                                clearTimeout(timeout);
+                                func(...args);
+                            };
+                            clearTimeout(timeout);
+                            timeout = setTimeout(later, wait);
+                        };
+                    }
+                    // Search functionality
+                    const originalHexContent = { value: "" };
+                    const performSearch = debounce((searchValue) => {
+                        let hexText = originalHexContent.value;
+                        if (!hexText) {
+                            hexText = hexView.textContent;
+                            originalHexContent.value = hexText;
+                        }
+                        if (searchValue) {
+                            const regex = new RegExp(searchValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+                            const highlighted = hexText.replace(regex, (match) => `<span class="search-highlight">${match}</span>`);
+                            hexView.innerHTML = highlighted;
+                        } else {
+                            hexView.innerHTML = originalHexContent.value
+                                .replace(/([0-9a-f]{8}:)/gi, '<span class="hex-offset">$1</span>')
+                                .replace(/([0-9A-F]{2})/gi, '<span class="hex-byte">$1</span>')
+                                .replace(/([^\s].*)$/gm, '<span class="hex-ascii">$1</span>');
+                        }
+                        console.log('Search performed, value:', searchValue); // Log 27: Search
+                    }, 300);
+                    searchHex.addEventListener("input", (e) => {
+                        performSearch(e.target.value.toLowerCase());
+                    });
+                    // Font size adjustment
+                    fontSize.addEventListener("input", (e) => {
+                        hexView.style.fontSize = `${e.target.value}px`;
+                        console.log('Font size changed:', e.target.value); // Log 28: Font size
+                    });
+                    zoomIn.addEventListener("click", () => {
+                        let currentSize = parseInt(fontSize.value) || 12;
+                        currentSize = Math.min(currentSize + 1, 20);
+                        fontSize.value = currentSize;
+                        hexView.style.fontSize = `${currentSize}px`;
+                        console.log('Zoom in, new size:', currentSize); // Log 29: Zoom in
+                    });
+                    zoomOut.addEventListener("click", () => {
+                        let currentSize = parseInt(fontSize.value) || 12;
+                        currentSize = Math.max(currentSize - 1, 10);
+                        fontSize.value = currentSize;
+                        hexView.style.fontSize = `${currentSize}px`;
+                        console.log('Zoom out, new size:', currentSize); // Log 30: Zoom out
+                    });
+                    // Theme toggle
+                    themeToggle.addEventListener("click", () => {
+                        hexEditorPopup.classList.toggle("light-theme");
+                        themeToggle.textContent = hexEditorPopup.classList.contains("light-theme") ? "Dark Theme" : "Light Theme";
+                        console.log('Theme toggled:', hexEditorPopup.classList.contains("light-theme") ? "light" : "dark"); // Log 31: Theme
+                    });
+                    // Full screen toggle
+                    fullscreenHex.addEventListener("click", () => {
+                        if (!document.fullscreenElement) {
+                            hexEditorPopup.requestFullscreen().then(() => {
+                                hexEditorPopup.classList.add("fullscreen");
+                                fullscreenHex.textContent = "Exit Full Screen";
+                                hexEditorPopup.style.transform = "none";
+                                console.log('Entered fullscreen'); // Log 32: Fullscreen
+                            }).catch(err => {
+                                console.error("Fullscreen error:", err);
+                                showToast("Failed to enter full screen");
+                            });
+                        } else {
+                            document.exitFullscreen().then(() => {
+                                hexEditorPopup.classList.remove("fullscreen");
+                                fullscreenHex.textContent = "Full Screen";
+                                xOffset = 0;
+                                yOffset = 0;
+                                hexEditorPopup.style.transform = "translate(-50%, -50%) translate3d(0, 0, 0)";
+                                console.log('Exited fullscreen'); // Log 33: Exit fullscreen
+                            }).catch(err => {
+                                console.error("Exit fullscreen error:", err);
+                                showToast("Failed to exit full screen");
+                            });
+                        }
+                    });
+                    document.addEventListener("fullscreenchange", () => {
+                        if (!document.fullscreenElement && hexEditorPopup.classList.contains("fullscreen")) {
+                            hexEditorPopup.classList.remove("fullscreen");
+                            fullscreenHex.textContent = "Full Screen";
+                            xOffset = 0;
+                            yOffset = 0;
+                            hexEditorPopup.style.transform = "translate(-50%, -50%) translate3d(0, 0, 0)";
+                            console.log('Fullscreen exited via browser'); // Log 34: Fullscreen change
+                        }
+                    });
+                    // Copy hex
+                    copyHexBtn.addEventListener("click", () => {
+                        navigator.clipboard.writeText(hexView.textContent).then(() => {
+                            showToast("Hex dump copied to clipboard!");
+                            console.log('Hex dump copied'); // Log 35: Copy hex
+                        }).catch(err => {
+                            console.error("Copy failed", err);
+                            showToast("Failed to copy hex dump");
+                        });
+                    });
+                    // Save button
+                    saveRawBtn.addEventListener("click", () => {
+                        const blob = new Blob([hexView.textContent], { type: "text/plain" });
+                        const a = document.createElement("a");
+                        a.href = URL.createObjectURL(blob);
+                        a.download = "hex_dump.txt";
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                        showToast("Hex dump saved!");
+                        console.log('Hex dump saved'); // Log 36: Save hex
+                    });
+                } else {
+                    console.error('Hex editor elements missing:', { viewRawBtn, hexEditorPopup, closeHexEditor, hexView }); // Log 37: Missing elements
+                    showToast("Hex editor initialization failed.", 3000);
                 }
-              }
             }
-          }
-        }
-      });
-    }
-    if (forgery.ela) {
-      const ctx2 = document.getElementById("elaChart").getContext("2d");
-      new Chart(ctx2, {
-        type: 'radar',
-        data: {
-          labels: ['ELA Score', 'Histogram STD', 'Edge Density', 'Blur Score', 'Copy-Move'],
-          datasets: [{
-            label: 'Detection Metrics',
-            data: [
-              forgery.ela.ela_score || 0,
-              forgery.ela.histogram_std || 0,
-              forgery.edges?.edge_density || 0,
-              forgery.edges?.blur_score || 0,
-              forgery.copy_move?.score || 0
-            ],
-            backgroundColor: 'rgba(231, 76, 60, 0.2)',
-            borderColor: 'rgba(231, 76, 60, 1)',
-            pointBackgroundColor: 'rgba(231, 76, 60, 1)',
-            pointBorderColor: '#fff',
-            pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: 'rgba(231, 76, 60, 1)'
-          }]
-        },
-        options: {
-          scales: {
-            r: {
-              angleLines: {
-                display: true
-              },
-              suggestedMin: 0,
-              suggestedMax: 100
+        } catch (error) {
+            console.error('Error fetching steganography results:', error); // Log 9: Fetch error
+            const stegoDetails = document.getElementById('stegoDetails');
+            const stegoLoading = document.getElementById('stegoLoading');
+            if (stegoDetails && stegoLoading) {
+                stegoDetails.innerHTML = `<h5><i class="fas fa-exclamation-triangle"></i> Error</h5><p>Failed to load steganography results</p>`;
+                stegoLoading.style.display = 'none';
+                stegoDetails.style.display = 'block';
             }
-          }
         }
-      });
+    } else {
+        console.warn('No steganography filename provided'); // Log 10: No filename
+        const stegoDetails = document.getElementById('stegoDetails');
+        const stegoLoading = document.getElementById('stegoLoading');
+        if (stegoDetails && stegoLoading) {
+            stegoDetails.innerHTML = `<h5><i class="fas fa-info-circle"></i> Message</h5><p>No steganography results available</p>`;
+            stegoLoading.style.display = 'none';
+            stegoDetails.style.display = 'block';
+        }
     }
-  }, 500);
+    // Progress circle animation
+    setTimeout(() => {
+        document.querySelectorAll('.progress-circle').forEach(circle => {
+            const percentage = parseInt(circle.getAttribute('data-percentage')) || 0;
+            const degrees = (percentage / 100) * 360;
+            circle.style.setProperty('--progress', `${degrees}deg`);
+        });
+    }, 300);
+    // Charts
+    setTimeout(() => {
+        if (df.model_scores) {
+            const ctx = document.getElementById("dfChart").getContext("2d");
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(df.model_scores),
+                    datasets: [{
+                        label: 'Model Confidence',
+                        data: Object.values(df.model_scores),
+                        backgroundColor: [
+                            'rgba(46, 204, 113, 0.7)',
+                            'rgba(52, 152, 219, 0.7)',
+                            'rgba(155, 89, 182, 0.7)',
+                            'rgba(241, 196, 15, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(46, 204, 113, 1)',
+                            'rgba(52, 152, 219, 1)',
+                            'rgba(155, 89, 182, 1)',
+                            'rgba(241, 196, 15, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Confidence %'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Detection Models'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.y}% confidence`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        if (forgery.ela) {
+            const ctx2 = document.getElementById("elaChart").getContext("2d");
+            new Chart(ctx2, {
+                type: 'radar',
+                data: {
+                    labels: ['ELA Score', 'Histogram STD', 'Edge Density', 'Blur Score', 'Copy-Move'],
+                    datasets: [{
+                        label: 'Detection Metrics',
+                        data: [
+                            forgery.ela.ela_score || 0,
+                            forgery.ela.histogram_std || 0,
+                            forgery.edges?.edge_density || 0,
+                            forgery.edges?.blur_score || 0,
+                            forgery.copy_move?.score || 0
+                        ],
+                        backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        pointBackgroundColor: 'rgba(231, 76, 60, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(231, 76, 60, 1)'
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            });
+        }
+    }, 500);
 }
-
 function renderRawStegoData(stegoData, containerElement, hexy) {
+    console.log('renderRawStegoData called with stegoData:', stegoData); // Log 1: Input data
+    console.log('containerElement:', containerElement); // Log 2: Container element
+    if (!containerElement) {
+        console.error('Error: containerElement is null or undefined');
+        showToast("Error: Hex viewer container not found.", 3000);
+        return;
+    }
     if (!stegoData.raw_output && !stegoData.hex_output && !stegoData.lsb_output) {
         containerElement.textContent = "No raw data available.";
         showToast("No data available to display in hex editor.", 3000);
+        console.log('No raw data available'); // Log 3: No data
         return;
     }
-
-    // Prioritize lsb_output, then hex_output, then raw_output
     let hexInput = stegoData.lsb_output || stegoData.hex_output || stegoData.raw_output;
+    console.log('hexInput:', hexInput); // Log 4: Selected input
     if (!hexInput) {
         containerElement.textContent = "No raw data available.";
         showToast("No data available to display in hex editor.", 3000);
+        console.log('No hexInput provided'); // Log 5: No hexInput
         return;
     }
-
-    // Convert hex to binary
     let dataBuffer;
     try {
         dataBuffer = new Uint8Array(
-            hexInput.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || 
+            hexInput.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) ||
             new TextEncoder().encode(stegoData.raw_output || "")
         );
+        console.log('dataBuffer length:', dataBuffer.length); // Log 6: Buffer size
     } catch (e) {
         containerElement.textContent = "Error: Invalid hex data.";
-        console.error("Failed to parse hex data:", e);
+        console.error("Failed to parse hex data:", e); // Log 7: Parse error
         showToast("Error processing hex data.", 3000);
         return;
     }
-
-    // Pagination settings
-    const pageSize = 4096; // Bytes per page
+    const pageSize = 4096;
     let currentPage = 0;
     const totalPages = Math.ceil(dataBuffer.length / pageSize);
-
-    // Function to render a specific page
+    console.log('totalPages:', totalPages); // Log 8: Total pages
     function renderPage(page) {
         const start = page * pageSize;
         const end = Math.min(start + pageSize, dataBuffer.length);
         const pageData = dataBuffer.slice(start, end);
-
-        // Use hexy.js to format the data
         let hexDump = hexy(pageData, {
             width: 16,
             numbering: 'hex_bytes',
@@ -1283,39 +1322,33 @@ function renderRawStegoData(stegoData, containerElement, hexy) {
             indent: 0,
             html: false
         });
-
-        // Highlight Python keywords
+        console.log('hexDump sample:', hexDump.substring(0, 100)); // Log 9: Hex dump sample
         hexDump = hexDump.replace(
             /(def |import |class |print\(|input\()/g,
             '<span class="python-keyword">$1</span>'
         );
-
-        // Colorize offsets, bytes, and ASCII
         const colorizedDump = hexDump
             .replace(/([0-9a-fA-F]{8}:)/gi, '<span class="hex-offset">$1</span>')
             .replace(/([0-9A-F]{2})/gi, '<span class="hex-byte">$1</span>')
             .replace(/([^\s].*)$/gm, '<span class="hex-ascii">$1</span>');
-
+        console.log('colorizedDump sample:', colorizedDump.substring(0, 100)); // Log 10: Colorized dump
         containerElement.innerHTML = colorizedDump;
-
-        // Update pagination controls
+        console.log('containerElement updated with innerHTML'); // Log 11: DOM update
         updatePaginationControls(page, totalPages);
     }
-
-    // Pagination controls
     function updatePaginationControls(page, totalPages) {
         let controls = document.querySelector('.hex-pagination');
         if (!controls) {
             controls = document.createElement('div');
             controls.className = 'hex-pagination';
             containerElement.parentElement.appendChild(controls);
+            console.log('Created hex-pagination controls'); // Log 12: Pagination created
         }
         controls.innerHTML = `
             <button id="prevPage" ${page === 0 ? 'disabled' : ''}>Previous</button>
             <span>Page ${page + 1} of ${totalPages}</span>
             <button id="nextPage" ${page >= totalPages - 1 ? 'disabled' : ''}>Next</button>
         `;
-
         const prevButton = controls.querySelector('#prevPage');
         const nextButton = controls.querySelector('#nextPage');
         if (prevButton) {
@@ -1323,6 +1356,7 @@ function renderRawStegoData(stegoData, containerElement, hexy) {
                 if (currentPage > 0) {
                     currentPage--;
                     renderPage(currentPage);
+                    console.log('Previous page clicked, currentPage:', currentPage); // Log 13: Prev page
                 }
             });
         }
@@ -1331,33 +1365,21 @@ function renderRawStegoData(stegoData, containerElement, hexy) {
                 if (currentPage < totalPages - 1) {
                     currentPage++;
                     renderPage(currentPage);
+                    console.log('Next page clicked, currentPage:', currentPage); // Log 14: Next page
                 }
             });
         }
     }
-
-    // Try decoding as Python code
     let decodedText = '';
     try {
-        // Attempt base64 or gzip decoding
         const decoded = new TextDecoder('utf-8', { fatal: false }).decode(dataBuffer);
+        console.log('Decoded text sample:', decoded.substring(0, 100)); // Log 15: Decoded text
         if (decoded.includes('def ') || decoded.includes('import ') || decoded.includes('class ')) {
             decodedText = decoded;
-        } else {
-            // Try base64 + gzip
-            try {
-                const base64Decoded = atob(decoded);
-                const gzipDecoded = pako.ungzip(new Uint8Array(base64Decoded.split('').map(c => c.charCodeAt(0))));
-                decodedText = new TextDecoder('utf-8').decode(gzipDecoded);
-            } catch (e) {
-                console.warn("Decoding as base64/gzip failed:", e);
-            }
         }
     } catch (e) {
-        console.warn("Decoding as text failed:", e);
+        console.warn("Decoding as text failed:", e); // Log 16: Text decode error
     }
-
-    // If Python code is found, display it
     if (decodedText && (decodedText.includes('def ') || decodedText.includes('import '))) {
         const codeCard = document.createElement('div');
         codeCard.className = 'stego-card';
@@ -1365,23 +1387,29 @@ function renderRawStegoData(stegoData, containerElement, hexy) {
             <h5><i class="fas fa-code"></i> Extracted Python Code</h5>
             <pre class="python-code">${decodedText}</pre>
         `;
-        document.querySelector('.stego-grid').prepend(codeCard);
+        const stegoGrid = document.querySelector('.stego-grid');
+        if (stegoGrid) {
+            stegoGrid.prepend(codeCard);
+            console.log('Python code card added to stego-grid'); // Log 17: Python code added
+        } else {
+            console.error('Error: .stego-grid not found'); // Log 18: Stego-grid missing
+        }
     }
-
-    // Initial render
     renderPage(currentPage);
-
-    // Update saveRawBtn to save full data
-    const saveRawBtn = document.getElementById('saveRawBtn');
-    saveRawBtn.addEventListener('click', () => {
-        const blob = new Blob([dataBuffer], { type: 'application/octet-stream' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'raw_stego_data.bin';
-        a.click();
-        URL.revokeObjectURL(a.href);
-        showToast('Raw data saved!');
-    });
+    if (saveRawBtn) {
+        saveRawBtn.addEventListener('click', () => {
+            const blob = new Blob([dataBuffer], { type: 'application/octet-stream' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'raw_stego_data.bin';
+            a.click();
+            URL.revokeObjectURL(a.href);
+            showToast('Raw data saved!');
+            console.log('Raw data saved'); // Log 19: Save clicked
+        });
+    } else {
+        console.warn('saveRawBtn not found'); // Log 20: Save button missing
+    }
 }
 
 

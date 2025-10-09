@@ -213,18 +213,34 @@ def safe_serialize(obj):
 @csrf_exempt
 def analyze_evidence(request):
     if request.method == "POST" and request.FILES.get("file"):
-        evidence_file = request.FILES["file"]
-        file_path = save_uploaded_file(evidence_file)
-        file_type = evidence_file.content_type
+       form_data = request.POST
+       evidence_file = request.FILES["file"]
+       file_path = save_uploaded_file(evidence_file)
+       file_type = evidence_file.content_type
+       file_name = evidence_file.name  
+       file_size = evidence_file.size
+       task_data = {
+            'task_name': form_data.get('task_task_name', ''),
+            'task_description': form_data.get('task_task_description', ''),
+            'file_type': file_type,
+            'file_name': file_name,
+            'file_size': file_size
+        }
 
-        def event_stream():
+       def event_stream():
             try:
                 def sse(data):
                     return f"data: {json.dumps(data)}\n\n"
+                start_time = datetime.datetime.now()
+                start_msg = f"Analysis started at: {start_time.strftime('%H:%M:%S')}"
+                yield f'data: {json.dumps({"progress": 1, "message": start_msg})}\n\n'
+                sys.stdout.flush()
+                time.sleep(0.3)
+
+                yield 'data: {"progress": 5, "message": "Uploading file..."}\n\n'
 
                 start_time = datetime.datetime.now()
-                yield sse({"progress": 1, "message": f"Analysis started at {start_time.isoformat()}"})
-
+                yield 'data: {"progress": 15, "message": "Initializing analysis..."}\n\n'
                 result = {
                     "meta": {
                         "original_filename": evidence_file.name,
@@ -235,6 +251,8 @@ def analyze_evidence(request):
                     "plugins": {},
                     "summary": {}
                 }
+                result["task_data"] = task_data  # Corrected key to "task_data" (not "taskdata")
+                print("Task Data:", task_data)
 
                 file_ext = os.path.splitext(file_path)[1].lower()
                 is_image = file_type.startswith("image/")
@@ -243,28 +261,41 @@ def analyze_evidence(request):
 
                 # === Image ===
                 if is_image:
-                    yield sse({"progress": 20, "message": "Running deepfake detection..."})
+                    yield 'data: {"progress": 20, "message": "Running deepfake detection..."}\n\n'
+                    print("Started Steganographic analyis")
                     deepfake_result = analyze_deepfake(file_path)
-                    deepfake_url = save_analysis_json(deepfake_result, prefix="deepfake")
-                    result["plugins"]["deepfake"] = {"summary": "Deepfake detection done", "url": deepfake_url}
+                    result["deepfake"] = deepfake_result
+                    print(result['deepfake'])
+                    time.sleep(0.5)
+                    yield 'data:{"progress":45, "message":"Running Steganographic detection"}\n\n'
+                    print("Started Steganographic detection")
+                    steg_detector= detect_steganography(file_path)
+                    result["steganographic_detection"]= steg_detector
+                    print(result['steganographic_detection'])
 
-                    yield sse({"progress": 40, "message": "Running steganography detection..."})
-                    steg_result = detect_steganography(file_path)
-                    steg_url = save_analysis_json(steg_result, prefix="steg")
-                    result["plugins"]["steg"] = {"summary": "Steg detection done", "url": steg_url}
+                    yield 'data: {"progress": 70, "message": "Running full forensic image analysis..."}\n\n'
+                    print("Starting full Forensic Analysis")
+                    stream_list = []
 
-                    yield sse({"progress": 60, "message": "Running forensic image analysis..."})
-                    forensic_result = full_image_forensic_analysis(file_path, streamer=None)
-                    forensic_url = save_analysis_json(forensic_result, prefix="forensic")
-                    result["plugins"]["forensic"] = {"summary": "Forensic analysis done", "url": forensic_url}
+                    def collector(update):
+                        stream_list.append(f'data: {json.dumps(update)}\n\n')
+                        time.sleep(0.2)
 
+                    forensic_result = full_image_forensic_analysis(file_path, streamer=collector)
+                    
+                    for line in stream_list:
+                        yield line
+                    
+                    result.update(forensic_result)
+                    print(result.update(forensic_result))
+
+                
                 # === Document ===
                 elif is_doc:
-                    yield sse({"progress": 50, "message": "Running document authenticity check..."})
+                    yield 'data: {"progress": 60, "message": "Running document authenticity check..."}\n\n'
                     doc_result = full_document_analysis(file_path)
-                    doc_url = save_analysis_json(doc_result, prefix="doc")
-                    result["plugins"]["document_analysis"] = {"summary": "Document analysis done", "url": doc_url}
-
+                    result["text_detection"] = doc_result.get("detection_result")
+                    result["report"] = doc_result.get("report")
                 # === Memory Dump ===
                 elif is_memdump:
                     yield sse({"progress": 40, "message": "Running memory forensics (Volatility3)..."})
@@ -299,19 +330,19 @@ def analyze_evidence(request):
                             result["plugins"][plugin] = {"error": stderr.strip() or "Unknown error"}
 
                 # === File hashes ===
-                yield sse({"progress": 90, "message": "Computing file hashes..."})
-                hash_json = json.loads(compute_file_hashes(file_path))
-                result["summary"]["hashes"] = hash_json
+                yield 'data: {"progress": 90, "message": "Computing file hashes..."}\n\n'
+                hash_result = compute_file_hashes(file_path)
+                result.update(json.loads(hash_result))
 
-                # === Save final aggregated JSON ===
-                final_url = save_analysis_json(result, prefix="analysis")
-                yield sse({"progress": 99, "message": "Saved analysis results", "result_url": final_url})
-                yield sse({"progress": 100, "message": "Analysis complete", "result_url": final_url})
+                end_time = datetime.datetime.now()
+                end_msg = f"Analysis ended at: {end_time.strftime('%H:%M:%S')}"
+                yield f'data: {json.dumps({"progress": 99, "message": end_msg})}\n\n'
+                yield f'data: {json.dumps({"progress": 100, "message": "Analysis complete", "result": result})}\n\n'
 
             except Exception as e:
-                yield sse({"progress": 100, "message": "Error: " + str(e), "error": True})
+                yield f'data: {json.dumps({"progress": 100, "message": "Error: " + str(e), "error": True})}\n\n'
 
-        return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+       return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
 
     return HttpResponse(json.dumps({"error": "No file or invalid request."}), content_type="application/json")
 

@@ -18,7 +18,7 @@ def ensure_response_dir():
 
 def save_result_as_json(result: Dict) -> str:
     """Save the steganography result as a JSON file and return the filename."""
-    upload_dir = os.path.join(ensure_response_dir(), "steganography")
+    upload_dir = ensure_response_dir()
     os.makedirs(upload_dir, exist_ok=True)
     unique_filename = f"{uuid.uuid4().hex}.json"
     file_path = os.path.join(upload_dir, unique_filename)
