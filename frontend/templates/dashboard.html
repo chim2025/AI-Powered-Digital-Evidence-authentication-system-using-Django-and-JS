@@ -25,6 +25,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
 
 </head>
 <body>
@@ -339,9 +341,90 @@
       </div>
       <div class="task-display-button">
     <button class="task-button task-wizard-trigger"><span class="fas fa-plus"></span> New Task</button>
-    <button><span class="fas fa-code-compare"></span> Comparator </button>
+    <button id="openExifComparatorx1"><span class="fas fa-code-compare"></span> Comparator </button>
     <button><span class="fas fa-tools"></span> Other Task</button>
   </div>
+
+
+
+<!-- Modal -->
+<div id="exifComparatorModalx1" class="modalx1" style="display: none;">
+    <div class="modalx1-content">
+        <div class="modalx1-header">
+            <h2 class="modalx1-title">EXIF Data Comparator</h2>
+            <span class="closex1">&times;</span>
+        </div>
+        <div class="modalx1-progress">
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-barx1" style="width: 50%;"></div>
+            </div>
+            <div class="step-indicators">
+                <div class="step-indicator" id="step-1-indicatorx1">
+                    <span>1</span>
+                    <span>Evidence Details</span>
+                </div>
+                <div class="step-indicator" id="step-2-indicatorx1">
+                    <span>2</span>
+                    <span>Upload & Compare</span>
+                </div>
+            </div>
+        </div>
+        <div class="modalx1-body">
+            <div class="step-containerx1 active" id="step-1x1">
+                <div class="step-contentx1">
+                    <div class="form-groupx1">
+                        <label for="evidenceNamex1">Evidence Name</label>
+                        <input type="text" id="evidenceNamex1" class="inputx1" placeholder="e.g., Case #123 - Laptop">
+                    </div>
+                    <div class="form-groupx1">
+                        <label for="evidenceDescriptionx1">Evidence Description</label>
+                        <textarea id="evidenceDescriptionx1" class="inputx1" placeholder="A brief summary of the evidence..." rows="3"></textarea>
+                    </div>
+                    <div class="form-groupx1">
+                        <label for="datex1">Date</label>
+                        <input type="date" id="datex1" class="inputx1" value="2025-10-09">
+                    </div>
+                </div>
+                <div class="modalx1-footerx1">
+                    <button id="nextStepBtnx1" class="btn next-btnx1">
+                        Next
+                        <span class="material-symbols-outlined">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+            <div class="step-containerx1" id="step-2x1">
+                <div class="step-contentx1">
+                    <div class="upload-sectionx1">
+                        <label class="upload-labelx1">Multiple File Upload</label>
+                        <div class="upload-areax1" id="uploadTriggerx1">
+                            <span class="material-symbols-outlined upload-iconx1">cloud_upload</span>
+                            <div class="upload-textx1">
+                                <p>or drag and drop</p>
+                                <p class="upload-note">PNG, JPG, PDF up to 10MB</p>
+                            </div>
+                            <input type="file" id="exifUploadx1" class="exif-inputx1" multiple accept="image/*,application/pdf">
+                        </div>
+                    </div>
+                    <div class="file-preview-sectionx1">
+                        <h3 class="preview-titlex1">Uploaded Files</h3>
+                        <div id="filePreviewx1" class="preview-containerx1">
+                            <!-- Previews will be dynamically added -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modalx1-footerx1">
+                    <button id="prevStepBtnx1" class="btn prev-btnx1">Cancel</button>
+                    <button id="compareExifBtnx1" class="btn compare-btnx1" disabled>
+                        <span class="material-symbols-outlined">compare_arrows</span>
+                        Compare
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
     <div id="taskWizardModal" class="modal">
       <div class="modal-content">
@@ -550,6 +633,7 @@
   <script type="module" src="/static/js/renderevidence.js"></script>
   <script type="module" src="/static/js/process.js"></script>
   <script type="module" src="/static/js/process_metrics.js"></script>
+  <script type="module" src="/static/js/exif.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 

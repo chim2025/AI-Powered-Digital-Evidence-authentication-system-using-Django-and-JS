@@ -665,17 +665,18 @@ async function renderEvidenceResults(data) {
                         <small>Confidence Score</small>
                     </div>
                     <div class="result-card">
-                        <h4>Forgery Verdict</h4>
-                        <p>${forgery.verdict || "N/A"}</p>
-                    </div>
-                    <div class="result-card">
-                        <h4>Metadata Verdict</h4>
-                        <p>${meta.verdict || "N/A"}</p>
-                    </div>
-                    <div class="result-card">
-                        <h4>Steganography Presence</h4>
-                        <p id="stegoPresence">${stego.stego_detected ? "Detected" : "Not Detected"}</p>
-                    </div>
+        <h4><i class="fas fa-file-signature"></i> Forgery Verdict</h4>
+        <p>${forgery.verdict || "N/A"}</p>
+    </div>
+                  <div class="result-card">
+        <h4><i class="fas fa-info-circle"></i> Metadata Verdict</h4>
+        <p>${meta.verdict || "N/A"}</p>
+    </div>
+    <div class="result-card">
+        <h4><i class="fas fa-eye"></i> Steganography Presence</h4>
+        <p id="stegoPresence">${stego.stego_detected ? "Detected" : "Not Detected"}</p>
+    </div>
+</div>
                 </div>
                 <p>File Hash Computation</p>
                 <div class="heatmap-container">
