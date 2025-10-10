@@ -144,6 +144,8 @@ LOGIN_URL = '/login/'
 MEDIA_URL = '/media/'
 FILES_URL= '/files/'
 RESPONSE_URL= '/response/steganography/'
+COMPARATOR_URL='/response/comparator'
+COMPARATOR_ROOT= os.path.join(BASE_DIR,'Comparators')
 RESPONSE_ROOT= os.path.join(BASE_DIR,'response')
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'uploaded_files')
@@ -155,3 +157,4 @@ os.makedirs(ANALYSIS_RESULTS_DIR, exist_ok=True)
 
 print(f"MEDIA_ROOT: {MEDIA_ROOT}")
 print(f"ANALYSIS_RESULTS_DIR: {ANALYSIS_RESULTS_DIR}")
+CSRF_COOKIE_HTTPONLY = False

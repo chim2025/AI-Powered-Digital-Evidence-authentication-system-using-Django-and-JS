@@ -1,3 +1,4 @@
+import tempfile
 import logging, subprocess, uuid, datetime, time, os, json, sys
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -24,6 +25,8 @@ from .document_authentication.run_pipeline import full_document_analysis
 from .models import User
 from .sysinfo import system_info
 from .processes import get_all_processes
+import uuid
+
 
 
 def safe_serialize(obj):
@@ -396,3 +399,53 @@ def get_analysis_result(request, filename):
     if not os.path.exists(full) or not filename.endswith(".json"):
         raise Http404("Analysis result not found")
     return FileResponse(open(full, "rb"), content_type="application/json")
+@csrf_exempt
+def file_comparator(request):
+    print(f"Request method: {request.method}")  # Debug log for method
+    print(f"Request FILES: {request.FILES}")  # Debug log for files
+    if request.method == 'POST' and 'files[]' in request.FILES:
+        try:
+            uploaded_files = request.FILES.getlist('files[]')
+            print(f"Received files: {[f.name for f in uploaded_files]}")  # Debug log
+            if not uploaded_files:
+                return JsonResponse({'error': 'No files uploaded'}, status=400)
+            # Save uploaded files to COMPARATOR_ROOT with unique names
+            file_paths = []
+            client_metadata = request.POST.get('metadata', '{}')  # Get client metadata from POST
+            try:
+                client_metadata = json.loads(client_metadata) if client_metadata else {}
+            except json.JSONDecodeError:
+                client_metadata = {}
+            for uploaded_file in uploaded_files:
+                
+                unique_name = f"{uploaded_file.name}"
+                save_path = os.path.join(settings.COMPARATOR_ROOT, unique_name)
+                with open(save_path, 'wb+') as destination:
+                    for chunk in uploaded_file.chunks():
+                        destination.write(chunk)
+                file_paths.append(save_path)
+            print(f"Saved file paths: {file_paths}")  # Debug log for paths
+            # Pass COMPARATOR_ROOT and client_metadata as first argument (as JSON string)
+            result = subprocess.run(
+                ['python', 'comparator.py', settings.COMPARATOR_ROOT] + file_paths,
+                input=json.dumps(client_metadata),  # Changed from .encode() to string
+                capture_output=True,
+                text=True,
+                cwd=os.path.dirname(__file__)
+            )
+            # Clean up (optional, depending on whether you want to keep files)
+            # for save_path in file_paths:
+            #     os.unlink(save_path)  # Uncomment to delete after processing
+            if result.returncode != 0:
+                return JsonResponse({'error': result.stderr}, status=500)
+            response = json.loads(result.stdout)
+            report_path = response.get('report_path')
+            if report_path:
+                report_url = f"{settings.COMPARATOR_URL}/{os.path.basename(report_path)}"
+                response['report_url'] = request.build_absolute_uri(report_url)
+                return JsonResponse(response, status=200)
+            return JsonResponse({'error': 'No report generated'}, status=500)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': f'Only POST method with files is supported. Received method: {request.method}, FILES: {request.FILES}'}, status=405)

@@ -174,3 +174,12 @@ backend/files/**/*.txt
 
 volatility_output/
 volatility_temp/
+backend/response /*
+backend/uploaded_files/*
+backend/Comparators/*
+backend/Comparators
+backend/analysis_results
+backend/venv/*
+backend/venv
+*venv
+*.env
