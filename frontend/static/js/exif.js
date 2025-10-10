@@ -10,12 +10,14 @@ document.getElementsByClassName('closex1')[0].addEventListener('click', function
     resetModalx1();
 });
 
-document.getElementById('exifComparatorModalx1').addEventListener('click', function(event) {
-    if (event.target === this) {
-        this.style.display = 'none';
-        resetModalx1();
-    }
-});
+window.addEventListener('DOMContentLoaded', () => {
+    const evidenceDateInput = document.getElementById('datex1');
+    
+    const now = new Date();
+    const formattedDateTime = now.toLocaleString(); 
+    evidenceDateInput.value = formattedDateTime;
+  });
+
 
 // Step navigation
 document.getElementById('nextStepBtnx1').addEventListener('click', function() {
@@ -28,7 +30,7 @@ document.getElementById('nextStepBtnx1').addEventListener('click', function() {
         document.getElementById('step-1-indicatorx1').classList.remove('active-stepx1');
         document.getElementById('step-2-indicatorx1').classList.add('active-stepx1');
     } else {
-        alert('Please fill in both evidence name and description.');
+        showToast("Fill In both the name and description")
     }
 });
 
@@ -135,4 +137,20 @@ function resetModalx1() {
     document.getElementById('exifUploadx1').value = '';
     document.getElementById('filePreviewx1').innerHTML = '';
     document.getElementById('compareExifBtnx1').disabled = true;
+}
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  if (!toast) {
+    console.warn("Toast element not found.");
+    alert(message);
+    return;
+  }
+  toast.innerHTML = `<div class="Information">
+    <div class="init-text"><p> <span class="fas fa-info-circle"></span>  Information Center</p></div></br>
+    <p>${message}</p>
+  </div>`;
+  toast.classList.add("show");
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 30000);
 }
