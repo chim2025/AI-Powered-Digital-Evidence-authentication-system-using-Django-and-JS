@@ -401,12 +401,12 @@ def get_analysis_result(request, filename):
     return FileResponse(open(full, "rb"), content_type="application/json")
 @csrf_exempt
 def file_comparator(request):
-    print(f"Request method: {request.method}")  # Debug log for method
-    print(f"Request FILES: {request.FILES}")  # Debug log for files
+    print(f"Request method: {request.method}")  
+    print(f"Request FILES: {request.FILES}")  
     if request.method == 'POST' and 'files[]' in request.FILES:
         try:
             uploaded_files = request.FILES.getlist('files[]')
-            print(f"Received files: {[f.name for f in uploaded_files]}")  # Debug log
+            print(f"Received files: {[f.name for f in uploaded_files]}")  
             if not uploaded_files:
                 return JsonResponse({'error': 'No files uploaded'}, status=400)
             # Save uploaded files to COMPARATOR_ROOT with unique names
@@ -434,8 +434,8 @@ def file_comparator(request):
                 cwd=os.path.dirname(__file__)
             )
             # Clean up (optional, depending on whether you want to keep files)
-            # for save_path in file_paths:
-            #     os.unlink(save_path)  # Uncomment to delete after processing
+            for save_path in file_paths:
+                os.unlink(save_path)  # Uncomment to delete after processing
             if result.returncode != 0:
                 return JsonResponse({'error': result.stderr}, status=500)
             response = json.loads(result.stdout)

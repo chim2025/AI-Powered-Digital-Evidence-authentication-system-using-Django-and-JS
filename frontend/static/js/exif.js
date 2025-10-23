@@ -5,8 +5,7 @@ let metadata = {}; // Store metadata for all selected files
 // Modal toggle functionality
 document.getElementById('openExifComparatorx1').addEventListener('click', function() {
     document.getElementById('exifComparatorModalx1').style.display = 'block';
-    const dateInput = document.getElementById('datex1');
-    dateInput.value = '2025-10-10'; // Set to current date
+    
 });
 
 document.getElementsByClassName('closex1')[0].addEventListener('click', function() {
