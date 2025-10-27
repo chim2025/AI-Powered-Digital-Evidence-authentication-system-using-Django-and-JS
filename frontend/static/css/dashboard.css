@@ -40,6 +40,7 @@
       background-color: var(--bg-color);
       color: var(--text-color);
       min-height: 100vh;
+      height: 100%;
     }
     
     .sidebar {
@@ -125,6 +126,9 @@ transition: background-color 0.3s ease;
     flex: 1;
     padding: 30px;
     overflow-y: auto;
+    min-height: 100vh; /* Ensure it fills the viewport height */
+    width: calc(100% - 240px);
+    text-align: left;
   }
 
   .header {
@@ -217,28 +221,25 @@ transition: background-color 0.3s ease;
     cursor: pointer;
     font-weight: 600;
   }
-  .content-section {
-      display: none; 
-  }
   
-  .content-section.active {
-      display: block; 
-  }
   
   .nav-link.active {
       font-weight: bold;
   }
   
 .content-section {
-  padding: 30px;
-  background-color: var(--background-color) !important;
+    padding: 30px;
+    background-color: var(--background-color) !important;
+    display: none;
+    transition: all 0.3s ease;
+    width: 100%; 
+    min-height: calc(100vh - 60px); 
+    box-sizing: border-box; 
+    text-align: left;
+  }
 
-  
- 
-  max-width: 1000px;
-  display: none;
-  transition: all 0.3s ease;
-}
+
+
 
 .content-section.active {
   display: block;
@@ -260,6 +261,13 @@ transition: background-color 0.3s ease;
   font-size: 16px;
   color: var(--light);
   margin-bottom: 25px;
+}
+/* Optional: Adjust tab content padding if needed */
+.content-section h2,
+.content-section h3,
+.content-section p {
+    /* Existing styles */
+    max-width: 100%; /* Ensure text doesn’t overflow unnaturally */
 }
 
 .setting-option {
@@ -2204,6 +2212,7 @@ svg {
   margin-top: 30px;
   display: flex;
   gap: 20px;
+  justify-content: center; /* Add this to center the buttons */
 }
 
 .task-display-button button {
@@ -2215,8 +2224,8 @@ svg {
   border-radius: 10px;
   cursor: pointer;
   display: flex;
-  
-  gap: 10px;
+  gap: 10px; /* This applies to internal button content */
+  align-items: center; /* Ensure internal content is vertically centered */
 }
 
 .task-display-button button:hover {
@@ -3345,6 +3354,7 @@ textarea.inputx1 {
     font-size: 1rem;
     font-family: 'Material Symbols Outlined';
 }
+
 .pairwise-overlay { display: flex; justify-content: center; align-items: flex-start; }
 .pairwise-dialog { position: relative; max-height: 80vh; overflow-y: auto; }
 .grid-hex-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 2px; padding: 10px; }

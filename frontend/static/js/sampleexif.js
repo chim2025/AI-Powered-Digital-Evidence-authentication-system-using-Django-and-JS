@@ -325,8 +325,8 @@ function renderExifResults(data) {
                 console.log("Fetched reportData:", reportData); // Debug: Verify fetched data
 
                 // Basic HTML structure
-                analyticsSection.innerHTML = `
-    <div class="container mx-auto p-6 ">
+             analyticsSection.innerHTML = `
+    <div class="container p-6">
         <!-- Evidence Container -->
         <div class="evidence-container mb-8 p-6 bg-white rounded-lg shadow-lg border border-gray-200">
             <h2 class="text-3xl font-bold text-gray-800 mb-4">Evidence Details</h2>
@@ -340,20 +340,20 @@ function renderExifResults(data) {
                     <p class="text-gray-900 mt-2" id="evidence-description-display">${data.task_data.task_description || "Unspecified"}</p>
                 </div>
             </div>
-            <div class="mt-6">
-                <h3 class="text-xl font-semibold text-gray-700 mb-4">File Previews</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="file-preview-display">
-                    ${selectedFiles.map(file => `
-                        <div class="p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-                            <p class="text-sm text-gray-600">Name: ${file.name}</p>
-                            ${file.type.startsWith('image/') ? `<img src="${URL.createObjectURL(file)}" alt="${file.name}" class="w-full h-32 object-cover rounded mt-2">` : 
-                            file.type === 'application/pdf' ? `<iframe src="${URL.createObjectURL(file)}" class="w-full h-32 mt-2" title="${file.name}"></iframe>` : 
-                            `<p class="text-gray-500 mt-2">Preview unavailable</p>`}
-                            <span class="file-typex1">${file.type.split('/')[1].toUpperCase() || file.type}</span>
-                        </div>
-                    `).join('') || '<p class="text-gray-500">No files previewed. Reload with image URLs if needed.</p>'}
-                </div>
+           <div class="mt-6">
+    <h3 class="text-xl font-semibold text-gray-700 mb-4">File Previews</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="file-preview-display">
+        ${selectedFiles.map(file => `
+            <div class="p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                <p class="text-sm text-gray-600">Name: ${file.name}</p>
+                ${file.type.startsWith('image/') ? `<img src="${URL.createObjectURL(file)}" alt="${file.name}" class="w-full h-48 object-cover rounded mt-2" style="max-height: 300px;">` : 
+                file.type === 'application/pdf' ? `<iframe src="${URL.createObjectURL(file)}" class="w-full h-48 mt-2" title="${file.name}"></iframe>` : 
+                `<p class="text-gray-500 mt-2">Preview unavailable</p>`}
+                <span class="file-typex1">${file.type.split('/')[1].toUpperCase() || file.type}</span>
             </div>
+        `).join('') || '<p class="text-gray-500">No files previewed. Reload with image URLs if needed.</p>'}
+    </div>
+</div>
         </div>
 
         <!-- Tabs and Content -->
@@ -370,17 +370,55 @@ function renderExifResults(data) {
     </div>
     <style>
         @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
-        .container { max-width: 1200px; position: relative; }
-        .evidence-container, .tabs-container { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); }
-        .tab { border: none; cursor: pointer; transition: all 0.3s ease; }
-        .tab[data-active] { border-bottom: 2px solid #00cc00; }
-        .tab-content { display: block; opacity: 1; transition: opacity 0.3s ease; }
-        .card { background: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); margin-bottom: 1rem; }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); }
-        .animate-pulse { animation: pulse 2s infinite; }
-        .animate-float { animation: float 4s infinite ease-in-out; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .container {
+            position: relative;
+            width: 100%; /* Remove max-width and mx-auto to span full width */
+            padding: 0 30px; /* Match .main-content padding for consistency */
+        }
+        .evidence-container, .tabs-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+        }
+        .tab {
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .tab[data-active] {
+            border-bottom: 2px solid #00cc00;
+        }
+        .tab-content {
+            display: block;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+            width: 100%; /* Ensure full width */
+            text-align: left; /* Explicitly set left alignment */
+        }
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+        .animate-float {
+            animation: float 4s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
         [title]:hover:after {
             content: attr(title);
             position: absolute;
@@ -396,10 +434,14 @@ function renderExifResults(data) {
             z-index: 20;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        @media (max-width: 768px) { .container { padding: 1rem; } .grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .grid { grid-template-columns: 1fr; }
+        }
+        /* Ensure grid items are left-aligned */
+        
     </style>
 `;
-
 
     function renderVerdictSummary() {
     const verdict = reportData.verdict_summary;
