@@ -599,7 +599,7 @@ async function renderEvidenceResults(data) {
     const hashes = data.hashes || {};
     const stego_file = data.steganographic_detection?.filename || '';
     console.log('Stego file path:', stego_file); // Log 2: Stego filename
-    let stego = { stego_detected: false, message: 'Loading Steganography Results...', loading: true };
+    let stego = { stego_detected: "Loading...", message: 'Loading Steganography Results...', loading: true };
     // Render initial HTML with placeholder for stegoTab
     section.innerHTML = `
         <div class="analysis-container modern-analysis">
@@ -677,9 +677,10 @@ async function renderEvidenceResults(data) {
         <p id="stegoPresence">${stego.stego_detected ? "Detected" : "Not Detected"}</p>
     </div>
 </div>
-                </div>
-                <p>File Hash Computation</p>
-                <div class="heatmap-container">
+
+<p>File Hash Computation</p>
+                
+
                     <div class="hash-grid">
                         ${Object.entries(hashes || {}).map(([key, value]) => `
                             <div class="hash-card">
@@ -694,7 +695,10 @@ async function renderEvidenceResults(data) {
                         `).join("")}
                     </div>
                 </div>
-            </div>
+          
+
+</div>
+                
             <div class="tab-content deepfake-section" id="deepfakeTab">
                 <h4 class="section-title"><i class="fas fa-brain"></i> Deepfake Detection Summary</h4>
                 <div class="deepfake-grid">

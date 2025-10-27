@@ -404,6 +404,13 @@ def file_comparator(request):
     print(f"Request method: {request.method}")  
     print(f"Request FILES: {request.FILES}")  
     if request.method == 'POST' and 'files[]' in request.FILES:
+        form_data = request.POST
+        task_data = {
+            'task_name': form_data.get('task_task_name', ''),
+            'task_description': form_data.get('task_task_description', ''),
+            
+        }
+        print(task_data)
         try:
             uploaded_files = request.FILES.getlist('files[]')
             print(f"Received files: {[f.name for f in uploaded_files]}")  
@@ -443,6 +450,7 @@ def file_comparator(request):
             if report_path:
                 report_url = f"{settings.COMPARATOR_URL}/{os.path.basename(report_path)}"
                 response['report_url'] = request.build_absolute_uri(report_url)
+                response['task_data']=task_data|{}
                 return JsonResponse(response, status=200)
             return JsonResponse({'error': 'No report generated'}, status=500)
         except Exception as e:

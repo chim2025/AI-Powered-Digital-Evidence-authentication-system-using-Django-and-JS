@@ -127,6 +127,29 @@ function updateCompareButton() {
 
 document.getElementById('compareExifBtnx1').addEventListener('click', async function() {
     console.log("Started and pressed Compare button")
+    let task_name = document.getElementById("evidenceNamex1")?.value || ""; 
+    let task_description = document.getElementById("evidenceDescriptionx1")?.value || "";
+    function get_task_data() {
+            const task_data = {};
+            if (! task_name && !task_description){
+                console.log("Both does not exist...")
+            }
+    
+
+            // Validate required fields
+            if (!task_name.trim() || !task_description.trim()) {
+                console.warn("Task name and description are required.");
+                return ""; 
+            }
+
+            // Populate task_data
+            task_data.task_name = task_name;
+            task_data.task_description = task_description;
+            
+
+            return task_data || {}; 
+            }
+
     const previewFiles = Array.from(document.getElementById('filePreviewx1').children).map(child => ({
         name: child.querySelector('.file-infox1 p').textContent.replace('Name: ', ''),
         fileId: child.querySelector('.cancel-iconx1').getAttribute('data-file-id')
@@ -202,11 +225,20 @@ document.getElementById('compareExifBtnx1').addEventListener('click', async func
 
         // Start cycling quotes
         cycleQuotes();
+    
+        
 
         const formData = new FormData();
         selectedFiles.forEach(file => {
             formData.append('files[]', file);
         });
+        const taskData=get_task_data()
+        if (taskData){
+        for(const[key, value] of Object.entries(taskData)){
+            formData.append( `task_${key}`, value)
+        }
+        }
+        console.log("FormData entries:", [...formData.entries()]);
         formData.append('metadata', JSON.stringify(metadata));
 
         try {
@@ -301,11 +333,11 @@ function renderExifResults(data) {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="p-4 bg-gray-50 rounded-lg shadow-inner">
                     <label class="block text-lg font-semibold text-gray-700">Evidence Name</label>
-                    <p class="text-gray-900 mt-2" id="evidence-name-display">${data.evidence_name || document.getElementById('evidenceNamex1')?.value || 'Not specified'}</p>
+                    <p class="text-gray-900 mt-2" id="evidence-name-display">${data.task_data.task_name || "Unspecified"}</p>
                 </div>
                 <div class="p-4 bg-gray-50 rounded-lg shadow-inner">
                     <label class="block text-lg font-semibold text-gray-700">Description</label>
-                    <p class="text-gray-900 mt-2" id="evidence-description-display">${data.evidence_description || document.getElementById('evidenceDescriptionx1')?.value || 'No description provided'}</p>
+                    <p class="text-gray-900 mt-2" id="evidence-description-display">${data.task_data.task_description || "Unspecified"}</p>
                 </div>
             </div>
             <div class="mt-6">
@@ -317,6 +349,7 @@ function renderExifResults(data) {
                             ${file.type.startsWith('image/') ? `<img src="${URL.createObjectURL(file)}" alt="${file.name}" class="w-full h-32 object-cover rounded mt-2">` : 
                             file.type === 'application/pdf' ? `<iframe src="${URL.createObjectURL(file)}" class="w-full h-32 mt-2" title="${file.name}"></iframe>` : 
                             `<p class="text-gray-500 mt-2">Preview unavailable</p>`}
+                            <span class="file-typex1">${file.type.split('/')[1].toUpperCase() || file.type}</span>
                         </div>
                     `).join('') || '<p class="text-gray-500">No files previewed. Reload with image URLs if needed.</p>'}
                 </div>
@@ -458,14 +491,147 @@ function renderExifResults(data) {
 
                 // Render pairwise comparisons
                 function renderPairwiseComparisons() {
-                    const content = Object.entries(reportData.pairwise_comparisons).map(([pairName, comparison]) => `
-                        <div class="mb-6 p-6 bg-gray-50/80 rounded-xl shadow-lg">
-                            <h3 class="text-2xl font-semibold text-black">${pairName}</h3>
-                            <p><strong>Similarity:</strong> ${comparison.similarity_percentage}%</p>
+    const content = (reportData.pairwise_comparisons && Object.entries(reportData.pairwise_comparisons).length > 0 
+        ? Object.entries(reportData.pairwise_comparisons).map(([pairName, comparison]) => {
+            const diffs = comparison.metadata_diffs || {};
+            const tamperingHints = (comparison.tampering_hints_combined && comparison.tampering_hints_combined.join(', ')) || 'None';
+
+            return `
+                <div class="mb-8 p-6 bg-white rounded-xl shadow-lg border-l-4 border-blue-600 hover:shadow-xl transition-all duration-300">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text">${pairName}</h3>
+                    
+                    <!-- Key Metrics Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="info-card-container p-4 bg-green-50">
+                            <span class="material-icons text-blue-600 animate-float mr-2">percent</span>
+                            <strong class="text-lg text-gray-800">Similarity:</strong>
+                            <p class="text-2xl font-bold text-blue-700" title="Percentage of byte similarity between files">${comparison.similarity_percentage?.toFixed(2) || 'N/A'}%</p>
                         </div>
-                    `).join('');
-                    renderContent('pairwise', content);
-                }
+                        <div class="info-card-container p-4 bg-red-50">
+                            <span class="material-icons text-red-600 animate-bounce mr-2">not_interested</span>
+                            <strong class="text-lg text-gray-800">Identical Hashes:</strong>
+                            <p class="text-2xl font-bold text-red-700">${comparison.identical_hashes ? 'Yes' : 'No' || 'N/A'}</p>
+                        </div>
+                        <div class="info-card-container p-4 bg-green-50">
+                            <span class="material-icons text-green-600 animate-pulse mr-2">data_usage</span>
+                            <strong class="text-lg text-gray-800">Size Difference:</strong>
+                            <p class="text-2xl font-bold text-green-700" title="Difference in file sizes">${comparison.size_difference_readable || 'N/A'}</p>
+                        </div>
+                        <div class="info-card-container p-4 bg-yellow-50">
+                            <span class="material-icons text-yellow-600 animate-pulse mr-2">warning</span>
+                            <strong class="text-lg text-gray-800">Tampering Hints:</strong>
+                            <p class="text-2xl font-bold text-yellow-700" title="Potential signs of file manipulation">${tamperingHints}</p>
+                        </div>
+                    </div>
+
+                    <!-- Metadata Differences -->
+                    <div class="mb-6 p-4 bg-gray-50 rounded-lg shadow-inner">
+                        <h4 class="text-xl font-semibold text-gray-800 mb-2">Metadata Differences</h4>
+                        ${Object.entries(diffs).length > 0 
+                            ? Object.entries(diffs).map(([key, value]) => `
+                                <div class="mb-2">
+                                    <strong class="text-gray-700">${key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong>
+                                    <p class="text-gray-600 ml-4">
+                                        File 1: ${value.file1 || 'N/A'}<br>
+                                        File 2: ${value.file2 || 'N/A'}
+                                    </p>
+                                </div>
+                            `).join('')
+                            : '<p class="text-gray-600">No metadata differences available.</p>'}
+                    </div>
+
+                    <!-- Detailed Comparison -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="info-card-container p-4">
+                            <strong class="text-lg text-gray-800">Byte Differences:</strong>
+                            <p class="text-xl text-gray-700">${comparison.byte_differences?.toLocaleString() || 'N/A'}</p>
+                        </div>
+                        <div class="info-card-container p-4">
+                            <strong class="text-lg text-gray-800">Unique Strings:</strong>
+                            <p class="text-xl text-gray-700">File 1: ${comparison.unique_strings_file1 || 'N/A'}, File 2: ${comparison.unique_strings_file2 || 'N/A'}</p>
+                        </div>
+                        <div class="info-card-container p-4">
+                            <strong class="text-lg text-gray-800">Common Strings:</strong>
+                            <p class="text-xl text-gray-700">${comparison.common_strings || 'N/A'} (${comparison.common_strings_list?.length || 0} items)</p>
+                        </div>
+                        <div class="info-card-container p-4">
+                            <strong class="text-lg text-gray-800">Entropy Difference:</strong>
+                            <p class="text-xl text-gray-700" title="Difference in randomness measure">${comparison.entropy_difference?.toFixed(6) || 'N/A'}</p>
+                        </div>
+                    </div>
+
+                    <!-- Modal Triggers -->
+                    <div class="mt-6 flex gap-4">
+                        <button class="pairwise-trigger px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all" data-target="pairwise-entropy-${pairName.replace(/ /g, '-')}-dialog">View Entropy Histogram</button>
+                        <button class="pairwise-trigger px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all" data-target="pairwise-printable-${pairName.replace(/ /g, '-')}-dialog">View Printable Strings</button>
+                    </div>
+
+                    <!-- Entropy Histogram Modal -->
+                    <div id="pairwise-entropy-${pairName.replace(/ /g, '-')}-dialog" class="pairwise-overlay hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+                        <div class="pairwise-dialog bg-white p-6 rounded-lg max-w-3xl mx-auto mt-20">
+                            <h4 class="text-2xl font-bold text-gray-900 mb-4">Entropy Histogram for ${pairName}</h4>
+                            <div class="grid-hex-container">
+                                ${Object.entries(comparison.entropy_histogram || {}).map(([value, frequency]) => `
+                                    <div class="grid-hex" style="height: ${frequency * 100}px; background: hsl(${value * 1.4}, 70%, 50%);">
+                                        <span class="grid-hex-value">${value}</span>
+                                        <span class="grid-hex-freq">${(frequency * 100).toFixed(2)}%</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button class="pairwise-close mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Close</button>
+                        </div>
+                    </div>
+
+                    <!-- Printable Strings Modal -->
+                    <div id="pairwise-printable-${pairName.replace(/ /g, '-')}-dialog" class="pairwise-overlay hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+                        <div class="pairwise-dialog bg-white p-6 rounded-lg max-w-3xl mx-auto mt-20">
+                            <h4 class="text-2xl font-bold text-gray-900 mb-4">Printable Strings for ${pairName}</h4>
+                            <div class="grid-hex-container overflow-y-auto max-h-96">
+                                ${comparison.printable_strings?.map((str, index) => `
+                                    <div class="grid-hex" style="background: #e0e7ff;">
+                                        <span class="grid-hex-value">${index.toString(16).padStart(2, '0')}</span>
+                                        <span class="grid-hex-freq">${str}</span>
+                                    </div>
+                                `).join('') || '<p class="text-gray-600">No printable strings available.</p>'}
+                            </div>
+                            <button class="pairwise-close mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('')
+        : '<p class="text-gray-600">No pairwise comparisons available.</p>');
+
+      renderContent('pairwise', content);
+
+      // Modal Functionality
+      document.querySelectorAll('.pairwise-trigger').forEach(button => {
+          button.addEventListener('click', () => {
+              const modalId = button.getAttribute('data-target');
+              const modal = document.getElementById(modalId);
+              if (modal) {
+                  modal.classList.remove('hidden');
+              }
+          });
+      });
+
+      document.querySelectorAll('.pairwise-close').forEach(button => {
+          button.addEventListener('click', () => {
+              const modal = button.closest('.pairwise-overlay');
+              if (modal) {
+                  modal.classList.add('hidden');
+              }
+          });
+      });
+
+      document.addEventListener('click', (e) => {
+          document.querySelectorAll('.pairwise-overlay').forEach(modal => {
+              if (!modal.contains(e.target) && !e.target.classList.contains('pairwise-trigger')) {
+                  modal.classList.add('hidden');
+              }
+          });
+      });
+  }
 
                 // Initial render
                 renderIndividualAnalyses();

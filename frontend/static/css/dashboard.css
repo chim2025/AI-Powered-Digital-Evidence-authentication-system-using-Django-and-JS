@@ -1509,6 +1509,7 @@ svg {
 
 .hash-grid {
   display: grid;
+  position: relative !important;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 16px;
 }
@@ -3344,3 +3345,11 @@ textarea.inputx1 {
     font-size: 1rem;
     font-family: 'Material Symbols Outlined';
 }
+.pairwise-overlay { display: flex; justify-content: center; align-items: flex-start; }
+.pairwise-dialog { position: relative; max-height: 80vh; overflow-y: auto; }
+.grid-hex-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 2px; padding: 10px; }
+.grid-hex { position: relative; width: 100%; border-radius: 10px; overflow: hidden; text-align: center; color: white; font-size: 0.8em; }
+.grid-hex-value { display: block; font-weight: bold; }
+.grid-hex-freq { display: block; font-size: 0.7em; }
+.info-card-container { background: white; border-radius: 0.5rem; transition: all 0.3s ease; }
+.info-card-container:hover { transform: translateY(-3px); }
