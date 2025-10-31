@@ -20,3 +20,8 @@ urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.FILES_URL, document_root=settings.FILES_ROOT)
 urlpatterns+= static(settings.RESPONSE_URL, document_root=settings.RESPONSE_ROOT)
 urlpatterns+= static(settings.COMPARATOR_URL, document_root=settings.COMPARATOR_ROOT)
+if settings.DEBUG:
+    urlpatterns += static(
+        f"{settings.STATIC_URL}comparator/",
+        document_root=settings.COMPARATOR_ROOT,
+    )
