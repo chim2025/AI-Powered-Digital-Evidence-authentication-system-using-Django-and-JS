@@ -14,6 +14,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+document.addEventListener('DOMContentLoaded', () => {
+    const closeBtn = document.querySelector('.closex1');
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+            document.getElementById('exifComparatorModalx1').style.display = 'none';
+            resetModalx1();
+        };
+    }
+});
 
 
 let selectedFiles = []; 
@@ -22,21 +31,19 @@ let metadata = {};
 
 document.getElementById('openExifComparatorx1').addEventListener('click', function() {
     document.getElementById('exifComparatorModalx1').style.display = 'block';
-    const dateInput = document.getElementById('datex1');
-    dateInput.value = '2025-10-11'; 
-});
-
-document.getElementsByClassName('closex1')[0].addEventListener('click', function() {
-    document.getElementById('exifComparatorModalx1').style.display = 'none';
-    resetModalx1();
-});
-
-window.addEventListener('DOMContentLoaded', () => {
+    
     const evidenceDateInput = document.getElementById('datex1');
     const now = new Date();
-    const formattedDateTime = now.toLocaleString();
-    evidenceDateInput.value = formattedDateTime;
+
+    // Format as YYYY-MM-DD (required for <input type="date">)
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+    const day = String(now.getDate()).padStart(2, '0');
+    
+    evidenceDateInput.value = `${year}-${month}-${day}`;
 });
+
+
 
 // Step navigation
 document.getElementById('nextStepBtnx1').addEventListener('click', function() {
@@ -143,6 +150,7 @@ function updateCompareButton() {
 }
 
 document.getElementById('compareExifBtnx1').addEventListener('click', async function() {
+    
     console.log("Started and pressed Compare button")
     let task_name = document.getElementById("evidenceNamex1")?.value || ""; 
     let task_description = document.getElementById("evidenceDescriptionx1")?.value || "";
@@ -182,48 +190,95 @@ document.getElementById('compareExifBtnx1').addEventListener('click', async func
             showToast("Error: Modal not found.");
             return;
         }
-        modal.innerHTML += `
-            <div class="analysis-loading-overlayx1" role="status" aria-live="assertive" aria-busy="true" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;">
-                <div class="modal-spinner-containerx1" style="display: flex; align-items: center; justify-content: center; position: relative; width: 60px; height: 60px; margin: 0 auto 12px;">
-                    <div class="modal-spinner-ringx1" style="position: absolute; width: 100%; height: 100%; border: 5px solid transparent; border-top-color: #00cc00; border-left-color: #00cc00; border-radius: 50%; animation: modal-spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;"></div>
-                    <div class="modal-spinner-corex1" style="width: 36px; height: 36px; background: linear-gradient(135deg, #00cc00, #66ff66); border-radius: 50%; animation: modal-pulse 1.4s ease-in-out infinite; box-shadow: 0 0 12px rgba(0, 204, 0, 0.6), 0 0 20px rgba(0, 204, 0, 0.3);"></div>
-                    <div class="modal-spinner-glowx1" style="position: absolute; width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle, rgba(0, 204, 0, 0.4) 0%, transparent 70%); animation: modal-glow 1.8s ease-in-out infinite;"></div>
-                </div>
-                <span style="font-size: 1.1em; color: #333; font-weight: 500; text-align: center;">Analyzing evidence... please wait.<br><small>It can take up to a minute</small></span>
-               
-                <div id="percent-textx1" style="margin-top: 10px; font-size: 1.1em; font-weight: 500; color: #333; text-align: center; visibility: visible;"></div>
-                <div class="modern-quote-boxx1" style="margin-top: 15px; font-size: 14px; color: #666; text-align: center; opacity: 0; transition: opacity 0.3s ease;"></div>
-            </div>
-            <style>
-                @keyframes modal-spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-                @keyframes modal-pulse {
-                    0% { transform: scale(0.85); opacity: 0.8; }
-                    50% { transform: scale(1.15); opacity: 1; }
-                    100% { transform: scale(0.85); opacity: 0.8; }
-                }
-                @keyframes modal-glow {
-                    0% { opacity: 0.4; transform: scale(0.95); }
-                    50% { opacity: 0.7; transform: scale(1.1); }
-                    100% { opacity: 0.4; transform: scale(0.95); }
-                }
-                .analysis-loading-overlayx1.hidden {
-                    opacity: 0;
-                    pointer-events: none;
-                }
-                .modern-quote-boxx1.show {
-                    opacity: 1 !important;
-                }
-                .analysis-progress-barx1 {
-                    background-color: #b3ffb3 !important;
-                    transition: width 0.3s ease, background-color 0.3s ease !important;
-                }
-            </style>
-        `;
+ // === CREATE OVERLAY ===
+const overlay = document.createElement('div');
+overlay.className = 'analysis-loading-overlayx1';
+overlay.setAttribute('role', 'status');
+overlay.setAttribute('aria-live', 'assertive');
+overlay.setAttribute('aria-busy', 'true');
+overlay.style.cssText = `
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; z-index: 1000;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+`;
 
-        // Force DOM update using requestAnimationFrame
+// === SPINNER + TEXT ===
+overlay.innerHTML = `
+    <!-- WINDOWS 3-DOT BOUNCING SPINNER -->
+    <div class="windows-dot-spinner">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+    </div>
+
+    <!-- TEXT -->
+    <div style="margin-top: 24px; text-align: center; color: #1a1a1a;">
+        <div style="font-size: 1.2em; font-weight: 500;">Analyzing evidence...</div>
+        <div style="font-size: 0.9em; color: #666; margin-top: 6px;">It can take up to a minute</div>
+    </div>
+
+    <!-- PERCENT (optional) -->
+    <div id="percent-textx1" style="margin-top: 12px; font-size: 1.1em; font-weight: 600; color: #00cc00;"></div>
+
+    <!-- QUOTE BOX -->
+    <div class="modern-quote-boxx1" style="margin-top: 18px; font-size: 14px; color: #555; max-width: 300px; opacity: 0; transition: opacity 0.4s ease;"></div>
+`;
+
+// === ADD ANIMATED CSS ===
+const style = document.createElement('style');
+style.textContent = `
+    /* WINDOWS 3-DOT BOUNCING SPINNER */
+    .windows-dot-spinner {
+        position: relative;
+        width: 80px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .windows-dot-spinner .dot {
+        width: 14px;
+        height: 14px;
+        background: #00cc00;
+        border-radius: 50%;
+        animation: windows-bounce 1.4s infinite ease-in-out both;
+        box-shadow: 0 2px 6px rgba(0, 204, 0, 0.3);
+    }
+
+    .windows-dot-spinner .dot:nth-child(1) { animation-delay: -0.32s; }
+    .windows-dot-spinner .dot:nth-child(2) { animation-delay: -0.16s; }
+    .windows-dot-spinner .dot:nth-child(3) { animation-delay: 0s; }
+
+    @keyframes windows-bounce {
+        0%, 80%, 100% {
+            transform: scale(0.8) translateY(0);
+            opacity: 0.7;
+        }
+        40% {
+            transform: scale(1.3) translateY(-18px);
+            opacity: 1;
+        }
+    }
+
+    /* SMOOTH FADE OUT */
+    .analysis-loading-overlayx1.hidden {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .modern-quote-boxx1.show {
+        opacity: 1 !important;
+    }
+`;
+
+// === APPEND TO MODAL ===
+modal.appendChild(overlay);
+modal.appendChild(style);
+
+       
         await new Promise(resolve => requestAnimationFrame(resolve));
         const loadingOverlay = modal.querySelector(".analysis-loading-overlayx1");
         const loadingText = loadingOverlay.querySelector("span");
@@ -240,7 +295,7 @@ document.getElementById('compareExifBtnx1').addEventListener('click', async func
             quoteBox: !!quoteBox
         });
 
-        // Start cycling quotes
+       
         cycleQuotes();
     
         
@@ -259,6 +314,8 @@ document.getElementById('compareExifBtnx1').addEventListener('click', async func
         formData.append('metadata', JSON.stringify(metadata));
 
         try {
+            
+            
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
             if (!csrfToken) {
                 console.warn('CSRF token not found. Ensure {% csrf_token %} is in the template.');
@@ -277,7 +334,7 @@ document.getElementById('compareExifBtnx1').addEventListener('click', async func
                 console.log('Report URL:', data.report_url);
                 loadingOverlay.classList.add('hidden');
                 localStorage.setItem('lastExifReport', JSON.stringify(data));
-                // Hide modal and navigate to analytics section
+                
                 document.getElementById('exifComparatorModalx1').style.display = 'none';
                 if (typeof showSection === 'function') {
                     showSection('analytics');
@@ -296,7 +353,9 @@ document.getElementById('compareExifBtnx1').addEventListener('click', async func
             showToast(`An error occurred during analysis: ${error.message}`);
         }
     }
-});
+    
+} 
+);
 
 function cycleQuotes() {
     const quotes = [
@@ -322,24 +381,23 @@ function renderExifResults (data = null) {
     console.log(fileUrls)
 
     function filePreviews(selectedFiles = [], fileUrls = []) {
-    // Build a list of files to render
+    
     const filesToRender = [];
 
-    // 1. Use selectedFiles if available (first load)
     if (selectedFiles.length > 0) {
         selectedFiles.forEach((file, idx) => {
             const staticUrl = fileUrls[idx];
             filesToRender.push({ file, staticUrl });
         });
     }
-    // 2. If no selectedFiles → use fileUrls only (refresh)
+   
     else if (fileUrls.length > 0) {
         fileUrls.forEach(staticUrl => {
             filesToRender.push({ file: null, staticUrl });
         });
     }
 
-    // 3. Nothing? → empty message
+    
     if (filesToRender.length === 0) {
         return '<p class="text-gray-500">No files previewed.</p>';
     }
@@ -409,109 +467,53 @@ function renderExifResults (data = null) {
     }
 
     analyticsSection.innerHTML = `
-   <div id="magic-loading-screen" class="fixed inset-0 z-[9999] overflow-hidden bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-    <!-- STARS BACKGROUND -->
-    <div class="stars"></div>
-    <div class="stars2"></div>
-    <div class="stars3"></div>
-
-    <!-- CURTAINS (closed at start) -->
-    <div id="curtain-left" class="curtain curtain-left"></div>
-    <div id="curtain-right" class="curtain curtain-right"></div>
-
-    <!-- MAGIC CHARACTER -->
-    <div id="magic-assistant" class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-48 h-64 opacity-0">
+    <div id="pro-loading-screen" class="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-slate-900 via-green-900 to-indigo-900 overflow-hidden">
         <div class="relative">
-            <!-- Body -->
-            <div class="w-24 h-32 mx-auto bg-gradient-to-b from-purple-400 to-purple-600 rounded-full shadow-2xl animate-float"></div>
-            <!-- Head -->
-            <div class="w-20 h-20 mx-auto -mt-8 bg-gradient-to-b from-pink-300 to-pink-400 rounded-full shadow-xl relative overflow-hidden">
-                <div class="absolute inset-0 bg-white/30 rounded-full animate-pulse"></div>
-                <!-- Eyes -->
-                <div class="absolute top-5 left-4 w-3 h-4 bg-black rounded-full animate-blink"></div>
-                <div class="absolute top-5 right-4 w-3 h-4 bg-black rounded-full animate-blink"></div>
-                <!-- Smile -->
-                <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-8 h-3 bg-pink-600 rounded-full"></div>
+            <!-- Pulsing Ring -->
+            <div class="absolute inset-0 w-32 h-32 mx-auto bg-green-500 rounded-full blur-3xl animate-ping"></div>
+            <div class="absolute inset-0 w-32 h-32 mx-auto bg-cyan-400 rounded-full blur-2xl animate-pulse"></div>
+            
+            <!-- Center Icon + Text -->
+            <div class="relative z-10 flex flex-col items-center text-white">
+                <div class="w-20 h-20 mb-6 bg-gradient-to-br from-cyan-400 to-green-600 rounded-2xl shadow-2xl flex items-center justify-center animate-bounce">
+                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold tracking-tight animate-fade-in">Preparing the Presentation Layer</h2>
+                <p class="text-sm text-green-200 mt-2 animate-fade-in-delay">Give me a little time<<<</p>
             </div>
-            <!-- Wand -->
-            <div id="wand" class="absolute top-12 -right-8 w-16 h-1 bg-yellow-400 rounded-full origin-left transform rotate-45 shadow-lg">
-                <div class="absolute -right-1 top-1/2 transform -translate-y-1/2 w-4 h-4 bg-yellow-300 rounded-full animate-ping"></div>
+
+            <!-- Subtle Particle Background -->
+            <div class="absolute inset-0 overflow-hidden pointer-events-none">
+                ${Array.from({ length: 30 }).map((_, i) => `
+                    <div class="absolute w-1 h-1 bg-cyan-400 rounded-full animate-float"
+                          style="left: ${Math.random() * 100}%; 
+                                 top: ${Math.random() * 100}%; 
+                                 animation-delay: ${Math.random() * 3}s;
+                                 animation-duration: ${3 + Math.random() * 4}s;"></div>
+                `).join('')}
             </div>
-            <!-- Magic Particles -->
-            <div class="magic-particles"></div>
         </div>
     </div>
 
-    <!-- TEXT -->
-    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-white opacity-0" id="loading-text">
-        <h1 class="text-5xl font-bold mb-4 tracking-wider animate-glow">Initializing Magic...</h1>
-        <p class="text-xl animate-typewriter">Preparing the presentation layer</p>
-    </div>
+    <style>
+        @keyframes ping { 75%, 100% { transform: scale(2); opacity: 0; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fade-in-delay { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-20px) rotate(10deg); } }
 
-    <!-- SPARKLES -->
-    <div class="sparkles"></div>
-</div>
+        .animate-ping { animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+        .animate-pulse { animation: pulse 2s ease-in-out infinite; }
+        .animate-bounce { animation: bounce 1.5s ease-in-out infinite; }
+        .animate-fade-in { animation: fade-in 0.6s ease-out forwards; }
+        .animate-fade-in-delay { animation: fade-in-delay 0.6s ease-out 0.3s forwards; opacity: 0; }
+        .animate-float { animation: float linear infinite; }
+    </style>
 `;
-
-setTimeout(() => {
-    const screen = document.getElementById('magic-loading-screen');
-    const assistant = document.getElementById('magic-assistant');
-    const text = document.getElementById('loading-text');
-    const curtainL = document.getElementById('curtain-left');
-    const curtainR = document.getElementById('curtain-right');
-
-    assistant.style.opacity = '1';
-    assistant.style.transition = 'opacity 1s ease';
-
- 
-    setTimeout(() => {
-        text.style.opacity = '1';
-        text.style.transition = 'opacity 1s ease';
-    }, 800);
-
-    setTimeout(() => {
-        const wand = document.getElementById('wand');
-        wand.style.transform = 'rotate(0deg) scale(1.5)';
-        wand.style.transition = 'transform 0.5s ease';
-        
-      
-        const particles = document.querySelector('.magic-particles');
-        for (let i = 0; i < 20; i++) {
-            const p = document.createElement('div');
-            p.style.cssText = `
-                position: absolute;
-                width: 6px; height: 6px;
-                background: #1c752bff;
-                border-radius: 50%;
-                left: 50%; top: 50%;
-                --x: ${(Math.random() - 0.5) * 300}px;
-                --y: ${(Math.random() - 0.5) * 300}px;
-                animation: particle 1.5s forwards;
-            `;
-            particles.appendChild(p);
-            setTimeout(() => p.remove(), 1500);
-        }
-    }, 2000);
-
-    // 4. OPEN CURTAIN AFTER 3.5s
-    setTimeout(() => {
-        curtainL.classList.add('open');
-        curtainR.classList.add('open');
-        
-       
-        // const sound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-magic-notification-2348.mp3');
-        // sound.play().catch(() => {});
-
-       
-        setTimeout(() => {
-            screen.style.transition = 'opacity 1s ease';
-            screen.style.opacity = '0';
-            setTimeout(() => screen.remove(), 1000);
-        }, 1500);
-    }, 3500);
-
-}, 100);
-
 
 
         fetch(data.report_url)
@@ -527,118 +529,135 @@ setTimeout(() => {
                 
                 
                 
-             analyticsSection.innerHTML = `
-    <div class="container p-6">
-        <!-- Evidence Container -->
-        <div class="evidence-container mb-8 p-6 bg-white rounded-lg shadow-lg border border-gray-200">
+    analyticsSection.innerHTML = `
+ 
+<div class="container p-6">
+    <!-- ────────────────────── Evidence & Previews ────────────────────── -->
+    <section id="evidence-section" class="mb-12">
+        <div class="evidence-container p-6 bg-white rounded-lg shadow-lg border border-gray-200">
             <h2 class="text-3xl font-bold text-gray-800 mb-4">Evidence Details</h2>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="p-4 bg-gray-50 rounded-lg shadow-inner">
                     <label class="block text-lg font-semibold text-gray-700">Evidence Name</label>
-                    <p class="text-gray-900 mt-2" id="evidence-name-display">${data.task_data.task_name || "Unspecified"}</p>
+                    <p class="text-gray-900 mt-2" id="evidence-name-display">
+                        ${data.task_data.task_name || "Unspecified"}
+                    </p>
                 </div>
                 <div class="p-4 bg-gray-50 rounded-lg shadow-inner">
                     <label class="block text-lg font-semibold text-gray-700">Description</label>
-                    <p class="text-gray-900 mt-2" id="evidence-description-display">${data.task_data.task_description || "Unspecified"}</p>
+                    <p class="text-gray-900 mt-2" id="evidence-description-display">
+                        ${data.task_data.task_description || "Unspecified"}
+                    </p>
                 </div>
             </div>
-           <div class="mt-6">
-    <h3 class="text-xl font-semibold text-gray-700 mb-4">File Previews</h3>
-   
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="file-preview-display">
+
+            <div class="mt-6">
+                <h3 class="text-xl font-semibold text-gray-700 mb-4">File Previews</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="file-preview-display">
                     ${filePreviews(selectedFiles, fileUrls)}
                 </div>
-</div>
-        </div>
-
-        <!-- Tabs and Content -->
-        <div class="tabs-container">
-            <div class="tabs flex gap-4 mb-6 border-b-2 border-green-200">
-                <button class="tab px-6 py-3 text-lg font-semibold text-gray-700 hover:text-green-600 data-[active]:text-green-600 data-[active]:border-b-2 data-[active]:border-green-600 transition-all" data-tab="verdict">Verdict Summary</button>
-                <button class="tab px-6 py-3 text-lg font-semibold text-gray-700 hover:text-green-600 transition-all" data-tab="individual">Individual Analyses</button>
-                <button class="tab px-6 py-3 text-lg font-semibold text-gray-700 hover:text-green-600 transition-all" data-tab="pairwise">Pairwise Comparisons</button>
             </div>
-            <div class="tab-content" id="verdict"></div>
-            <div class="tab-content" id="individual" style="display: none;"></div>
-            <div class="tab-content" id="pairwise" style="display: none;"></div>
+        </div>
+    </section>
+
+    <!-- ────────────────────── Sticky Tab Header ────────────────────── -->
+    <div id="sticky-tab-wrapper" class="relative">
+        <div id="sticky-tab-bar"
+     class="flex gap-4 pb-2 bg-white border-b-2 border-green-200
+            transition-all duration-300">
+            <button class="tab px-6 py-3 text-lg font-semibold text-gray-700
+                           hover:text-green-600 data-[active]:text-green-600
+                           data-[active]:border-b-2 data-[active]:border-green-600"
+                    data-tab="verdict">Verdict Summary</button>
+            <button class="tab px-6 py-3 text-lg font-semibold text-gray-700
+                           hover:text-green-600 transition-all"
+                    data-tab="individual">Individual Analyses</button>
+            <button class="tab px-6 py-3 text-lg font-semibold text-gray-700
+                           hover:text-green-600 transition-all"
+                    data-tab="pairwise">Pairwise Comparisons</button>
         </div>
     </div>
-    <style>
-        @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
-        .container {
-            position: relative;
-            width: 100%; /* Remove max-width and mx-auto to span full width */
-            padding: 0 30px; /* Match .main-content padding for consistency */
-        }
-        .evidence-container, .tabs-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(5px);
-        }
-        .tab {
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .tab[data-active] {
-            border-bottom: 2px solid #00cc00;
-        }
-        .tab-content {
-            display: block;
-            opacity: 1;
-            transition: opacity 0.3s ease;
-            width: 100%; /* Ensure full width */
-            text-align: left; /* Explicitly set left alignment */
-        }
-        .card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 1rem;
-        }
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
-        .animate-pulse {
-            animation: pulse 2s infinite;
-        }
-        .animate-float {
-            animation: float 4s infinite ease-in-out;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        [title]:hover:after {
-            content: attr(title);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1a202c;
-            color: #fff;
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 0.9em;
-            white-space: nowrap;
-            z-index: 20;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        @media (max-width: 768px) {
-            .container { padding: 1rem; }
-            .grid { grid-template-columns: 1fr; }
-        }
-        /* Ensure grid items are left-aligned */
-        
-    </style>
+
+    <!-- ────────────────────── Tab Contents ────────────────────── -->
+    <section class="tab-content-wrapper mt-6">
+        <div class="tab-content" id="verdict"></div>
+        <div class="tab-content" id="individual" style="display:none;"></div>
+        <div class="tab-content" id="pairwise"   style="display:none;"></div>
+    </section>
+</div>
+
+<style>
+    @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+    /* ── Layout ── */
+    .container { position:static; width:100%; padding:0 30px; }
+    @media (max-width:768px){ .container{padding:1rem;} }
+
+    .evidence-container { background:rgba(255,255,255,.95); backdrop-filter:blur(5px); }
+
+    /* ── Sticky Tab Bar ── */
+   #sticky-tab-wrapper { 
+    margin-top: 0; 
+    position: static !important; 
+}
+    #sticky-tab-bar {
+       position: sticky;
+        top: 0;
+        background: #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,.08);
+        z-index: 40;
+    }
+
+    /* ── Tab Buttons ── */
+    .tab { border:none; cursor:pointer; transition:all .3s ease; }
+    .tab[data-active] { border-bottom:2px solid #00cc00; }
+
+    /* ── Tab Content ── */
+    .tab-content {
+        opacity:1; transition:opacity .3s ease;
+        min-height:60vh;          /* keep a comfortable scroll area */
+    }
+    .tab-content[data-active] { display:block; }
+
+    /* ── Misc ── */
+    .card { background:#fff; padding:1.5rem; border-radius:.75rem;
+            box-shadow:0 4px 6px rgba(0,0,0,.1); margin-bottom:1rem; }
+    .card:hover { transform:translateY(-2px);
+                  box-shadow:0 6px 12px rgba(0,0,0,.15); }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    .animate-pulse { animation:pulse 2s infinite; }
+    .animate-float { animation:float 4s infinite ease-in-out; }  
+#sticky-tab-bar.scrolled {
+    box-shadow: 0 4px 12px rgba(0,0,0,.12);
+}
+</style>
 `;
 
-    function renderVerdictSummary() {
+(() => {
+    console.log("Navigation toggled")
+    const bar = document.getElementById('sticky-tab-bar');
+    const sec = document.getElementById('evidence-section');
+
+    if (!bar || !sec) {
+        console.warn("Sticky elements missing. Retrying...");
+        return setTimeout(arguments.callee, 50);
+    }
+
+    function update() {
+        bar.classList.toggle('scrolled', sec.getBoundingClientRect().bottom <= 0);
+        console.log ("Updates worked")
+    }
+
+    if (!window.stickyTabListener) {
+        window.addEventListener('scroll', () => requestAnimationFrame(update), { passive: true });
+        window.stickyTabListener = true;
+    }
+    update();
+})();
+function renderVerdictSummary() {
     const verdict = reportData.verdict_summary;
     const overall = reportData.overall_verdict;
     const narrative = reportData.overall_verdict_narrative.replace(/\n/g, '<br>');
@@ -1501,6 +1520,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // renderExifResults({ report_url: "http://127.0.0.1:8000/response/comparator/JSON-20251023_125222-35cd7960-ed76-45b4-b2c7-88ee90be5738.json" });
 });
 function resetModalx1() {
+    // REMOVE OVERLAY
+    document.querySelector('.analysis-loading-overlayx1')?.remove();
+    document.querySelector('style[data-loading="true"]')?.remove();
+
     document.getElementById('step-1x1').classList.add('active');
     document.getElementById('step-2x1').classList.remove('active');
     document.getElementById('progress-barx1').style.width = '50%';
@@ -1508,15 +1531,16 @@ function resetModalx1() {
     document.getElementById('step-2-indicatorx1').classList.remove('active-stepx1');
     document.getElementById('evidenceNamex1').value = '';
     document.getElementById('evidenceDescriptionx1').value = '';
-    document.getElementById('datex1').value = '2025-10-11';
+    document.getElementById('datex1').value = '';
     document.getElementById('filePreviewx1').innerHTML = '';
+    document.getElementById('compareExifBtnx1').disabled = true;
+
     const analyticsSection = document.getElementById('analytics_section');
     if (analyticsSection) analyticsSection.innerHTML = '<div class="no-processx1">No process yet...</div>';
-    document.getElementById('compareExifBtnx1').disabled = true;
+
     selectedFiles = [];
     metadata = {};
 }
-
 function showToast(message) {
     const toast = document.getElementById("toast");
     if (!toast) {

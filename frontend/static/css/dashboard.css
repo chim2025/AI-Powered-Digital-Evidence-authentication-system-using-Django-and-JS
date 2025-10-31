@@ -3785,3 +3785,8 @@ pre {
     0% { transform: translate(0, 0) scale(1); opacity: 1; }
     100% { transform: translate(var(--x, 100px), var(--y, -100px)) scale(0); opacity: 0; }
 }
+.analytics-parent {
+    position: static !important;
+    overflow: visible !important;
+    transform: none !important;
+}
