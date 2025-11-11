@@ -26,8 +26,48 @@ from .models import User
 from .sysinfo import system_info
 from .processes import get_all_processes
 import uuid
+import secrets
+import subprocess
+from datetime import datetime
 
+from django.contrib.staticfiles.storage import staticfiles_storage
 
+def _make_unique_folder() -> str:
+    """
+    Returns a full path like:
+        /path/to/COMPARATOR_ROOT/20251030_142305_7a3f9b/
+    """
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    rand_hex  = secrets.token_hex(3)               # 6 random hex chars
+    folder_name = f"{timestamp}_{rand_hex}"
+    folder_path = os.path.join(settings.COMPARATOR_ROOT, folder_name)
+
+    os.makedirs(folder_path, exist_ok=True)        # safe-race-free
+    return folder_path
+
+def _save_uploaded_files(uploaded_files, folder_path):
+    """
+    Saves files and returns a list of *absolute* file paths.
+    Also creates a list of *relative* paths for the static URL.
+    """
+    saved_paths      = []      # absolute paths (for subprocess)
+    static_rel_paths = []      # paths relative to COMPARATOR_ROOT (for URLs)
+
+    for uploaded_file in uploaded_files:
+        # keep the original name – Django already sanitises it
+        original_name = uploaded_file.name
+        abs_path      = os.path.join(folder_path, original_name)
+
+        with open(abs_path, "wb+") as dest:
+            for chunk in uploaded_file.chunks():
+                dest.write(chunk)
+
+        saved_paths.append(abs_path)
+        # relative path → will be served as static/comparator/<folder>/<name>
+        rel_path = os.path.join(os.path.basename(folder_path), original_name)
+        static_rel_paths.append(rel_path)
+
+    return saved_paths, static_rel_paths
 
 def safe_serialize(obj):
     if isinstance(obj, (np.bool_, bool)):
@@ -401,41 +441,43 @@ def get_analysis_result(request, filename):
     return FileResponse(open(full, "rb"), content_type="application/json")
 @csrf_exempt
 def file_comparator(request):
-    print(f"Request method: {request.method}")  # Debug log for method
-    print(f"Request FILES: {request.FILES}")  # Debug log for files
+    print(f"Request method: {request.method}")  
+    print(f"Request FILES: {request.FILES}")  
     if request.method == 'POST' and 'files[]' in request.FILES:
+        form_data = request.POST
+        task_data = {
+            'task_name': form_data.get('task_task_name', ''),
+            'task_description': form_data.get('task_task_description', ''),
+            
+        }
+        print(task_data)
         try:
             uploaded_files = request.FILES.getlist('files[]')
-            print(f"Received files: {[f.name for f in uploaded_files]}")  # Debug log
+            print(f"Received files: {[f.name for f in uploaded_files]}")  
             if not uploaded_files:
                 return JsonResponse({'error': 'No files uploaded'}, status=400)
-            # Save uploaded files to COMPARATOR_ROOT with unique names
+            
             file_paths = []
-            client_metadata = request.POST.get('metadata', '{}')  # Get client metadata from POST
+            client_metadata = request.POST.get('metadata', '{}')  
             try:
                 client_metadata = json.loads(client_metadata) if client_metadata else {}
             except json.JSONDecodeError:
                 client_metadata = {}
-            for uploaded_file in uploaded_files:
-                
-                unique_name = f"{uploaded_file.name}"
-                save_path = os.path.join(settings.COMPARATOR_ROOT, unique_name)
-                with open(save_path, 'wb+') as destination:
-                    for chunk in uploaded_file.chunks():
-                        destination.write(chunk)
-                file_paths.append(save_path)
-            print(f"Saved file paths: {file_paths}")  # Debug log for paths
-            # Pass COMPARATOR_ROOT and client_metadata as first argument (as JSON string)
+            unique_folder = _make_unique_folder()                # <-- new folder
+            file_paths, static_urls = _save_uploaded_files(uploaded_files, unique_folder)
+
+            print(f"Saved files in: {unique_folder}")
+            print(f"Static URLs: {static_urls}")
             result = subprocess.run(
                 ['python', 'comparator.py', settings.COMPARATOR_ROOT] + file_paths,
-                input=json.dumps(client_metadata),  # Changed from .encode() to string
+                input=json.dumps(client_metadata),  
                 capture_output=True,
                 text=True,
                 cwd=os.path.dirname(__file__)
             )
-            # Clean up (optional, depending on whether you want to keep files)
-            # for save_path in file_paths:
-            #     os.unlink(save_path)  # Uncomment to delete after processing
+            
+           
+           
             if result.returncode != 0:
                 return JsonResponse({'error': result.stderr}, status=500)
             response = json.loads(result.stdout)
@@ -443,6 +485,12 @@ def file_comparator(request):
             if report_path:
                 report_url = f"{settings.COMPARATOR_URL}/{os.path.basename(report_path)}"
                 response['report_url'] = request.build_absolute_uri(report_url)
+                response['task_data']=task_data|{}
+                response['file_url']= {"static_folder": os.path.basename(unique_folder),
+                "file_urls": [
+                    staticfiles_storage.url(os.path.join("comparator", rel))
+                    for rel in static_urls
+                ],}
                 return JsonResponse(response, status=200)
             return JsonResponse({'error': 'No report generated'}, status=500)
         except Exception as e:

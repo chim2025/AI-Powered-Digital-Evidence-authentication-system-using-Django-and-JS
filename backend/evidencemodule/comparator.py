@@ -531,7 +531,7 @@ def find_embedded_signatures(data, file_type, file_path):
         errors.append(f"Embedded signature detection failed for {file_path}: {str(e)}")
     return found, errors
 
-def extract_printable_strings(data, file_path, min_len=6, max_display=50):
+def extract_printable_strings(data, file_path, min_len=6, max_display=2000):
     """Extract printable ASCII strings, truncating long strings."""
     strings = re.findall(b'[\\x09-\\x0D\\x20-\\x7E]{' + str(min_len).encode() + b',}', data)
     result = []
@@ -543,7 +543,7 @@ def extract_printable_strings(data, file_path, min_len=6, max_display=50):
                 decoded = decoded[:97] + '...'
             result.append(decoded)
         if len(strings) > max_display:
-            result.append(f"[Truncated: {len(strings) - max_display} more strings]")
+            result.append(f"[Truncated: {len(strings) - max_display} more strings (total: {len(strings)})]")
     except Exception as e:
         errors.append(f"String extraction failed for {file_path}: {str(e)}")
     return result, errors
@@ -1037,16 +1037,16 @@ def save_json(path, data, output_dir):
     return report_file
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3:  # Expect at least output_dir and one file
+    if len(sys.argv) < 3: 
         print(json.dumps({'error': 'Usage: python comparator.py <output_dir> <file1> [file2 ...]'}))
         sys.exit(1)
-    output_dir = sys.argv[1]  # First argument is the output directory
-    files = sys.argv[2:]      # Remaining arguments are file paths
+    output_dir = sys.argv[1]  
+    files = sys.argv[2:]      
     missing = [f for f in files if not os.path.exists(f)]
     if missing:
         print(json.dumps({'error': f'Missing files: {", ".join(missing)}'}))
         sys.exit(1)
-    # Read client metadata from stdin if available
+    
     client_metadata = None
     if not sys.stdin.isatty():
         import json

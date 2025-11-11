@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-m^#!!ys&c3uh0ajbqqq-ua1p@s9jdntxiz(t$h0rvqu@%46!q9
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*", '192.168.1.32:8002']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -111,11 +111,15 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
+COMPARATOR_ROOT= os.path.join(BASE_DIR,'Comparators')
+os.makedirs(COMPARATOR_ROOT, exist_ok=True)
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
-STATICFILES_DIRS = [BASE_DIR.parent / 'frontend' / 'static']
+STATICFILES_DIRS = [
+    ("comparator", COMPARATOR_ROOT),  # lowercase recommended
+    (BASE_DIR.parent / 'frontend' / 'static'),  
+]
 STATIC_URL = '/static/'
 
 # Default primary key field type
@@ -145,7 +149,7 @@ MEDIA_URL = '/media/'
 FILES_URL= '/files/'
 RESPONSE_URL= '/response/steganography/'
 COMPARATOR_URL='/response/comparator'
-COMPARATOR_ROOT= os.path.join(BASE_DIR,'Comparators')
+
 RESPONSE_ROOT= os.path.join(BASE_DIR,'response')
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'uploaded_files')
