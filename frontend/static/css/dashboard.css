@@ -40,6 +40,7 @@
       background-color: var(--bg-color);
       color: var(--text-color);
       min-height: 100vh;
+      height: 100%;
     }
     
     .sidebar {
@@ -125,6 +126,9 @@ transition: background-color 0.3s ease;
     flex: 1;
     padding: 30px;
     overflow-y: auto;
+    min-height: 100vh; /* Ensure it fills the viewport height */
+    width: calc(100% - 240px);
+    text-align: left;
   }
 
   .header {
@@ -217,28 +221,25 @@ transition: background-color 0.3s ease;
     cursor: pointer;
     font-weight: 600;
   }
-  .content-section {
-      display: none; 
-  }
   
-  .content-section.active {
-      display: block; 
-  }
   
   .nav-link.active {
       font-weight: bold;
   }
   
 .content-section {
-  padding: 30px;
-  background-color: var(--background-color) !important;
+    padding: 30px;
+    background-color: var(--background-color) !important;
+    display: none;
+    transition: all 0.3s ease;
+    width: 100%; 
+    min-height: calc(100vh - 60px); 
+    box-sizing: border-box; 
+    text-align: left;
+  }
 
-  
- 
-  max-width: 1000px;
-  display: none;
-  transition: all 0.3s ease;
-}
+
+
 
 .content-section.active {
   display: block;
@@ -260,6 +261,13 @@ transition: background-color 0.3s ease;
   font-size: 16px;
   color: var(--light);
   margin-bottom: 25px;
+}
+/* Optional: Adjust tab content padding if needed */
+.content-section h2,
+.content-section h3,
+.content-section p {
+    /* Existing styles */
+    max-width: 100%; /* Ensure text doesnâ€™t overflow unnaturally */
 }
 
 .setting-option {
@@ -1188,7 +1196,7 @@ svg {
 }
 
 .issue-count::after {
-  content: "⚠️";
+  content: "âš ï¸";
   font-size: 20px;
   position: absolute;
   right: -25px;
@@ -1509,6 +1517,7 @@ svg {
 
 .hash-grid {
   display: grid;
+  position: relative !important;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 16px;
 }
@@ -2203,6 +2212,7 @@ svg {
   margin-top: 30px;
   display: flex;
   gap: 20px;
+  justify-content: center; /* Add this to center the buttons */
 }
 
 .task-display-button button {
@@ -2214,8 +2224,8 @@ svg {
   border-radius: 10px;
   cursor: pointer;
   display: flex;
-  
-  gap: 10px;
+  gap: 10px; /* This applies to internal button content */
+  align-items: center; /* Ensure internal content is vertically centered */
 }
 
 .task-display-button button:hover {
@@ -3334,13 +3344,39 @@ textarea.inputx1 {
 .prev-btnx1:hover {
     background-color: rgba(208, 231, 208, 0.5);
 }
-
 .compare-btnx1:disabled {
     background-color: #ccc;
     cursor: not-allowed;
 }
-
 .material-symbols-outlined {
     font-size: 1rem;
     font-family: 'Material Symbols Outlined';
+}
+.pairwise-overlay { display: flex; justify-content: center; align-items: flex-start; }
+.pairwise-dialog { position: relative; max-height: 80vh; overflow-y: auto; }
+.grid-hex-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 2px; padding: 10px; }
+.grid-hex { position: relative; width: 100%; border-radius: 10px; overflow: hidden; text-align: center; color: white; font-size: 0.8em; }
+.grid-hex-value { display: block; font-weight: bold; }
+.grid-hex-freq { display: block; font-size: 0.7em; }
+.info-card-container { background: white; border-radius: 0.5rem; transition: all 0.3s ease; }
+.info-card-container:hover { transform: translateY(-3px); }
+
+.placeholder-message {
+  background: rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #007bff;
+  padding: 20px;
+  margin-top: 15px;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+}
+
+.placeholder-message p {
+  margin: 5px 0;
+  color: #444;
+}
+
+[data-theme="dark"] .placeholder-message {
+  background: rgba(255, 255, 255, 0.05);
+  border-left-color: #00bcd4;
+  color: #ddd;
 }

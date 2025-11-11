@@ -60,7 +60,7 @@
       <div class="nav-link" data-section="support">
         <i class="fas fa-tools"></i> Support
       </div>
-      <!-- ðŸ”¹ Added Logout -->
+      <!-- Ã°Å¸â€Â¹ Added Logout -->
         <a href="{% url 'logout' %}" class="nav-link">
           <i class="fas fa-sign-out-alt"></i> Logout
         </a>
@@ -320,8 +320,8 @@
       <h3>Language Selection</h3>
       <select id="language">
         <option value="en">English</option>
-        <option value="es">EspaÃ±ol</option>
-        <option value="fr">FranÃ§ais</option>
+        <option value="es">EspaÃƒÂ±ol</option>
+        <option value="fr">FranÃƒÂ§ais</option>
         <option value="de">Deutsch</option>
       </select>
     </div>
@@ -628,7 +628,23 @@
    <!--- system-info details ... -->
   </div>
 </section>
+<section id="community" class="content-section">
+  <h2><i class="fas fa-users"></i> Community</h2>
+  <div class="placeholder-message">
+    <p>👋 Our community features are currently under development.</p>
+    <p>Stay tuned — you’ll soon be able to connect, share insights, and collaborate with other investigators!</p>
+  </div>
+</section>
 
+<section id="support" class="content-section">
+  <h2><i class="fas fa-tools"></i> Support</h2>
+  <div class="placeholder-message">
+    <p>⚙️ This page is still being built.</p>
+    <p>If you need assistance, please reach out to our support team at
+      <a href="mailto:evidenceguard.support@gmail.com">evidenceguard.support@gmail.com</a>
+    </p>
+  </div>
+</section>
 
   
 <script src="/static/js/hexy.js" onerror="this.onerror=null; this.src='https://unpkg.com/hexy@0.3.3/lib/hexy.js';"></script>
@@ -638,8 +654,9 @@
   <script type="module" src="/static/js/renderevidence.js"></script>
   <script type="module" src="/static/js/process.js"></script>
   <script type="module" src="/static/js/process_metrics.js"></script>
-  <script type="module" src="/static/js/exif.js"></script>
+  <script type="module" src="/static/js/sampleexif.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
 
 
   <script>
@@ -694,3 +711,5 @@
     
 </body>
 </html>
+
+<!-- This line is added to remove merge conflict  -->
