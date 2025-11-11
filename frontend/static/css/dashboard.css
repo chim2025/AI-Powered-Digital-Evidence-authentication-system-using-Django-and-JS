@@ -3790,3 +3790,29 @@ pre {
     overflow: visible !important;
     transform: none !important;
 }
+/* === FORCE REMOVE UNDERLINE FROM EVERYTHING === */
+*,
+*::before,
+*::after {
+    text-decoration: none !important;
+    text-decoration-line: none !important;
+    text-decoration-style: solid !important;
+    text-underline-offset: unset !important;
+}
+
+/* === RESTORE UNDERLINE ONLY FOR REAL LINKS === */
+a {
+    text-decoration: underline !important;
+    text-decoration-color: currentColor;
+    text-underline-offset: 2px;
+}
+
+a:hover {
+    text-decoration-thickness: 1.5px;
+}
+
+/* === OPTIONAL: PREVENT FUTURE DEBUG UNDERLINES === */
+.debug-mode *,
+[data-debug] * {
+    text-decoration: none !important;
+}

@@ -1121,6 +1121,14 @@ ${(() => {
     if (type.includes('zip') || type.includes('rar')) return 'archive';
     return 'insert_drive_file';
 }
+// === INJECT UNDERLINE FIX ===
+const styleFix = document.createElement('style');
+styleFix.textContent = `
+    * { text-decoration: none !important; }
+    a { text-decoration: underline !important; text-underline-offset: 2px; }
+    a:hover { text-decoration-thickness: 1.5px; }
+`;
+document.head.appendChild(styleFix);
 
     renderContent('individual', content);
 
