@@ -28,7 +28,7 @@ from .processes import get_all_processes
 import uuid
 import secrets
 import subprocess
-from datetime import datetime
+import datetime
 
 from django.contrib.staticfiles.storage import staticfiles_storage
 
@@ -37,7 +37,7 @@ def _make_unique_folder() -> str:
     Returns a full path like:
         /path/to/COMPARATOR_ROOT/20251030_142305_7a3f9b/
     """
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     rand_hex  = secrets.token_hex(3)               # 6 random hex chars
     folder_name = f"{timestamp}_{rand_hex}"
     folder_path = os.path.join(settings.COMPARATOR_ROOT, folder_name)
