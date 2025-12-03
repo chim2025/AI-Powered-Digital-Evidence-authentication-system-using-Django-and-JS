@@ -519,6 +519,13 @@ function startEvidenceAnalysis() {
         try {
           if (json.result.memdump) {
             renderMemdumpResults(json.result.memdump);
+          } else if (json.result.deepfake_video) {
+            // Video deepfake detection result - merge with parent data
+            renderEvidenceResults({
+              ...json.result.deepfake_video,
+              task_data: json.result.task_data,
+              hashes: json.result.hashes
+            });
           } else if (json.result.steganographic_detection) {
             renderEvidenceResults({
               ...json.result,
@@ -690,8 +697,8 @@ async function renderEvidenceResults(data) {
                         <div class="result-card">
                             <h4>Final Verdict</h4>
                             <p class="${data.prediction === 'FAKE' ? 'text-danger' : 'text-success'}" style="font-size: 1.5em; font-weight: bold;">${data.prediction || "N/A"}</p>
-                            <div class="progress-circle" data-percentage="${(data.confidence || 0).toFixed(0)}">
-                                <span class="progress-value">${(data.confidence || 0).toFixed(0)}%</span>
+                            <div class="progress-circle" data-percentage="${((data.confidence || 0) * 100).toFixed(0)}">
+                                <span class="progress-value">${((data.confidence || 0) * 100).toFixed(0)}%</span>
                             </div>
                             <small>Confidence Score</small>
                         </div>
@@ -756,6 +763,112 @@ async function renderEvidenceResults(data) {
                             </div>
                         `).join("")}
                     </div>
+                </div>
+          
+
+</div>
+                
+            <div class="tab-content deepfake-section" id="deepfakeTab">
+                ${isVideo ? `
+                    <h4 class="section-title"><i class="fas fa-brain"></i> Video Deepfake Detection Analysis</h4>
+                    <div class="deepfake-grid">
+                        <div class="df-card verdict-box">
+                            <h5><i class="fas fa-balance-scale"></i> Final Verdict</h5>
+                            <p class="verdict-text ${data.prediction === 'FAKE' ? 'verdict-fake' : 'verdict-real'}">
+                                ${data.prediction || "N/A"}
+                            </p>
+                            <p><strong>Confidence:</strong> ${(data.confidence * 100 || 0).toFixed(2)}%</p>
+                        </div>
+                        <div class="df-card">
+                            <h5><i class="fas fa-chart-pie"></i> Frame Statistics</h5>
+                            <p><strong>Total Faces:</strong> ${(data.fake_face_count || 0) + (data.real_face_count || 0)}</p>
+                            <p><strong>Fake Faces:</strong> ${data.fake_face_count || 0}</p>
+                            <p><strong>Real Faces:</strong> ${data.real_face_count || 0}</p>
+                            <p><strong>Fake Percentage:</strong> ${(data.fake_face_percentage || 0).toFixed(1)}%</p>
+                        </div>
+                    </div>
+                    ${data.frame_predictions && data.frame_predictions.length > 0 ? `
+                        <h5 style="margin-top: 20px;"><i class="fas fa-film"></i> Suspicious Frames</h5>
+                        <div class="frame-predictions" style="max-height: 400px; overflow-y: auto;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+                                        <th style="padding: 10px; text-align: left;">Frame #</th>
+                                        <th style="padding: 10px; text-align: left;">Prediction</th>
+                                        <th style="padding: 10px; text-align: left;">Confidence</th>
+                                        <th style="padding: 10px; text-align: left;">Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.frame_predictions.filter(fp => fp.prediction === 'FAKE').map(fp => `
+                                        <tr style="border-bottom: 1px solid #eee;">
+                                            <td style="padding: 10px;">${fp.frame_number}</td>
+                                            <td style="padding: 10px;">
+                                                <span class="badge-fake" style="padding: 4px 8px; border-radius: 4px;">
+                                                    <i class="fas fa-times-circle"></i> ${fp.prediction}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 10px;">${(fp.confidence * 100 || 0).toFixed(2)}%</td>
+                                            <td style="padding: 10px;">${fp.timestamp.toFixed(2)}s</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    ` : '<p style="margin-top: 20px; color: #666;">No frame-level predictions available</p>'}
+                ` : `
+                    <h4 class="section-title"><i class="fas fa-brain"></i> Deepfake Detection Summary</h4>
+                    <div class="deepfake-grid">
+                        <div class="df-card">
+                            <h5><i class="fas fa-user-check"></i> Face Detection</h5>
+                            <p><strong>Regions Detected:</strong> ${df.detected_regions || "N/A"}</p>
+                            <p><strong>Faces Count:</strong> ${df.face_count || "N/A"}</p>
+                            <p><strong>Content Type:</strong> ${df.content_type || "N/A"}</p>
+                        </div>
+                        <div class="df-card">
+                            <h5><i class="fas fa-random"></i> Manipulation</h5>
+                            <p><strong>Type:</strong> ${df.manipulation_type || "N/A"}</p>
+                            <p><strong>Tampering:</strong>
+                                <span class="${df.tampering_detected ? 'badge-fake' : 'badge-real'}">
+                                    <i class="fas ${df.tampering_detected ? 'fa-times-circle' : 'fa-check-circle'}"></i>
+                                    ${df.tampering_detected ? "Detected" : "Not Detected"}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="df-card">
+                            <h5><i class="fas fa-robot"></i> AI Verdict</h5>
+                            <p><strong>AI Verdict:</strong> ${df.ai_generated_label || "Unknown"}</p>
+                            <p><strong>Confidence:</strong> <span class="conf-bar">
+                                <span class="conf-fill" style="width:${df.ai_generated_confidence || 0}%;"></span>
+                            </span> ${df.ai_generated_confidence || 0}%</p>
+                        </div>
+                        <div class="df-card">
+                            <h5><i class="fas fa-microchip"></i> Models Used</h5>
+                            <ul class="df-list">
+                                ${df.models_used?.map(m => `<li><i class="fas fa-cogs"></i> ${m}</li>`).join("") || "<li>None</li>"}
+                            </ul>
+                        </div>
+                        <div class="df-card">
+                            <h5><i class="fas fa-percentage"></i> Model Scores</h5>
+                            <p><strong>ResNet-18:</strong> ${df.model_scores?.resnet18 || "N/A"}%</p>
+                            <p><strong>EfficientNet:</strong> ${df.model_scores?.efficientnet || "N/A"}%</p>
+                            <p><strong>Overall Confidence:</strong> ${df.confidence_score || "N/A"}%</p>
+                        </div>
+                        <div class="df-card verdict-box">
+                            <h5><i class="fas fa-balance-scale"></i> Final Verdict</h5>
+                            <p class="verdict-text ${df.verdict === 'Authentic' ? 'verdict-real' : 'verdict-fake'}">
+                                ${df.verdict || "N/A"}
+                            </p>
+                        </div>
+                    </div>
+                    <canvas id="dfChart"></canvas>
+                `}
+            </div>
+            <div class="tab-content forgery-section" id="forgeryTab">
+                <h4 class="section-title"><i class="fas fa-search-dollar"></i> Forgery Detection Summary</h4>
+                <div class="forgery-grid">
+                    <div class="forgery-card">
+                        <h5><i class="fas fa-tools"></i> Methods Used</h5>
                         <ul class="method-list">
                             ${forgery.methods_used?.map(method => `<li><i class="fas fa-check-circle"></i> ${method}</li>`).join("") || "<li>None</li>"}
                         </ul>
@@ -798,26 +911,44 @@ async function renderEvidenceResults(data) {
             </div>
             <div class="tab-content metadata-tab" id="metadataTab">
                 <h4 class="meta-section-title"><i class="fas fa-info-circle"></i> Metadata Findings</h4>
-                <div class="meta-highlight-box">
-                    <p><i class="fas fa-tools meta-icon"></i> <strong>Software Used:</strong> ${meta.software_used || "Not Detected"}</p>
-                </div>
-                <div class="meta-highlight-box warning">
-                    <p><i class="fas fa-exclamation-triangle"></i> Inconsistencies: ${meta.metadata_inconsistencies?.join(", ") || "None found"}</p>
-                </div>
-                <div class="meta-highlight-box location">
-                    <p><i class="fas fa-map-marker-alt"></i> GPS Location: ${meta.gps_coordinates?.latitude || "N/A"}, ${meta.gps_coordinates?.longitude || "N/A"}</p>
-                </div>
-                <div class="meta-subsection">
-                    <h5><i class="fas fa-camera-retro"></i> EXIF Data</h5>
-                    <div class="exif-grid">
-                        ${Object.entries(meta.exif_data || {}).map(([k, v]) => `
-                            <div class="exif-card">
-                                <p class="exif-key"><i class="fas fa-tag"></i> ${k}</p>
-                                <p class="exif-value">${v}</p>
-                            </div>
-                        `).join("")}
+                ${isVideo ? `
+                    <div class="meta-highlight-box">
+                        <p><i class="fas fa-video meta-icon"></i> <strong>Video Duration:</strong> ${(data.video_duration || 0).toFixed(2)} seconds</p>
                     </div>
-                </div>
+                    <div class="meta-highlight-box">
+                        <p><i class="fas fa-film meta-icon"></i> <strong>Total Frames:</strong> ${data.total_frames || 0}</p>
+                    </div>
+                    <div class="meta-highlight-box">
+                        <p><i class="fas fa-play meta-icon"></i> <strong>Processed Frames:</strong> ${data.processed_frames || 0}</p>
+                    </div>
+                    <div class="meta-highlight-box">
+                        <p><i class="fas fa-clock meta-icon"></i> <strong>Processing Time:</strong> ${(data.processing_time || 0).toFixed(2)} seconds</p>
+                    </div>
+                    <div class="meta-highlight-box">
+                        <p><i class="fas fa-calendar meta-icon"></i> <strong>Analysis Timestamp:</strong> ${data.timestamp || "N/A"}</p>
+                    </div>
+                ` : `
+                    <div class="meta-highlight-box">
+                        <p><i class="fas fa-tools meta-icon"></i> <strong>Software Used:</strong> ${meta.software_used || "Not Detected"}</p>
+                    </div>
+                    <div class="meta-highlight-box warning">
+                        <p><i class="fas fa-exclamation-triangle"></i> Inconsistencies: ${meta.metadata_inconsistencies?.join(", ") || "None found"}</p>
+                    </div>
+                    <div class="meta-highlight-box location">
+                        <p><i class="fas fa-map-marker-alt"></i> GPS Location: ${meta.gps_coordinates?.latitude || "N/A"}, ${meta.gps_coordinates?.longitude || "N/A"}</p>
+                    </div>
+                    <div class="meta-subsection">
+                        <h5><i class="fas fa-camera-retro"></i> EXIF Data</h5>
+                        <div class="exif-grid">
+                            ${Object.entries(meta.exif_data || {}).map(([k, v]) => `
+                                <div class="exif-card">
+                                    <p class="exif-key"><i class="fas fa-tag"></i> ${k}</p>
+                                    <p class="exif-value">${v}</p>
+                                </div>
+                            `).join("")}
+                        </div>
+                    </div>
+                `}
             </div>
             <div class="tab-content stego-section" id="stegoTab">
                 <h4 class="section-title"><i class="fas fa-eye-slash"></i> Steganography Analysis</h4>
