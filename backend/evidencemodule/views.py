@@ -22,6 +22,7 @@ from .ai_models.stegonagraphydetector import detect_steganography
 from .ai_models.utils import full_image_forensic_analysis
 from .ai_models.filehash import compute_file_hashes
 from .document_authentication.run_pipeline import full_document_analysis
+from .ai_models.video_deepfake.predict import VideoDeepfakeDetector
 from .models import User
 from .sysinfo import system_info
 from .processes import get_all_processes
@@ -299,6 +300,8 @@ def analyze_evidence(request):
 
                 file_ext = os.path.splitext(file_path)[1].lower()
                 is_image = file_type.startswith("image/")
+                is_video = file_type.startswith("video/") or file_ext in ['.mp4', '.avi', '.mov']
+
                 is_doc = file_ext in ['.pdf', '.docx', '.txt', '.doc']
                 is_memdump = file_ext in ['.dmp', '.raw', '.mem']
 
@@ -333,6 +336,34 @@ def analyze_evidence(request):
                     print(result.update(forensic_result))
 
                 
+
+                # === Video ===
+                elif is_video:
+                    yield 'data: {"progress": 20, "message": "Initializing video deepfake detector..."}\n\n'
+                    try:
+                        detector = VideoDeepfakeDetector()
+                        yield 'data: {"progress": 40, "message": "Analyzing video frames (this may take a while)..."}\n\n'
+                        
+                        # Run analysis
+                        video_result = detector.predict_video(file_path, verbose=False)
+                        
+                        # Convert to dict
+                        video_result_dict = video_result.to_dict()
+                        
+                        # Add to result
+                        result["deepfake_video"] = video_result_dict
+                        
+                        # Add summary verdict
+                        result["summary"]["verdict"] = video_result_dict["prediction"]
+                        result["summary"]["confidence"] = video_result_dict["confidence"]
+                        
+                        yield f'data: {json.dumps({"progress": 80, "message": f"Video analysis complete. Verdict: {video_result.prediction}"})}\n\n'
+                        
+                    except Exception as e:
+                        print(f"Video analysis error: {e}")
+                        yield f'data: {json.dumps({"progress": 80, "message": f"Video analysis failed: {str(e)}", "error": True})}\n\n'
+                        result["deepfake_video"] = {"error": str(e)}
+
                 # === Document ===
                 elif is_doc:
                     yield 'data: {"progress": 60, "message": "Running document authenticity check..."}\n\n'
@@ -376,7 +407,6 @@ def analyze_evidence(request):
                 yield 'data: {"progress": 90, "message": "Computing file hashes..."}\n\n'
                 hash_result = compute_file_hashes(file_path)
                 result.update(json.loads(hash_result))
-
                 end_time = datetime.datetime.now()
                 end_msg = f"Analysis ended at: {end_time.strftime('%H:%M:%S')}"
                 yield f'data: {json.dumps({"progress": 99, "message": end_msg})}\n\n'
