@@ -1,0 +1,24 @@
+{
+    "file": "goodluckadded2.mp4",
+    "findings": [
+        "Metadata stripped or pro editor used"
+    ],
+    "verdict": "NO FORENSIC EVIDENCE of tampering",
+    "score": 30,
+    "gop": {
+        "flagged": false,
+        "reason": "Regular GOP (0.000)"
+    },
+    "duplicates": {
+        "count": 0,
+        "rate": 0.0
+    },
+    "hard_cuts": {
+        "count": 2,
+        "expected": 2
+    },
+    "metadata": {
+        "suspicious": true,
+        "reason": "Creation time stripped (not normal re-encode)"
+    }
+}

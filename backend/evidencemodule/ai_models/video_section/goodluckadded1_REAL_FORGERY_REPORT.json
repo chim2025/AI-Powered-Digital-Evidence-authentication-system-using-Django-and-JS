@@ -1,0 +1,25 @@
+{
+    "file": "goodluckadded1.mp4",
+    "findings": [
+        "Frame duplication (41.2%)",
+        "Metadata stripped or pro editor used"
+    ],
+    "verdict": "HIGHLY SUSPICIOUS — Likely manipulated",
+    "score": 80,
+    "gop": {
+        "flagged": false,
+        "reason": "Regular GOP (0.000)"
+    },
+    "duplicates": {
+        "count": 1465,
+        "rate": 41.24
+    },
+    "hard_cuts": {
+        "count": 9,
+        "expected": 7
+    },
+    "metadata": {
+        "suspicious": true,
+        "reason": "Creation time stripped (not normal re-encode)"
+    }
+}

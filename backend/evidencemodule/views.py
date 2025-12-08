@@ -30,6 +30,7 @@ import uuid
 import secrets
 import subprocess
 import datetime
+from .ai_models.video_section.transportlayer import executors
 
 from django.contrib.staticfiles.storage import staticfiles_storage
 
@@ -342,45 +343,30 @@ def analyze_evidence(request):
                     yield 'data: {"progress": 20, "message": "Initializing video deepfake detector..."}\n\n'
                     try:
                         detector = VideoDeepfakeDetector()
-                        yield 'data: {"progress": 40, "message": "Analyzing video frames (this may take a while)..."}\n\n'
+                        yield 'data: {"progress": 30, "message": "Intitializing deefake detection scripts (this may take a while)..."}\n\n'
                         
-                        # Prepare heatmap directory
-                        heatmap_rel_dir = f"heatmaps/{uuid.uuid4().hex}"
-                        heatmap_abs_dir = os.path.join(settings.MEDIA_ROOT, heatmap_rel_dir)
                         
-                        # Run analysis with heatmap generation
-                        video_result = detector.predict_video(
-                            file_path, 
-                            verbose=False,
-                            heatmap_output_dir=heatmap_abs_dir
-                        )
+                        video_result = detector.predict_video(file_path, verbose=False)
                         
                         # Convert to dict
                         video_result_dict = video_result.to_dict()
                         
-                        # Convert absolute heatmap paths to relative MEDIA URLs
-                        if video_result_dict.get('heatmap_paths'):
-                            heatmap_urls = []
-                            for abs_path in video_result_dict['heatmap_paths']:
-                                # Get path relative to MEDIA_ROOT
-                                rel_path = os.path.relpath(abs_path, settings.MEDIA_ROOT).replace("\\", "/")
-                                # Construct URL
-                                url = settings.MEDIA_URL.rstrip("/") + "/" + rel_path
-                                heatmap_urls.append(url)
-                            video_result_dict['heatmap_paths'] = heatmap_urls
                         
-                        # Add to result
                         result["deepfake_video"] = video_result_dict
                         
                         # Add summary verdict
                         result["summary"]["verdict"] = video_result_dict["prediction"]
                         result["summary"]["confidence"] = video_result_dict["confidence"]
+
+                        yield 'data: {"progress": 59, "message": "Analyzing bit by bit frames of the video..."}\n\n'
+                        result["major_analysis"]=executors(file_path)
+                        print(result["major_analysis"])
                         
-                        yield f'data: {json.dumps({"progress": 80, "message": f"Video analysis complete. Verdict: {video_result.prediction}"})}\n\n'
+                        yield f'data: {json.dumps({"progress": 88, "message": f"Video analysis complete. Verdict: {video_result.prediction}"})}\n\n'
                         
                     except Exception as e:
                         print(f"Video analysis error: {e}")
-                        yield f'data: {json.dumps({"progress": 80, "message": f"Video analysis failed: {str(e)}", "error": True})}\n\n'
+                        yield f'data: {json.dumps({"progress": 88, "message": f"Video analysis failed: {str(e)}", "error": True})}\n\n'
                         result["deepfake_video"] = {"error": str(e)}
 
                 # === Document ===
