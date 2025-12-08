@@ -827,7 +827,7 @@ async function renderEvidenceResults(data) {
                             <div class="heatmap-gallery" style="display: flex; overflow-x: auto; gap: 15px; padding: 5px; padding-bottom: 15px;">
                                 ${data.heatmap_paths.map((path, idx) => `
                                     <div class="heatmap-card" style="flex: 0 0 auto; background: white; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                                        <img src="${path}" alt="Heatmap ${idx + 1}" style="height: 180px; border-radius: 4px; cursor: pointer; display: block;" onclick="window.open('${path}', '_blank')">
+                                        <img src="${path}" alt="Heatmap ${idx + 1}" style="height: 180px; border-radius: 4px; cursor: pointer; display: block;" onclick="openHeatmapModal('${path}')">
                                         <p style="font-size: 0.8em; margin-top: 8px; text-align: center; font-weight: bold; color: #333;">Frame ${idx + 1}</p>
                                     </div>
                                 `).join('')}
@@ -1884,10 +1884,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
-function openHeatmapModal(src) {
-  document.getElementById("heatmapModal").style.display = "block";
-  document.getElementById("heatmapModalImg").src = src;
+// --- Heatmap Lightbox Modal ---
+function createHeatmapModal() {
+  if (document.getElementById('heatmapModalDisplay')) return;
+
+  const modalHtml = `
+    <div id="heatmapModalDisplay" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.9); justify-content: center; align-items: center;">
+        <span style="position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer;" onclick="closeHeatmapModal()">&times;</span>
+        <img class="modal-content" id="img01" style="margin: auto; display: block; max-width: 90%; max-height: 90vh; border-radius: 4px; box-shadow: 0 0 20px rgba(0,0,0,0.5);">
+    </div>
+    `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  // Close when clicking outside
+  const modal = document.getElementById('heatmapModalDisplay');
+  modal.onclick = function (event) {
+    if (event.target === modal) {
+      closeHeatmapModal();
+    }
+  }
 }
+
+function openHeatmapModal(src) {
+  createHeatmapModal();
+  const modal = document.getElementById('heatmapModalDisplay');
+  const modalImg = document.getElementById("img01");
+  modal.style.display = "flex";
+  modalImg.src = src;
+}
+
 function closeHeatmapModal() {
-  document.getElementById("heatmapModal").style.display = "none";
+  const modal = document.getElementById('heatmapModalDisplay');
+  if (modal) modal.style.display = "none";
 }
