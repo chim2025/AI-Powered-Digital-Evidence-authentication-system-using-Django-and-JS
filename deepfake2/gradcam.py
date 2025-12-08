@@ -16,10 +16,10 @@ from typing import List, Tuple, Optional
 import sys
 
 # Add src to path
-# sys.path.append(str(Path(__file__).parent))
+sys.path.append(str(Path(__file__).parent))
 
-from .src.models.architecture import DeepfakeDetector
-from .src.data.dataset import get_transforms
+from src.models.architecture import DeepfakeDetector
+from src.data.dataset import get_transforms
 
 
 class GradCAM:
@@ -252,8 +252,7 @@ class VideoGradCAM:
     def __init__(
         self,
         model_path: str = 'models/checkpoints/best_model.pth',
-        device: str = 'cuda',
-        model: Optional[DeepfakeDetector] = None
+        device: str = 'cuda'
     ):
         """
         Initialize Video Grad-CAM generator
@@ -261,20 +260,13 @@ class VideoGradCAM:
         Args:
             model_path: Path to trained model checkpoint
             device: 'cuda' or 'cpu'
-            model: Optional pre-loaded model instance
         """
         self.device = torch.device(device if torch.cuda.is_available() else 'cpu')
         
-        if model is not None:
-            self.model = model
-            # Ensure model is on correct device
-            self.model.to(self.device)
-            self.model.eval()
-        else:
-            # Load model
-            self.model = DeepfakeDetector().to(self.device)
-            self.model.load_state_dict(torch.load(model_path, map_location=self.device))
-            self.model.eval()
+        # Load model
+        self.model = DeepfakeDetector().to(self.device)
+        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
+        self.model.eval()
         
         # Initialize Grad-CAM
         self.gradcam = GradCAM(self.model, device=str(self.device))

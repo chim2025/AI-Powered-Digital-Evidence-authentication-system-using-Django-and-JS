@@ -14,17 +14,14 @@ from typing import Dict, List, Tuple, Optional
 import json
 from datetime import datetime
 import sys
-import os
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, asdict
 
 # Add src to path for imports
-# Add src to path for imports
-# sys.path.append(str(Path(__file__).parent))
+sys.path.append(str(Path(__file__).parent))
 
-from .src.models.architecture import DeepfakeDetector
-from .src.data.face_extraction import FaceExtractor
-from .src.data.dataset import get_transforms
-from .gradcam import VideoGradCAM
+from src.models.architecture import DeepfakeDetector
+from src.data.face_extraction import FaceExtractor
+from src.data.dataset import get_transforms
 
 
 @dataclass
@@ -61,9 +58,6 @@ class VideoPrediction:
     processing_time: float
     timestamp: str
     
-    # Visualizations
-    heatmap_paths: List[str] = field(default_factory=list)
-    
     def to_dict(self):
         """Convert to dictionary for JSON serialization"""
         result = asdict(self)
@@ -83,7 +77,7 @@ class VideoDeepfakeDetector:
     
     def __init__(
         self,
-        model_path: str = None,
+        model_path: str = 'models/checkpoints/best_model.pth',
         device: str = 'cuda',
         sample_rate: int = 30,
         max_faces: int = 50,
@@ -104,9 +98,6 @@ class VideoDeepfakeDetector:
         self.max_faces = max_faces
         self.batch_size = batch_size
         
-        if model_path is None:
-             model_path = os.path.join(os.path.dirname(__file__), 'checkpoints', 'best_model.pth')
-
         print(f"Initializing detector on {self.device}...")
         
         # Load model
@@ -122,14 +113,6 @@ class VideoDeepfakeDetector:
         # Get transforms for preprocessing
         self.transform = get_transforms('val')
         print("✓ Transforms loaded")
-        
-        # Initialize Grad-CAM generator
-        self.gradcam = VideoGradCAM(
-            model_path=model_path,
-            device=device,
-            model=self.model
-        )
-        print("✓ Grad-CAM initialized")
         
     def extract_video_info(self, video_path: str) -> Dict:
         """Extract basic video information"""
@@ -171,20 +154,8 @@ class VideoDeepfakeDetector:
             # Transform and stack faces
             batch_tensors = []
             for face in batch_faces:
-                # Ensure face is uint8 numpy array
-                if face.dtype != np.uint8:
-                    face = (face * 255).astype(np.uint8)
-                
-                # Apply transforms (albumentations expects uint8 input)
-                # The transform pipeline handles: Resize -> Normalize -> ToTensorV2
+                # Apply transforms
                 transformed = self.transform(image=face)['image']
-                
-                # Ensure it's a float tensor (ToTensorV2 should handle this, but be explicit)
-                if not isinstance(transformed, torch.Tensor):
-                    transformed = torch.from_numpy(transformed).float()
-                if transformed.dtype != torch.float32:
-                    transformed = transformed.float()
-                    
                 batch_tensors.append(transformed)
             
             batch_tensor = torch.stack(batch_tensors).to(self.device)
@@ -268,7 +239,6 @@ class VideoDeepfakeDetector:
         self,
         video_path: str,
         output_json: Optional[str] = None,
-        heatmap_output_dir: Optional[str] = None,
         verbose: bool = True
     ) -> VideoPrediction:
         """
@@ -365,8 +335,7 @@ class VideoDeepfakeDetector:
                 fake_face_percentage=0.0,
                 frame_predictions=[],
                 processing_time=(datetime.now() - start_time).total_seconds(),
-                timestamp=datetime.now().isoformat(),
-                heatmap_paths=[]
+                timestamp=datetime.now().isoformat()
             )
         
         # Run predictions
@@ -399,19 +368,6 @@ class VideoDeepfakeDetector:
         real_count = sum(1 for fp in frame_predictions if fp.prediction == 'REAL')
         fake_percentage = (fake_count / len(frame_predictions)) * 100 if frame_predictions else 0
         
-        # Generate heatmaps for suspicious frames if requested
-        heatmap_paths = []
-        if heatmap_output_dir and (video_pred == 'FAKE' or fake_count > 0):
-            if verbose:
-                print("Generating Grad-CAM heatmaps...")
-            heatmap_paths = self.gradcam.generate_for_suspicious_frames(
-                video_result=type('obj', (object,), {'frame_predictions': frame_predictions}),
-                faces_list=faces_list,
-                output_dir=heatmap_output_dir,
-                confidence_threshold=0.7,
-                max_frames=10
-            )
-        
         # Build result
         result = VideoPrediction(
             video_path=video_path,
@@ -425,8 +381,7 @@ class VideoDeepfakeDetector:
             fake_face_percentage=fake_percentage,
             frame_predictions=frame_predictions,
             processing_time=(datetime.now() - start_time).total_seconds(),
-            timestamp=datetime.now().isoformat(),
-            heatmap_paths=heatmap_paths
+            timestamp=datetime.now().isoformat()
         )
         
         # Print summary
@@ -470,12 +425,89 @@ class VideoDeepfakeDetector:
                 [fp for fp in result.frame_predictions if fp.prediction == 'FAKE'],
                 key=lambda x: x.confidence,
                 reverse=True
-            )[:10]
+            )[:5]
             
             if suspicious_frames:
-                print(f"Most suspicious frames (top 10):")
+                print(f"Most suspicious frames (top 5):")
                 for i, fp in enumerate(suspicious_frames, 1):
                     print(f"  {i}. Frame {fp.frame_number} at {fp.timestamp:.2f}s - "
                           f"Confidence: {fp.confidence*100:.1f}%")
                 print()
 
+
+def main():
+    """Command-line interface for video prediction"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description='Deepfake detection for videos',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python predict_video.py video.mp4
+  python predict_video.py video.mp4 --output results.json
+  python predict_video.py video.mp4 --device cpu
+        """
+    )
+    
+    parser.add_argument('video', help='Path to video file')
+    parser.add_argument('--output', '-o', help='Save results to JSON file')
+    parser.add_argument('--model', default='models/checkpoints/best_model.pth',
+                       help='Path to model checkpoint')
+    parser.add_argument('--device', default='cuda', choices=['cuda', 'cpu'],
+                       help='Device to run on')
+    parser.add_argument('--sample-rate', type=int, default=30,
+                       help='Process every Nth frame (default: 30)')
+    parser.add_argument('--max-faces', type=int, default=50,
+                       help='Maximum faces to process (default: 50)')
+    parser.add_argument('--batch-size', type=int, default=8,
+                       help='Batch size for inference (default: 8)')
+    parser.add_argument('--quiet', '-q', action='store_true',
+                       help='Suppress progress messages')
+    
+    args = parser.parse_args()
+    
+    # Check if video exists
+    if not Path(args.video).exists():
+        print(f"Error: Video file not found: {args.video}")
+        return 1
+    
+    # Initialize detector
+    try:
+        detector = VideoDeepfakeDetector(
+            model_path=args.model,
+            device=args.device,
+            sample_rate=args.sample_rate,
+            max_faces=args.max_faces,
+            batch_size=args.batch_size
+        )
+    except Exception as e:
+        print(f"Error initializing detector: {e}")
+        return 1
+    
+    # Analyze video
+    try:
+        result = detector.predict_video(
+            args.video,
+            output_json=args.output,
+            verbose=not args.quiet
+        )
+        
+        # Return exit code based on result
+        # 0 = REAL, 1 = FAKE, 2 = UNKNOWN/Error
+        if result.prediction == 'REAL':
+            return 0
+        elif result.prediction == 'FAKE':
+            return 1
+        else:
+            return 2
+            
+    except Exception as e:
+        print(f"\nError during video analysis: {e}")
+        import traceback
+        traceback.print_exc()
+        return 2
+
+
+if __name__ == '__main__':
+    exit(main())

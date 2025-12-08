@@ -816,6 +816,19 @@ async function renderEvidenceResults(data) {
                             </table>
                         </div>
                     ` : '<p style="margin-top: 20px; color: #666;">No frame-level predictions available</p>'}
+                    
+                    ${data.heatmap_paths && data.heatmap_paths.length > 0 ? `
+                        <h5 style="margin-top: 20px;"><i class="fas fa-fire"></i> Manipulation Heatmaps</h5>
+                        <p style="font-size: 0.9em; color: #666; margin-bottom: 10px;">Visual explanation of suspicious regions (Original | Heatmap | Overlay)</p>
+                        <div class="heatmap-gallery" style="display: flex; overflow-x: auto; gap: 15px; padding: 10px 0; padding-bottom: 5px;">
+                            ${data.heatmap_paths.map((path, idx) => `
+                                <div class="heatmap-card" style="flex: 0 0 auto; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <img src="${path}" alt="Heatmap ${idx + 1}" style="height: 180px; border-radius: 4px; cursor: pointer;" onclick="window.open('${path}', '_blank')">
+                                    <p style="font-size: 0.8em; margin-top: 8px; text-align: center; font-weight: bold;">Suspicious Frame ${idx + 1}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
                 ` : `
                     <h4 class="section-title"><i class="fas fa-brain"></i> Deepfake Detection Summary</h4>
                     <div class="deepfake-grid">

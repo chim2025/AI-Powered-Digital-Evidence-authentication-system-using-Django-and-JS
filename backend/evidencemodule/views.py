@@ -344,11 +344,30 @@ def analyze_evidence(request):
                         detector = VideoDeepfakeDetector()
                         yield 'data: {"progress": 40, "message": "Analyzing video frames (this may take a while)..."}\n\n'
                         
-                        # Run analysis
-                        video_result = detector.predict_video(file_path, verbose=False)
+                        # Prepare heatmap directory
+                        heatmap_rel_dir = f"heatmaps/{uuid.uuid4().hex}"
+                        heatmap_abs_dir = os.path.join(settings.MEDIA_ROOT, heatmap_rel_dir)
+                        
+                        # Run analysis with heatmap generation
+                        video_result = detector.predict_video(
+                            file_path, 
+                            verbose=False,
+                            heatmap_output_dir=heatmap_abs_dir
+                        )
                         
                         # Convert to dict
                         video_result_dict = video_result.to_dict()
+                        
+                        # Convert absolute heatmap paths to relative MEDIA URLs
+                        if video_result_dict.get('heatmap_paths'):
+                            heatmap_urls = []
+                            for abs_path in video_result_dict['heatmap_paths']:
+                                # Get path relative to MEDIA_ROOT
+                                rel_path = os.path.relpath(abs_path, settings.MEDIA_ROOT).replace("\\", "/")
+                                # Construct URL
+                                url = settings.MEDIA_URL.rstrip("/") + "/" + rel_path
+                                heatmap_urls.append(url)
+                            video_result_dict['heatmap_paths'] = heatmap_urls
                         
                         # Add to result
                         result["deepfake_video"] = video_result_dict
