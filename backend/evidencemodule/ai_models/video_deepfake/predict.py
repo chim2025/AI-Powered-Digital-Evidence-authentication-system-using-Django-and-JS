@@ -409,7 +409,7 @@ class VideoDeepfakeDetector:
                 faces_list=faces_list,
                 output_dir=heatmap_output_dir,
                 confidence_threshold=0.7,
-                max_frames=10
+                max_frames=None
             )
         
         # Build result
