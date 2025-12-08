@@ -1,0 +1,243 @@
+{
+    "file": "a6a6e31ff1a644328cc83e527f125ecb.mp4",
+    "tamper_probability": 0.6713,
+    "verdict": "SUSPICIOUS — NEEDS MANUAL REVIEW",
+    "features": {
+        "gop_irregularity": 0.0,
+        "duplicate_ratio": 18.58,
+        "cut_density": 0.633,
+        "metadata_flag": 0,
+        "prnu_full_calibration": {
+            "analysis_date": "2025-12-06T13:31:19",
+            "total_videos_requested": 1,
+            "videos_processed": [
+                {
+                    "video": "a6a6e31ff1a644328cc83e527f125ecb.mp4",
+                    "full_path": "C:\\Users\\profo\\Desktop\\evidence\\backend\\files\\a6a6e31ff1a644328cc83e527f125ecb.mp4",
+                    "frames_used": 1000,
+                    "patch_size": 32,
+                    "mean_corr": 0.1843,
+                    "median_corr": 0.1141,
+                    "std_corr": 0.2446,
+                    "mad_corr": 0.0702,
+                    "status": "ok"
+                }
+            ],
+            "global_statistics": {
+                "videos_analyzed": 1,
+                "mean_correlation": {
+                    "min": 0.1843,
+                    "p25": 0.1843,
+                    "median": 0.1843,
+                    "p75": 0.1843,
+                    "max": 0.1843
+                },
+                "std_correlation": {
+                    "min": 0.2446,
+                    "p25": 0.2446,
+                    "median": 0.2446,
+                    "p75": 0.2446,
+                    "max": 0.2446
+                },
+                "mad_correlation": {
+                    "min": 0.0702,
+                    "p25": 0.0702,
+                    "median": 0.0702,
+                    "p75": 0.0702,
+                    "max": 0.0702
+                }
+            },
+            "threshold_suggestions": {
+                "consistent_camera": {
+                    "mean_corr_min": 0.1843,
+                    "std_corr_max": 0.05,
+                    "mad_corr_max": 0.03
+                },
+                "possible_tampering": {
+                    "mean_corr_max": 0.018,
+                    "std_corr_min": 0.2446,
+                    "mad_corr_min": 0.0702
+                }
+            },
+            "histograms": {
+                "mean_corr": [
+                    {
+                        "range": "-0.3157–-0.1907",
+                        "count": 0
+                    },
+                    {
+                        "range": "-0.1907–-0.0657",
+                        "count": 0
+                    },
+                    {
+                        "range": "-0.0657–0.0593",
+                        "count": 0
+                    },
+                    {
+                        "range": "0.0593–0.1843",
+                        "count": 1
+                    },
+                    {
+                        "range": "0.1843–0.3093",
+                        "count": 0
+                    },
+                    {
+                        "range": "0.3093–0.4343",
+                        "count": 0
+                    },
+                    {
+                        "range": "0.4343–0.5593",
+                        "count": 0
+                    },
+                    {
+                        "range": "0.5593–0.6843",
+                        "count": 0
+                    }
+                ],
+                "std_corr": [
+                    {
+                        "range": "-0.2554–-0.1304",
+                        "count": 0
+                    },
+                    {
+                        "range": "-0.1304–-0.0054",
+                        "count": 0
+                    },
+                    {
+                        "range": "-0.0054–0.1196",
+                        "count": 0
+                    },
+                    {
+                        "range": "0.1196–0.2446",
+                        "count": 1
+                    },
+                    {
+                        "range": "0.2446–0.3696",
+                        "count": 0
+                    },
+                    {
+                        "range": "0.3696–0.4946",
+                        "count": 0
+                    },
+                    {
+                        "range": "0.4946–0.6196",
+                        "count": 0
+                    },
+                    {
+                        "range": "0.6196–0.7446",
+                        "count": 0
+                    }
+                ],
+                "mad_corr": [
+                    {
+                        "range": "-0.4298–-0.3048",
+                        "count": 0
+                    },
+                    {
+                        "range": "-0.3048–-0.1798",
+                        "count": 0
+                    },
+                    {
+                        "range": "-0.1798–-0.0548",
+                        "count": 0
+                    },
+                    {
+                        "range": "-0.0548–0.0702",
+                        "count": 0
+                    },
+                    {
+                        "range": "0.0702–0.1952",
+                        "count": 1
+                    },
+                    {
+                        "range": "0.1952–0.3202",
+                        "count": 0
+                    },
+                    {
+                        "range": "0.3202–0.4452",
+                        "count": 0
+                    },
+                    {
+                        "range": "0.4452–0.5702",
+                        "count": 0
+                    }
+                ]
+            }
+        },
+        "prnu_checkers": {
+            "video": "a6a6e31ff1a644328cc83e527f125ecb.mp4",
+            "full_path": "C:\\Users\\profo\\Desktop\\evidence\\backend\\files\\a6a6e31ff1a644328cc83e527f125ecb.mp4",
+            "frames_used": 1000,
+            "patch_size": 32,
+            "mean_corr": 0.1843,
+            "median_corr": 0.1141,
+            "std_corr": 0.2446,
+            "mad_corr": 0.0702,
+            "status": "ok",
+            "threshold_suggestions": {
+                "consistent_camera": {
+                    "mean_corr_min": 0.1843,
+                    "std_corr_max": 0.05,
+                    "mad_corr_max": 0.03
+                },
+                "possible_tampering": {
+                    "mean_corr_max": 0.018,
+                    "std_corr_min": 0.2446,
+                    "mad_corr_min": 0.0702
+                }
+            }
+        },
+        "explanations": {
+            "classification": "INCONSISTENT – POSSIBLE TAMPERING / MULTI-CAMERA",
+            "confidence": "Low",
+            "overall_score_0_100": 25,
+            "mean_corr": 0.1843,
+            "median_corr": 0.1141,
+            "std_corr": 0.2446,
+            "mad_corr": 0.0702,
+            "frames_used": 1000,
+            "thresholds_used": "adaptive/from_calibration",
+            "detailed_checks": {
+                "frames_sufficient": true,
+                "mean_corr_high_enough": true,
+                "mean_corr_too_low": false,
+                "std_corr_low_enough": false,
+                "std_corr_too_high": true,
+                "mad_corr_low_enough": false,
+                "mad_corr_too_high": true,
+                "no_computation_error": true
+            },
+            "explanation_bullets": [
+                "Mean corr 0.1843 ≥ 0.1843 → strong fingerprint (0.369 of typical max 0.50)",
+                "Std dev 0.2446 > 0.0500 → unstable (possible splicing) (0.489 of typical max 0.50)",
+                "MAD 0.0702 > 0.0300 → outliers in noise pattern (0.234 of typical max 0.30)",
+                "One or more metrics fall into tampering range"
+            ],
+            "benchmarks": {
+                "mean_corr": {
+                    "max_typical": 0.5,
+                    "min_typical": 0.02
+                },
+                "median_corr": {
+                    "max_typical": 0.5,
+                    "min_typical": 0.02
+                },
+                "std_corr": {
+                    "max_typical": 0.5,
+                    "min_typical": 0.0
+                },
+                "mad_corr": {
+                    "max_typical": 0.3,
+                    "min_typical": 0.0
+                }
+            },
+            "ratios": {
+                "mean_corr": 0.3686,
+                "median_corr": 0.2282,
+                "std_corr": 0.4892,
+                "mad_corr": 0.234
+            },
+            "raw_notes": "ok"
+        }
+    }
+}

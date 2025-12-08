@@ -30,6 +30,7 @@ import uuid
 import secrets
 import subprocess
 import datetime
+from .ai_models.video_section.transportlayer import executors
 
 from django.contrib.staticfiles.storage import staticfiles_storage
 
@@ -342,26 +343,30 @@ def analyze_evidence(request):
                     yield 'data: {"progress": 20, "message": "Initializing video deepfake detector..."}\n\n'
                     try:
                         detector = VideoDeepfakeDetector()
-                        yield 'data: {"progress": 40, "message": "Analyzing video frames (this may take a while)..."}\n\n'
+                        yield 'data: {"progress": 30, "message": "Intitializing deefake detection scripts (this may take a while)..."}\n\n'
                         
-                        # Run analysis
+                        
                         video_result = detector.predict_video(file_path, verbose=False)
                         
                         # Convert to dict
                         video_result_dict = video_result.to_dict()
                         
-                        # Add to result
+                        
                         result["deepfake_video"] = video_result_dict
                         
                         # Add summary verdict
                         result["summary"]["verdict"] = video_result_dict["prediction"]
                         result["summary"]["confidence"] = video_result_dict["confidence"]
+
+                        yield 'data: {"progress": 59, "message": "Analyzing bit by bit frames of the video..."}\n\n'
+                        result["major_analysis"]=executors(file_path)
+                        print(result["major_analysis"])
                         
-                        yield f'data: {json.dumps({"progress": 80, "message": f"Video analysis complete. Verdict: {video_result.prediction}"})}\n\n'
+                        yield f'data: {json.dumps({"progress": 88, "message": f"Video analysis complete. Verdict: {video_result.prediction}"})}\n\n'
                         
                     except Exception as e:
                         print(f"Video analysis error: {e}")
-                        yield f'data: {json.dumps({"progress": 80, "message": f"Video analysis failed: {str(e)}", "error": True})}\n\n'
+                        yield f'data: {json.dumps({"progress": 88, "message": f"Video analysis failed: {str(e)}", "error": True})}\n\n'
                         result["deepfake_video"] = {"error": str(e)}
 
                 # === Document ===
