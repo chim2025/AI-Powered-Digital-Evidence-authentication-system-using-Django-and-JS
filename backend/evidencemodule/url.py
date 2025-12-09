@@ -15,6 +15,8 @@ urlpatterns = [
     path("get_enriched/", views.get_enriched, name="get_enriched"),
     path('analysis_results/list/', views.list_analysis_results, name='analysis_results_list'),
     path('analysis_results/get/<str:filename>/', views.get_analysis_result, name='get_analysis_result'),
+   
+    path('vt-status/<str:task_id>/', views.vt_status, name='vt_status'),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.FILES_URL, document_root=settings.FILES_ROOT)

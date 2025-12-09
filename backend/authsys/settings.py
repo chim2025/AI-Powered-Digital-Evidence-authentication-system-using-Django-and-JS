@@ -156,8 +156,13 @@ RESPONSE_ROOT= os.path.join(BASE_DIR,'response')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'uploaded_files')
 FILES_ROOT = os.path.join(BASE_DIR, "files")
 FORENSIC_ROOT=os.path.join(BASE_DIR,'forensic_results')
+ANALYSIS_RESULTS_DIR = os.path.join(BASE_DIR, "analysis_results")
 
 # Directory for storing analysis JSON results
-ANALYSIS_RESULTS_DIR = os.path.join(BASE_DIR, "analysis_results")
 os.makedirs(ANALYSIS_RESULTS_DIR, exist_ok=True)
+os.makedirs(FORENSIC_ROOT, exist_ok=True)
+os.makedirs(FILES_ROOT, exist_ok=True)
+os.makedirs(MEDIA_ROOT, exist_ok=True)
+os.makedirs(RESPONSE_ROOT, exist_ok=True)
 CSRF_COOKIE_HTTPONLY = False
+VIRUSTOTAL_API_KEY= "2d20df93153f2c9559d3ef9e231e2cab6c170af6bf5cb21e1a5b26ef7cb1d424"
