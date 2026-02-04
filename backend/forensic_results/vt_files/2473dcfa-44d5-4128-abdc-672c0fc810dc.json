@@ -1,0 +1,18 @@
+{
+  "task_id": "2473dcfa-44d5-4128-abdc-672c0fc810dc",
+  "file_path": "C:\\Users\\profo\\Desktop\\evidence\\backend\\files\\293dfe662f8943a285330e6faa3569f4.mp4",
+  "created_at": "2025-12-17T12:37:31.555116",
+  "vt_status": "completed",
+  "vt_result": {
+    "malicious": 0,
+    "suspicious": 0,
+    "undetected": 61,
+    "harmless": 0,
+    "total_engines": 76,
+    "detection_ratio": "0/76",
+    "permalink": "https://www.virustotal.com/gui/file/9e9a85559df33c1bb4bea817ba0018cd1b6a47ae6478b73476aa4a3de073c0e0",
+    "sha256": "9e9a85559df33c1bb4bea817ba0018cd1b6a47ae6478b73476aa4a3de073c0e0"
+  },
+  "vt_started_at": "2025-12-17T12:39:31.192125",
+  "vt_completed_at": "2025-12-17T12:40:29.750931"
+}

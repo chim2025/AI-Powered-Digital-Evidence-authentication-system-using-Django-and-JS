@@ -15,7 +15,7 @@ import json
 from datetime import datetime
 import sys
 import os
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 
 # Add src to path for imports
 # Add src to path for imports
@@ -24,6 +24,7 @@ from dataclasses import dataclass, asdict
 from .src.models.architecture import DeepfakeDetector
 from .src.data.face_extraction import FaceExtractor
 from .src.data.dataset import get_transforms
+from .gradcam import VideoGradCAM
 
 
 @dataclass
@@ -59,6 +60,9 @@ class VideoPrediction:
     # Metadata
     processing_time: float
     timestamp: str
+    
+    # Visualizations
+    heatmap_paths: List[str] = field(default_factory=list)
     
     def to_dict(self):
         """Convert to dictionary for JSON serialization"""
@@ -109,15 +113,23 @@ class VideoDeepfakeDetector:
         self.model = DeepfakeDetector().to(self.device)
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()
-        print("✓ Model loaded")
+        print("âœ“ Model loaded")
         
         # Initialize face extractor
         self.face_extractor = FaceExtractor(device=str(self.device))
-        print("✓ Face extractor initialized")
+        print("âœ“ Face extractor initialized")
         
         # Get transforms for preprocessing
         self.transform = get_transforms('val')
-        print("✓ Transforms loaded")
+        print("âœ“ Transforms loaded")
+        
+        # Initialize Grad-CAM generator
+        self.gradcam = VideoGradCAM(
+            model_path=model_path,
+            device=device,
+            model=self.model
+        )
+        print("âœ“ Grad-CAM initialized")
         
     def extract_video_info(self, video_path: str) -> Dict:
         """Extract basic video information"""
@@ -201,8 +213,8 @@ class VideoDeepfakeDetector:
         
         Strategy: Hybrid approach
         - Count faces predicted as FAKE with high confidence
-        - If >30% of faces are FAKE with >70% confidence → Video is FAKE
-        - Otherwise → Video is REAL
+        - If >30% of faces are FAKE with >70% confidence â†’ Video is FAKE
+        - Otherwise â†’ Video is REAL
         
         This approach biases toward detecting deepfakes (better for forensics)
         while requiring strong evidence.
@@ -256,6 +268,7 @@ class VideoDeepfakeDetector:
         self,
         video_path: str,
         output_json: Optional[str] = None,
+        heatmap_output_dir: Optional[str] = None,
         verbose: bool = True
     ) -> VideoPrediction:
         """
@@ -331,13 +344,13 @@ class VideoDeepfakeDetector:
         if verbose:
             if len(faces_list) > 0:
                 unique_frames = len(set(f['frame_number'] for f in faces_list))
-                print(f"✓ Extracted {len(faces_list)} faces from {unique_frames} frames\n")
+                print(f"âœ“ Extracted {len(faces_list)} faces from {unique_frames} frames\n")
             else:
-                print(f"✓ Extracted 0 faces\n")
+                print(f"âœ“ Extracted 0 faces\n")
         
         if len(faces_list) == 0:
             if verbose:
-                print("⚠ No faces detected in video!")
+                print("âš  No faces detected in video!")
             
             # Return result with no faces
             return VideoPrediction(
@@ -352,7 +365,8 @@ class VideoDeepfakeDetector:
                 fake_face_percentage=0.0,
                 frame_predictions=[],
                 processing_time=(datetime.now() - start_time).total_seconds(),
-                timestamp=datetime.now().isoformat()
+                timestamp=datetime.now().isoformat(),
+                heatmap_paths=[]
             )
         
         # Run predictions
@@ -375,7 +389,7 @@ class VideoDeepfakeDetector:
             frame_predictions.append(frame_pred)
         
         if verbose:
-            print(f"✓ Processed {len(frame_predictions)} faces\n")
+            print(f"âœ“ Processed {len(frame_predictions)} faces\n")
         
         # Aggregate to video-level prediction
         video_pred, video_conf = self.aggregate_predictions(frame_predictions)
@@ -384,6 +398,19 @@ class VideoDeepfakeDetector:
         fake_count = sum(1 for fp in frame_predictions if fp.prediction == 'FAKE')
         real_count = sum(1 for fp in frame_predictions if fp.prediction == 'REAL')
         fake_percentage = (fake_count / len(frame_predictions)) * 100 if frame_predictions else 0
+        
+        # Generate heatmaps for suspicious frames if requested
+        heatmap_paths = []
+        if heatmap_output_dir and (video_pred == 'FAKE' or fake_count > 0):
+            if verbose:
+                print("Generating Grad-CAM heatmaps...")
+            heatmap_paths = self.gradcam.generate_for_suspicious_frames(
+                video_result=type('obj', (object,), {'frame_predictions': frame_predictions}),
+                faces_list=faces_list,
+                output_dir=heatmap_output_dir,
+                confidence_threshold=0.7,
+                max_frames=None
+            )
         
         # Build result
         result = VideoPrediction(
@@ -398,7 +425,8 @@ class VideoDeepfakeDetector:
             fake_face_percentage=fake_percentage,
             frame_predictions=frame_predictions,
             processing_time=(datetime.now() - start_time).total_seconds(),
-            timestamp=datetime.now().isoformat()
+            timestamp=datetime.now().isoformat(),
+            heatmap_paths=heatmap_paths
         )
         
         # Print summary
@@ -412,7 +440,7 @@ class VideoDeepfakeDetector:
             with open(output_path, 'w') as f:
                 json.dump(result.to_dict(), f, indent=2)
             if verbose:
-                print(f"\n✓ Results saved to: {output_json}")
+                print(f"\nâœ“ Results saved to: {output_json}")
         
         return result
     
@@ -430,11 +458,11 @@ class VideoDeepfakeDetector:
         print(f"Confidence: {result.confidence*100:.2f}%\n")
         
         print(f"Statistics:")
-        print(f"  • Processed frames: {result.processed_frames}/{result.total_frames}")
-        print(f"  • Total faces analyzed: {result.fake_face_count + result.real_face_count}")
-        print(f"  • Faces predicted as FAKE: {result.fake_face_count} ({result.fake_face_percentage:.1f}%)")
-        print(f"  • Faces predicted as REAL: {result.real_face_count}")
-        print(f"  • Processing time: {result.processing_time:.2f} seconds\n")
+        print(f"  â€¢ Processed frames: {result.processed_frames}/{result.total_frames}")
+        print(f"  â€¢ Total faces analyzed: {result.fake_face_count + result.real_face_count}")
+        print(f"  â€¢ Faces predicted as FAKE: {result.fake_face_count} ({result.fake_face_percentage:.1f}%)")
+        print(f"  â€¢ Faces predicted as REAL: {result.real_face_count}")
+        print(f"  â€¢ Processing time: {result.processing_time:.2f} seconds\n")
         
         # Show most suspicious frames
         if result.prediction == 'FAKE':
@@ -442,12 +470,11 @@ class VideoDeepfakeDetector:
                 [fp for fp in result.frame_predictions if fp.prediction == 'FAKE'],
                 key=lambda x: x.confidence,
                 reverse=True
-            )[:5]
+            )[:10]
             
             if suspicious_frames:
-                print(f"Most suspicious frames (top 5):")
+                print(f"Most suspicious frames (top 10):")
                 for i, fp in enumerate(suspicious_frames, 1):
                     print(f"  {i}. Frame {fp.frame_number} at {fp.timestamp:.2f}s - "
                           f"Confidence: {fp.confidence*100:.1f}%")
                 print()
-

@@ -58,7 +58,7 @@ def _save_uploaded_files(uploaded_files, folder_path):
     static_rel_paths = []      # paths relative to COMPARATOR_ROOT (for URLs)
 
     for uploaded_file in uploaded_files:
-        # keep the original name – Django already sanitises it
+       
         original_name = uploaded_file.name
         abs_path      = os.path.join(folder_path, original_name)
 
@@ -67,7 +67,7 @@ def _save_uploaded_files(uploaded_files, folder_path):
                 dest.write(chunk)
 
         saved_paths.append(abs_path)
-        # relative path → will be served as static/comparator/<folder>/<name>
+     
         rel_path = os.path.join(os.path.basename(folder_path), original_name)
         static_rel_paths.append(rel_path)
 
@@ -97,7 +97,7 @@ def save_analysis_json(result_obj, prefix="analysis"):
     filename = f"{prefix}_{ts}_{uuid.uuid4().hex}.json"
     filepath = os.path.join(out_dir, filename)
 
-    # Recursive conversion
+    
     def _convert(obj):
         if isinstance(obj, dict):
             return {k: _convert(v) for k, v in obj.items()}
@@ -115,11 +115,11 @@ def save_analysis_json(result_obj, prefix="analysis"):
         return settings.MEDIA_URL.rstrip("/") + "/" + rel
     return filepath
 
-#Index Page
+
 def index(request):
     return render(request, 'index.html')
 
-# User Registration
+
 def register_user(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -376,12 +376,28 @@ def analyze_evidence(request):
                     try:
                         detector = VideoDeepfakeDetector()
                         yield 'data: {"progress": 30, "message": "Intitializing deefake detection scripts (this may take a while)..."}\n\n'
+                        heatmap_rel_dir = f"heatmaps/{uuid.uuid4().hex}"
+                        heatmap_abs_dir = os.path.join(settings.MEDIA_ROOT, heatmap_rel_dir)
                         
-                        
-                        video_result = detector.predict_video(file_path, verbose=False)
+
+                        video_result = detector.predict_video(
+                            file_path, 
+                            verbose=False,
+                            heatmap_output_dir=heatmap_abs_dir
+                        )
+                        video_result_dict = video_result.to_dict()
+                        if video_result_dict.get('heatmap_paths'):
+                            heatmap_urls = []
+                            for abs_path in video_result_dict['heatmap_paths']:
+                                # Get path relative to MEDIA_ROOT
+                                rel_path = os.path.relpath(abs_path, settings.MEDIA_ROOT).replace("\\", "/")
+                                # Construct URL
+                                url = settings.MEDIA_URL.rstrip("/") + "/" + rel_path
+                                heatmap_urls.append(url)
+                            video_result_dict['heatmap_paths'] = heatmap_urls
                         
                         # Convert to dict
-                        video_result_dict = video_result.to_dict()
+                        
                         
                         
                         result["deepfake_video"] = video_result_dict
@@ -390,7 +406,7 @@ def analyze_evidence(request):
                         result["summary"]["verdict"] = video_result_dict["prediction"]
                         result["summary"]["confidence"] = video_result_dict["confidence"]
 
-                        yield 'data: {"progress": 59, "message": "Analyzing bit by bit frames of the video..."}\n\n'
+                        yield 'data: {"progress": 69, "message": "Analyzing bit by bit frames of the video..."}\n\n'
                         result["major_analysis"]=executors(file_path)
                         print(result["major_analysis"])
                         

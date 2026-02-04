@@ -149,7 +149,7 @@ MEDIA_URL = '/media/'
 FILES_URL= '/files/'
 RESPONSE_URL= '/response/steganography/'
 COMPARATOR_URL='/response/comparator'
-FORENSIC_URL='/foresnics/'
+FORENSIC_URL='/forensics/'
 
 RESPONSE_ROOT= os.path.join(BASE_DIR,'response')
 

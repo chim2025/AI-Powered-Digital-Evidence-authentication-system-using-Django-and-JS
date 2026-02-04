@@ -77,59 +77,72 @@ class RealVideoForensics:
    
     def run(self):
         print(f"\nAnalyzing: {self.name}")
-
-        features = {}
-        printable_metadata=Printable_and_Metadata(self.path)
-        features["important_Metadata"]=printable_metadata.extract_text_and_metadata()
-        features['printable_strings']=printable_metadata.extract_raw_printable_strings()
-        features["gop_irregularity"] = self.compute_gop_irregularity()
-        features["duplicate_ratio"] = self.compute_duplicate_ratio()
-        features["cut_density"] = self.compute_cut_density()
-        
-       
-        features["metadata_flag"] = int(self.check_metadata_suspicion())
-        
-        calibration = calibrate_prnu_from_videos(self.path)
-        features["prnu_full_calibration"] = calibration  # NEW: Include ALL calibration details
-        
-        if not calibration["videos_processed"] or "mean_corr" not in calibration["videos_processed"][0]:
-            verdict = {"classification": "PRNU ANALYSIS FAILED", "confidence": "N/A", "overall_score_0_100": 0}
-            prnu_clean = {"error": "Could not compute PRNU"}
-        else:
-            prnu_clean = calibration["videos_processed"][0].copy()
-            prnu_clean.pop("prnu_ref", None)  
-            prnu_clean["threshold_suggestions"] = calibration.get("threshold_suggestions", {})  # FIX: Enable adaptive thresholds
-            verdict = prnu_detailed_verdict(prnu_clean, use_strict_thresholds=False)
-        
-        features["prnu_checkers"] = prnu_clean
-        features["explanations"] = verdict 
-        
-        probability = self.classify(features)
-   
-        if probability > 0.85:
-            verdict_str = "TAMPERED — HIGH CONFIDENCE"
-        elif probability > 0.60:
-            verdict_str = "SUSPICIOUS — NEEDS MANUAL REVIEW"
-        else:
-            verdict_str = "NO STRONG EVIDENCE OF TAMPERING"
-      
-        report = {
-            "file": self.name,
-            "tamper_probability": round(probability, 4),
-            "verdict": verdict_str,
-            "features": features
-        }
-        save_info = save_json_report(report)
+        try:
 
 
-        self.pretty_print(report)
+            features = {}
+            metadata={}
+            printable_metadata=Printable_and_Metadata(self.path)
+            metadata["important_Metadata"]=printable_metadata.extract_text_and_metadata()
+            metadata['printable_strings']=printable_metadata.extract_raw_printable_strings()
+            features["gop_irregularity"] = self.compute_gop_irregularity()
+            features["duplicate_ratio"] = self.compute_duplicate_ratio()
+            features["cut_density"] = self.compute_cut_density()
+            
+        
+            features["metadata_flag"] = int(self.check_metadata_suspicion())
+            
+            calibration = calibrate_prnu_from_videos(self.path)
+            features["prnu_full_calibration"] = calibration  # NEW: Include ALL calibration details
+            
+            if not calibration["videos_processed"] or "mean_corr" not in calibration["videos_processed"][0]:
+                verdict = {"classification": "PRNU ANALYSIS FAILED", "confidence": "N/A", "overall_score_0_100": 0}
+                prnu_clean = {"error": "Could not compute PRNU"}
+            else:
+                prnu_clean = calibration["videos_processed"][0].copy()
+                prnu_clean.pop("prnu_ref", None)  
+                prnu_clean["threshold_suggestions"] = calibration.get("threshold_suggestions", {}) 
+                verdict = prnu_detailed_verdict(prnu_clean, use_strict_thresholds=False)
+            
+            features["prnu_checkers"] = prnu_clean
+            features["explanations"] = verdict 
+            
+            probability = self.classify(features)
+    
+            if probability > 0.85:
+                verdict_str = "TAMPERED — HIGH CONFIDENCE"
+            elif probability > 0.60:
+                verdict_str = "SUSPICIOUS — NEEDS MANUAL REVIEW"
+            else:
+                verdict_str = "NO STRONG EVIDENCE OF TAMPERING"
+        
+            report = {
+                "file": self.name,
+                "tamper_probability": round(probability, 4),
+                "verdict": verdict_str,
+                "metadata": metadata,
+                "features": features
+                
+            }
+            save_info = save_json_report(report)
 
-        return {
-            "file": self.name,
-            "tamper_probability": report["tamper_probability"],
-            "verdict": report["verdict"],
-            "report_reference": save_info
-        }
+
+            self.pretty_print(report)
+
+            return {
+                "file": self.name,
+                "tamper_probability": report["tamper_probability"],
+                "verdict": report["verdict"],
+                "report_reference": save_info
+            }
+        except Exception as e:
+            print(f"Error occured here: {e}")
+            return {
+                'file': "Not returned",
+                "error": e
+            }
+
+
 
    
     def classify(self, f):

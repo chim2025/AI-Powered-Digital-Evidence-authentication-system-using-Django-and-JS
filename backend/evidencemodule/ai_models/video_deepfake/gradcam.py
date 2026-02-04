@@ -252,7 +252,8 @@ class VideoGradCAM:
     def __init__(
         self,
         model_path: str = 'models/checkpoints/best_model.pth',
-        device: str = 'cuda'
+        device: str = 'cuda',
+        model: Optional[DeepfakeDetector] = None
     ):
         """
         Initialize Video Grad-CAM generator
@@ -260,13 +261,20 @@ class VideoGradCAM:
         Args:
             model_path: Path to trained model checkpoint
             device: 'cuda' or 'cpu'
+            model: Optional pre-loaded model instance
         """
         self.device = torch.device(device if torch.cuda.is_available() else 'cpu')
         
-        # Load model
-        self.model = DeepfakeDetector().to(self.device)
-        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
-        self.model.eval()
+        if model is not None:
+            self.model = model
+            # Ensure model is on correct device
+            self.model.to(self.device)
+            self.model.eval()
+        else:
+            # Load model
+            self.model = DeepfakeDetector().to(self.device)
+            self.model.load_state_dict(torch.load(model_path, map_location=self.device))
+            self.model.eval()
         
         # Initialize Grad-CAM
         self.gradcam = GradCAM(self.model, device=str(self.device))
@@ -322,7 +330,7 @@ class VideoGradCAM:
             )
             
             if face_data is None:
-                print(f"  ⚠ Frame {frame_pred.frame_number}: Face data not found")
+                print(f"  âš  Frame {frame_pred.frame_number}: Face data not found")
                 continue
             
             face_image = face_data['face']
@@ -349,9 +357,9 @@ class VideoGradCAM:
             saved_paths.append(str(output_path))
             
             print(f"  [{i}/{len(suspicious_frames)}] Frame {frame_pred.frame_number} "
-                  f"(conf: {confidence*100:.1f}%) → {output_path.name}")
+                  f"(conf: {confidence*100:.1f}%) â†’ {output_path.name}")
         
-        print(f"\n✓ Generated {len(saved_paths)} heatmaps in: {output_dir}")
+        print(f"\nâœ“ Generated {len(saved_paths)} heatmaps in: {output_dir}")
         
         return saved_paths
 
@@ -398,7 +406,7 @@ def demo_gradcam(
         confidence=confidence
     )
     
-    print(f"✓ Saved visualization to: {output_path}")
+    print(f"âœ“ Saved visualization to: {output_path}")
 
 
 if __name__ == '__main__':

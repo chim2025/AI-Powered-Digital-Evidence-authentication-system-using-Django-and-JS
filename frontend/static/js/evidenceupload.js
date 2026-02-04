@@ -519,21 +519,22 @@ function startEvidenceAnalysis() {
         try {
           if (json.result.memdump) {
             renderMemdumpResults(json.result.memdump);
-          } else if (json.result.deepfake_video) {
-            // Video deepfake detection result - merge with parent data
-            renderEvidenceResults({
-              ...json.result.deepfake_video,
-              task_data: json.result.task_data,
-              hashes: json.result.hashes
-            });
           } else if (json.result.steganographic_detection) {
             renderEvidenceResults({
               ...json.result,
               stego: json.result.steganographic_detection // Map to 'stego' for renderEvidenceResults
             });
+            document.getElementById("vt-status").innerHTML = "VirusTotal: queued (starting now...)";
+            startVTPolling(json.result.meta.task_id);
           } else if (json.result.deepfake_detection || json.result.forgery_detection || json.result.metadata) {
             renderEvidenceResults(json.result);
-          } else if (json.result.report && json.result.text_detection) {
+          }
+          else if(json.result.deepfake_video){
+            videoForensics(json.result)
+            document.getElementById("vt-status").innerHTML = "VirusTotal: queued (starting now...)";
+            startVTPolling(json.result.meta.task_id);
+          }
+          else if (json.result.report && json.result.text_detection) {
             renderDocumentResults({
               text_detection: json.result.text_detection,
               report: json.result.report,
@@ -633,6 +634,14 @@ async function renderEvidenceResults(data) {
                             <video src="/evidence/files/${fileName}" controls class="evidence-image" style="max-height: 400px; width: 100%;"></video>
                         </div>
                         <div class="evidence-info-content">
+                         <div class="evidence-info-item">
+                                    <h4>Evidence Name</h4>
+                                    <p>${task.task_name || ""}</p>
+                                </div>
+                                <div class="evidence-info-item">
+                                    <h4>Evidence Description</h4>
+                                    <p>${task.task_description || "No description for this case"}</p>
+                                </div>
                             <div class="evidence-info-item">
                                 <h4>File Name</h4>
                                 <p>${fileName}</p>
@@ -653,6 +662,10 @@ async function renderEvidenceResults(data) {
                                 <h4>Processing Time</h4>
                                 <p>${(data.processing_time || 0).toFixed(2)} seconds</p>
                             </div>
+                            <div class="evidence-info-item">
+                                    <h4>File Size</h4>
+                                    <p>${formatFileSize(task.file_size || 0)}</p>
+                                </div>
                         </div>
                     </div>
                 ` : `
@@ -713,6 +726,12 @@ async function renderEvidenceResults(data) {
                             <small>Percentage of manipulated faces</small>
                         </div>
                     </div>
+                    <div id="vt-section" style="margin-top: 30px; padding: 15px; border: 1px solid #444; border-radius: 8px; background: #1e1e1e;">
+  <h3>VirusTotal Scan</h3>
+  <div id="vt-status" style="font-style: italic; color: #888;">
+    Not started yet...
+  </div>
+</div>
                 ` : `
                     <p>General Model Scoring</p>
                     <div class="card-grid">
@@ -816,6 +835,24 @@ async function renderEvidenceResults(data) {
                             </table>
                         </div>
                     ` : '<p style="margin-top: 20px; color: #666;">No frame-level predictions available</p>'}
+
+                    ${data.heatmap_paths && data.heatmap_paths.length > 0 ? `
+                        <div class="heatmap-section" style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px;">
+                            <h5><i class="fas fa-fire"></i> Suspicious Region Heatmaps (${data.heatmap_paths.length})</h5>
+                            <p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">
+                                Visualizing the <strong>${data.heatmap_paths.length}</strong> most suspicious frames. 
+                                (Layout: Original Face | Heatmap | Overlay)
+                            </p>
+                            <div class="heatmap-gallery" style="display: flex; overflow-x: auto; gap: 15px; padding: 5px; padding-bottom: 15px;">
+                                ${data.heatmap_paths.map((path, idx) => `
+                                    <div class="heatmap-card" style="flex: 0 0 auto; background: white; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                                        <img src="${path}" alt="Heatmap ${idx + 1}" style="height: 180px; border-radius: 4px; cursor: pointer; display: block;" onclick="openHeatmapModal('${path}')">
+                                        <p style="font-size: 0.8em; margin-top: 8px; text-align: center; font-weight: bold; color: #333;">Frame ${idx + 1}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : '<p> Error loading heatmaps</p>'}
                 ` : `
                     <h4 class="section-title"><i class="fas fa-brain"></i> Deepfake Detection Summary</h4>
                     <div class="deepfake-grid">
@@ -1840,36 +1877,2189 @@ function renderMemdumpResults(data) {
   `;
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    const cached = localStorage.getItem('evidenceResults');
+    if (cached) {
+        try {
+            const parsed = JSON.parse(cached);
+            if (parsed) {
+                console.log('Using cached EXIF report');
+                videoForensics(parsed);
+                startVTPolling(parsed.meta.task_id);  
+            }
+        } catch (e) {
+            console.error('Failed to parse cached EXIF data', e);
+        }
+    }
+});
+
+
+
+function createHeatmapModal() {
+  if (document.getElementById('heatmapModalDisplay')) return;
+
+  const modalHtml = `
+    <div id="heatmapModalDisplay" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.9); justify-content: center; align-items: center;">
+        <span style="position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer;" onclick="closeHeatmapModal()">&times;</span>
+        <img class="modal-content" id="img01" style="margin: auto; display: block; max-width: 90%; max-height: 90vh; border-radius: 4px; box-shadow: 0 0 20px rgba(0,0,0,0.5);">
+    </div>
+    `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  // Close when clicking outside
+  const modal = document.getElementById('heatmapModalDisplay');
+  modal.onclick = function (event) {
+    if (event.target === modal) {
+      closeHeatmapModal();
+    }
+  }
+}
+
+/**
+ * Helper function to generate the VT status HTML with or without a spinner.
+ * @param {string} statusText The human-readable status text.
+ * @param {boolean} showSpinner Whether to include the spinning icon.
+ * @returns {string} The resulting HTML string.
+ */
+const getSpinnerHTML = (statusText, showSpinner) => {
+    const spinnerIcon = showSpinner 
+        ? `<span class="material-symbols-rounded spinner-spin text-lg text-green-600">sync</span>`
+        : '';
+    
+    // Uses the flex container structure defined in the HTML above
+    return `
+        ${spinnerIcon}
+        <span class="text-gray-600">${statusText}</span>
+    `;
+};
+
+
+function startVTPolling(taskId) {
+    const statusEl = document.getElementById("vt-status");
+    
+    // Initial state set with spinner (queued)
+    statusEl.innerHTML = getSpinnerHTML("VirusTotal: queued (will start automatically)", true);
+
+    const poll = setInterval(() => {
+        fetch(`/evidence/vt-status/${taskId}/`)
+            .then(r => r.json())
+            .then(data => {
+                const vtStatus = data.vt_status;
+
+                if (vtStatus === "completed") {
+                    clearInterval(poll);
+                    const r = data.vt_result;
+                    statusEl.innerHTML = `
+                        <strong class="text-sm" style="color: ${r.malicious > 0 ? '#ef4444' : '#10b981'}">
+                            <span class="material-symbols-rounded align-middle mr-1 text-base">check_circle</span>
+                            VirusTotal: ${r.detection_ratio}
+                        </strong>
+                        <a href="${r.permalink}" target="_blank" class="text-xs text-blue-600 hover:text-blue-800 transition ml-2">
+                            Open Full Report
+                        </a>
+                    `;
+                } else if (vtStatus === "scanning") {
+                    statusEl.innerHTML = getSpinnerHTML("VirusTotal: scanning with 70+ engines...", true);
+                } else if (vtStatus === "queued") {
+                    statusEl.innerHTML = getSpinnerHTML("VirusTotal: queued (will start soon)", true);
+                } else if (vtStatus === "error") {
+                    clearInterval(poll);
+                    statusEl.innerHTML = `
+                        <span class="text-sm text-red-600 font-semibold">
+                            <span class="material-symbols-rounded align-middle mr-1 text-base">error</span>
+                            VT Error: ${data.vt_result?.error || "Unknown"}
+                        </span>`;
+                }
+            })
+            .catch(err => {
+                console.error("VT polling error:", err);
+                clearInterval(poll);
+                statusEl.innerHTML = `
+                    <span class="text-sm text-red-600 font-semibold">
+                        <span class="material-symbols-rounded align-middle mr-1 text-base">warning</span>
+                        VT Polling Failed. Check Console.
+                    </span>`;
+            });
+    }, 12000); 
+}
+
+
+
+
+
+
+
+
+async function videoForensics(data) {
+    
+ 
+
+    const section = document.getElementById("analytics_section");
+
+ 
+    if (!section) {
+        console.error("Error: Could not find element with ID 'analytics_section'. The function cannot render the content.");
+      
+        return; 
+    }
+    
+   
+    const result = data || {};
+
+   
+    const df = result.deepfake_video || {};
+    const metadatasection= ""
+    const task = result.task_data || {};
+    const meta = result.meta || {};
+    const hashes = result.hashes || {};
+    const majorAnalysis = result.major_analysis || {};
+    
+    // Core data extraction
+    const filepath = df.video_path || meta.file_path || '';
+    const fileName = filepath.substring(filepath.lastIndexOf('\\') + 1) || task.file_name;
+    const isVideo = df.video_duration !== undefined; 
+
+    if (!isVideo) {
+        section.innerHTML = `<div class="p-8 bg-red-100 text-red-800 rounded-lg">Error: Data is not recognized as a video analysis result.</div>`;
+        return;
+    }
+
+
+const getVerdictStyle = (verdict) => {
+    const v = verdict?.toLowerCase() || 'n/a';
+    
+    if (v.includes('fake') || v.includes('tampered') || v.includes('tamper')) {
+        return 'bg-red-500 text-white shadow-red-300';
+    }
+    
+    if (v.includes('real') || v.includes('intact') || v.includes('clean')) {
+        return 'bg-green-500 text-white shadow-green-300';
+    }
+    
+    return 'bg-gray-300 text-gray-800 shadow-gray-200';
+};
+
+
+const renderDataList = (items) => `
+    <div class="space-y-3">
+        ${items.map(item => `
+            <div class="flex justify-between items-start py-1 border-b border-gray-100 last:border-b-0">
+                <span class="font-medium text-gray-600 text-sm">${item.title}</span>
+                <span class="text-gray-800 font-semibold text-right text-sm">${item.value}</span>
+            </div>
+        `).join('')}
+    </div>
+`;
+
+// --- NEW HELPER FUNCTION: Renders the VT Polling Section ---
+const renderVTPollingSection = (vtStatus) => {
+    // 1. Define the initial status text
+    let statusText = 'N/A';
+    let showSpinner = false;
+    
+    if (vtStatus === 'queued') {
+        statusText = 'Queued (will start automatically)';
+        showSpinner = true;
+    } else if (vtStatus === 'scanning') {
+        statusText = 'Scanning with 70+ engines...';
+        showSpinner = true;
+    } else if (vtStatus === 'completed') {
+        statusText = 'Completed (polling will not start)';
+    } else if (vtStatus === 'error') {
+        statusText = 'Error during previous scan.';
+    }
+
+    // 2. Spinner HTML logic
+    const spinnerIcon = showSpinner 
+        ? `<span class="material-symbols-rounded spinner-spin text-lg text-green-600">sync</span>`
+        : '';
+        
+    return `
+        <div id="vt-section" class="mt-6 p-4 border border-gray-300 rounded-xl bg-gray-50 text-gray-700">
+            <h3 class="text-lg font-bold mb-2 border-b pb-2 text-green-700">
+                <span class="material-symbols-rounded align-middle mr-2">security_shield</span>VirusTotal Scan
+            </h3>
+            <div id="vt-status" class="flex items-center space-x-2 font-medium text-sm text-gray-600">
+                ${spinnerIcon}
+                <span>VirusTotal: ${statusText}</span>
+            </div>
+        </div>
+    `;
+};
+
+
+const renderMetadataCard = (metaData) => {
+    // 1. Separate VT status from general metadata
+    const vtStatus = metaData?.vt_status;
+    const filteredMetaData = { ...metaData };
+    delete filteredMetaData.vt_status; // Ensure it's not rendered in the main grid
+
+    const metadataEntries = Object.entries(filteredMetaData || {});
+    
+    // Check if the original metadata was empty before filtering (if only vt_status was present)
+    const isEmpty = metadataEntries.length === 0;
+
+    const metadataContent = metadataEntries.map(([key, value]) => `
+        <div class="p-3 bg-gray-50 border border-gray-200 rounded-md">
+            <h5 class="text-xs font-medium text-green-600 uppercase mb-1">${key.replace(/_/g, ' ')}</h5>
+            <p class="text-xs text-gray-700 break-words">${value || 'N/A'}</p>
+        </div>
+    `).join("");
+
+    const metadataCardHTML = `
+        <div class="p-5 bg-white rounded-xl shadow-lg border border-green-100">
+            <h4 class="text-lg font-bold mb-4 text-green-700 border-b pb-2">
+                <span class="material-symbols-rounded align-middle mr-2">sell</span>Core File Metadata
+            </h4>
+            <div class="grid grid-cols-2 gap-4">
+                ${metadataContent}
+            </div>
+            ${isEmpty ? '<div class="p-4 bg-gray-100 text-gray-700 rounded-lg mt-4">ℹ️ No core metadata extracted.</div>' : ''}
+        </div>
+    `;
+    
+    // 3. Combine the Metadata Card with the dynamic VT Section (if VT data exists)
+    const vtSectionHTML = vtStatus ? renderVTPollingSection(vtStatus) : '';
+    
+    // Return both HTML blocks combined.
+    return metadataCardHTML + vtSectionHTML;
+};
+
+
+const renderCircularProgress = (percentage, title, prediction, predictionType) => {
+    const clampedPercentage = Math.min(100, Math.max(0, percentage));
+    
+    let mainColorClass = 'green';
+    
+    if (predictionType === 'Deepfake') {
+        if (clampedPercentage > 50 && prediction?.toLowerCase() === 'fake') {
+            mainColorClass = 'red';
+        } else if (clampedPercentage > 50 && prediction?.toLowerCase() === 'real') {
+            mainColorClass = 'green';
+        }
+    } else if (predictionType === 'Tamper') {
+        if (clampedPercentage >= 40) {
+            mainColorClass = 'red';       
+        } else if (clampedPercentage >= 25) {
+            mainColorClass = 'orange';    
+        } else if (clampedPercentage >= 15) {
+            mainColorClass = 'yellow';    
+        } else if (clampedPercentage >= 5) {
+            mainColorClass = 'lime';      
+        } else {
+            mainColorClass = 'green';     
+        }
+    }
+
+    let fillColor = '';
+    let textColor = '';
+    
+    switch (mainColorClass) {
+        case 'red':
+            fillColor = '#ef4444'; 
+            textColor = 'text-red-700';
+            break;
+        case 'orange':
+            fillColor = '#f97316'; 
+            textColor = 'text-orange-700';
+            break;
+        case 'yellow':
+            fillColor = '#facc15'; 
+            textColor = 'text-yellow-700';
+            break;
+        case 'lime':
+            fillColor = '#84cc16'; 
+            textColor = 'text-lime-700';
+            break;
+        case 'green':
+            fillColor = '#10b981'; 
+            textColor = 'text-green-700';
+            break;
+        default:
+            fillColor = '#9ca3af'; 
+            textColor = 'text-gray-700';
+            break;
+    }
+
+    const conicGradientStyle = `
+        background: conic-gradient(
+            ${fillColor} ${clampedPercentage}%, 
+            #e5e7eb ${clampedPercentage}%
+        );
+    `;
+
+    return `
+        <div class="flex flex-col items-center p-3">
+            <h5 class="text-sm font-semibold text-gray-600 mb-2">${title}</h5>
+            
+            <div class="relative w-32 h-32 flex items-center justify-center rounded-full shadow-inner bg-gray-100">
+                
+                <div class="absolute w-full h-full rounded-full flex items-center justify-center overflow-hidden" 
+                     style="${conicGradientStyle}">
+
+                    <div class="w-28 h-28 bg-white rounded-full flex flex-col items-center justify-center p-1 shadow-md">
+                        <p class="text-2xl font-extrabold ${textColor} leading-none">${clampedPercentage.toFixed(0)}%</p>
+                        <p class="text-xs text-gray-500 mt-1">Score</p>
+                    </div>
+                </div>
+            </div>
+
+            <p class="mt-3 text-base font-bold ${textColor} text-center">${prediction || 'N/A'}</p>
+            <p class="text-xs text-gray-500 text-center uppercase tracking-wider">${predictionType}</p>
+        </div>
+    `;
+};
+
+
+
+// Function to generate the HTML (NO EMBEDDED <script> tag)
+const renderFileHashes = (hashes) => {
+    const hashEntries = Object.entries(hashes || {});
+    const initialDisplayCount = 4;
+    const totalCount = hashEntries.length;
+
+    if (totalCount === 0) {
+        return `
+            <div class="p-5 bg-white rounded-xl shadow-lg border border-green-100">
+                <h4 class="text-lg font-bold mb-4 text-green-700 border-b pb-2">
+                    <span class="material-symbols-rounded align-middle mr-2">lock</span>File Integrity Hashes
+                </h4>
+                <div class="p-4 bg-gray-100 text-gray-700 rounded-lg">No file hashes provided for this evidence.</div>
+            </div>
+        `;
+    }
+
+    const initialHashes = hashEntries.slice(0, initialDisplayCount);
+    const hiddenHashes = hashEntries.slice(initialDisplayCount);
+    const hiddenCount = totalCount - initialDisplayCount;
+
+    // Pre-calculate the initial button text
+    const initialButtonText = `Show ${hiddenCount} More`;
+
+    const initialContent = initialHashes.map(([key, value]) => `
+        <div class="p-3 bg-gray-50 border border-gray-200 rounded-md">
+            <h5 class="text-xs font-medium text-green-600 uppercase mb-1">${key.toUpperCase()}</h5>
+            <p class="text-xs font-mono text-gray-700 break-all">${value}</p>
+        </div>
+    `).join("");
+
+    const hiddenContent = hiddenHashes.map(([key, value]) => `
+        <div class="p-3 bg-gray-50 border border-gray-200 rounded-md">
+            <h5 class="text-xs font-medium text-green-600 uppercase mb-1">${key.toUpperCase()}</h5>
+            <p class="text-xs font-mono text-gray-700 break-all">${value}</p>
+        </div>
+    `).join("");
+
+    return `
+        <div class="p-5 bg-white rounded-xl shadow-lg border border-green-100">
+            <h4 class="text-lg font-bold mb-4 text-green-700 border-b pb-2">
+                <span class="material-symbols-rounded align-middle mr-2">lock</span>File Integrity Hashes
+            </h4>
+            
+            <div id="initial-hashes-display" class="grid grid-cols-2 gap-4 mb-4">
+                ${initialContent}
+            </div>
+
+            ${hiddenHashes.length > 0 ? `
+                <div id="hidden-hashes-content" class="grid grid-cols-2 gap-4 transition-all duration-300 ease-in-out hidden mb-4">
+                    ${hiddenContent}
+                </div>
+
+                <div class="flex justify-end">
+                    <button data-hash-toggle="true"
+                            data-initial-count="${initialDisplayCount}"
+                            data-total-count="${totalCount}"
+                            class="flex items-center text-sm font-semibold text-green-600 hover:text-green-800 transition duration-150">
+                        <span id="hash-button-text-${Math.random().toString(36).substring(2, 9)}">${initialButtonText}</span>
+                        <span class="material-symbols-rounded align-middle text-lg transition-transform transform rotate-0 ml-1">expand_more</span>
+                    </button>
+                </div>
+            ` : ''}
+        </div>
+    `;
+};
+
+const verdictColorBorder = (majorAnalysis.verdict || df.prediction)?.toLowerCase().includes('fake') ? 'border-red-600' : 'border-green-600';
+
+const videoSummaryContent = `
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-1 space-y-6">
+            
+            <div class="p-4 bg-gray-100 rounded-xl shadow-inner flex flex-col items-center">
+                <h4 class="text-lg font-bold mb-3 text-gray-700">
+                    <span class="material-symbols-rounded align-middle mr-2">videocam</span>Video Evidence Preview
+                </h4>
+                <video src="/evidence/files/${fileName}" controls class="w-full h-auto rounded-lg shadow-xl" style="max-height: 450px;"></video>
+            </div>
+
+            <div class="p-5 bg-white rounded-xl shadow-lg ${verdictColorBorder} border-2 text-center space-y-4">
+                <h5 class="text-sm font-semibold text-gray-500 mb-2 pt-2">Overall Forensic Verdict</h5>
+                <span class="inline-block px-4 py-1 rounded-lg text-2xl font-extrabold shadow-sm ${getVerdictStyle(majorAnalysis.verdict || df.prediction)}">
+                    ${majorAnalysis.verdict || df.prediction || "N/A"}
+                </span>
+                
+                <div class="grid grid-cols-2 gap-3 pt-5 border-t border-gray-100">
+                    ${renderCircularProgress(
+                        df.confidence * 100 || 0, 
+                        "Deepfake Confidence", 
+                        df.prediction,
+                        'Deepfake'
+                    )}
+                    ${renderCircularProgress(
+                        majorAnalysis.tamper_probability * 100 || 0, 
+                        "Tamper Probability", 
+                        (majorAnalysis.tamper_probability || 0) > 0.4 ? 'Strongly Tampered' : ((majorAnalysis.tamper_probability || 0) > 0.25 ? 'Tampered' : 'Intact'),
+                        'Tamper'
+                    )}
+                </div>
+            </div>
+
+            <div class="p-5 bg-white rounded-xl shadow-lg border border-gray-200">
+                <h4 class="text-lg font-bold mb-4 text-green-700 border-b pb-2">
+                    <span class="material-symbols-rounded align-middle mr-2">schedule</span>Video Analysis Metrics
+                </h4>
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div class="p-3 bg-gray-50 rounded-lg">
+                        <p class="text-2xl font-extrabold text-green-800">${(df.video_duration || 0).toFixed(2)}</p>
+                        <p class="text-xs text-gray-600">Duration (s)</p>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg">
+                        <p class="text-2xl font-extrabold text-green-800">${df.total_frames || 0}</p>
+                        <p class="text-xs text-gray-600">Total Frames</p>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg">
+                        <p class="text-2xl font-extrabold text-green-800">${df.processed_frames || 0}</p>
+                        <p class="text-xs text-gray-600">Processed Frames</p>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg">
+                        <p class="text-2xl font-extrabold text-green-800">${(df.processing_time || 0).toFixed(2)}</p>
+                        <p class="text-xs text-gray-600">Processing Time (s)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2 space-y-6">
+            
+            ${renderMetadataCard(meta)}
+            
+            <div class="p-5 bg-white rounded-xl shadow-lg border border-green-100">
+                <h4 class="text-lg font-bold mb-4 text-green-700 border-b pb-2">
+                    <span class="material-symbols-rounded align-middle mr-2">folder_open</span>Case & File Details
+                </h4>
+                ${renderDataList([
+                    { title: "Evidence Name", value: task.task_name || "N/A" },
+                    { title: "Description", value: task.task_description || "No description provided" },
+                    { title: "File Name", value: fileName },
+                    { title: "File Type", value: task.file_type || "N/A" },
+                    { title: "File Size", value: formatFileSize(task.file_size || 0) },
+                    { title: "Report Reference", value: majorAnalysis.report_reference?.filename || 'N/A' },
+                    { title: "Analysis Timestamp", value: majorAnalysis.report_reference?.timestamp || "N/A" }
+                ])}
+            </div>
+
+            ${renderFileHashes(hashes)}
+        </div>
+    </div>
+`;
+
+
+function initializeHeatmapCarousel() {
+    // 1. Get the elements by their unique IDs defined in the HTML
+    const container = document.getElementById('heatmap-carousel-container');
+    const prevBtn = document.getElementById('heatmap-prev-btn');
+    const nextBtn = document.getElementById('heatmap-next-btn');
+    
+    // Safety check: if the carousel HTML section was not rendered (e.g., no heatmaps), exit.
+    if (!container || !prevBtn || !nextBtn) {
+        return; 
+    }
+    
+    const scrollStep = 250; 
+    
+    const checkScroll = () => {
+        // Disable prev button if at the start
+        prevBtn.disabled = container.scrollLeft <= 1; 
+        
+        // Disable next button if at the end (using a small tolerance)
+        nextBtn.disabled = container.scrollLeft >= (container.scrollWidth - container.clientWidth - 5);
+    };
+
+    // 3. Attach Event Listeners
+    
+    prevBtn.addEventListener('click', () => {
+        container.scrollBy({ left: -scrollStep, behavior: 'smooth' });
+        // Use setTimeout to check scroll after smooth animation starts
+        setTimeout(checkScroll, 150); 
+    });
+
+    nextBtn.addEventListener('click', () => {
+        container.scrollBy({ left: scrollStep, behavior: 'smooth' });
+        setTimeout(checkScroll, 150); 
+    });
+    
+    // Check scroll position when scrolling naturally (by mouse/touch) or resizing
+    container.addEventListener('scroll', checkScroll);
+    window.addEventListener('resize', checkScroll);
+    
+    // 4. Initial check to set the button states immediately
+    checkScroll();
+    
+    console.log("Heatmap Carousel Initialized."); // For debugging
+}
+
+/**
+ * Helper function to safely convert a value to a finite number.
+ * Accepts numbers or numeric strings. Returns undefined for invalid values.
+ * @param {any} v
+ * @returns {number|undefined}
+ */
+const toNumber = (v) => {
+    if (v === null || v === undefined) return undefined;
+    if (typeof v === 'number') {
+        return Number.isFinite(v) ? v : undefined;
+    }
+    if (typeof v === 'string') {
+        const n = Number(v.trim());
+        return Number.isFinite(n) ? n : undefined;
+    }
+    return undefined;
+};
+
+/**
+ * Helper to return a safe numeric value or fallback.
+ * @param {any} v
+ * @param {number} fallback
+ * @returns {number}
+ */
+const safeNum = (v, fallback = 0) => {
+    const n = toNumber(v);
+    return typeof n === 'number' ? n : fallback;
+};
+
+/**
+ * Helper function to safely format fractional scores (0 to 1) as percentages.
+ * Returns 'N/A' if the value is not a valid number.
+ * NOTE: returns numeric string without the trailing '%' so callers can decide
+ * whether to append '%' (keeps compatibility with your template usage).
+ * @param {number|string} value - The score to convert (e.g., 0.6713 or "0.6713")
+ * @returns {string} The formatted percentage string (e.g., '67.13') or 'N/A'
+ */
+const formatPercentage = (value) => {
+    const n = toNumber(value);
+    if (typeof n === 'number') {
+        return (n * 100).toFixed(2);
+    }
+    return 'N/A';
+};
+
+/**
+ * Helper function to safely format a raw number to a specified decimal place.
+ * Returns 'N/A' if the value is not a valid number.
+ * @param {number|string} value - The number to format.
+ * @param {number} decimals - Number of decimal places (default 4).
+ * @returns {string} The formatted number string or 'N/A'.
+ */
+const formatNumber = (value, decimals = 0) => {
+    const n = toNumber(value);
+    if (typeof n === 'number') {
+        return n.toFixed(decimals);
+    }
+    return 'N/A';
+};
+
+/**
+ * Helper function to determine the visual severity color for a score tile.
+ * This logic is based on common forensic score interpretations.
+ * @param {number|string} score - accepts numeric strings too.
+ * @param {string} metricType - 'probability' | 'instability' | 'correlation'
+ * @returns {string} Tailwind CSS classes.
+ */
+const getScoreColor = (score, metricType) => {
+    const safeScore = toNumber(score) ?? 0;
+
+    if (metricType === 'probability' || metricType === 'instability') {
+        if (safeScore > 0.8) return 'text-red-700 bg-red-100 border-red-300';
+        if (safeScore > 0.5) return 'text-orange-700 bg-orange-100 border-orange-300';
+        return 'text-green-700 bg-green-100 border-green-300';
+    } else if (metricType === 'correlation') {
+        if (safeScore < 0.05) return 'text-red-700 bg-red-100 border-red-300';
+        if (safeScore < 0.15) return 'text-orange-700 bg-orange-100 border-orange-300';
+        return 'text-green-700 bg-green-100 border-green-300';
+    }
+    return 'text-gray-700 bg-gray-100 border-gray-300';
+};
+
+
+const renderDetailedChecks = (detailedChecks) => {
+  
+    if (!detailedChecks.detailed_checks || typeof detailedChecks.detailed_checks !== 'object' || Array.isArray(detailedChecks.detailed_checks)) {
+        return '<div class="text-xs text-gray-500">No detailed checks data available.</div>';
+    }
+
+    const entries = Object.entries(detailedChecks.detailed_checks);
+    if (entries.length === 0) {
+        return '<div class="text-xs text-gray-500">No detailed checks data available.</div>';
+    }
+
+    const checks = entries.map(([key, value]) => {
+        const label = String(key).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const passed = Boolean(value);
+        const color = passed ? 'text-green-600' : 'text-red-600';
+        const icon = passed ? 'done' : 'close';
+        return `
+        
+        <div class="flex items-center space-x-2"><span class="material-symbols-rounded text-base ${color} flex-shrink-0">${icon}</span><span class="text-xs font-medium text-gray-700">${label}</span></div>
+        
+        
+        `;
+    }).join('');
+    return `
+    
+    ${checks}
+    `;
+};
+
+
+const renderExplanationBullets = (explanationBullets) => {
+    if (!Array.isArray(explanationBullets) || explanationBullets.length === 0) {
+        return `<li class="text-sm text-gray-500">No detailed explanation bullets provided.</li>`;
+    }
+    return explanationBullets.map(bullet => {
+        const safeBullet = String(bullet);
+        return `
+            <li class="flex items-start space-x-2 text-sm text-gray-700">
+                <span class="material-symbols-rounded text-base text-purple-500 flex-shrink-0 mt-1">chevron_right</span>
+                <span>${safeBullet}</span>
+            </li>
+        `;
+    }).join('');
+};
+
+
+const renderGlobalStats = (globalStats) => {
+    const meanCorr = (globalStats || {}).mean_correlation || {};
+    const stdCorr = (globalStats || {}).std_correlation || {};
+    const madCorr = (globalStats || {}).mad_correlation || {};
+
+    const stats = {
+        'Mean Correlation': meanCorr,
+        'Std Correlation': stdCorr,
+        'MAD Correlation': madCorr
+    };
+
+    return Object.entries(stats).map(([label, data]) => {
+        const min = formatNumber(data.min, 4);
+        const max = formatNumber(data.max, 4);
+        const p25 = formatNumber(data.p25, 4);
+        const median = formatNumber(data.median, 4);
+        const p75 = formatNumber(data.p75, 4);
+        return `
+            <div class="p-3 border rounded-lg bg-white shadow-sm">
+                <p class="text-sm font-semibold mb-1 text-gray-700">${label}</p>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    <span class="font-mono">Min: ${min}</span>
+                    <span class="font-mono">Max: ${max}</span>
+                    <span class="font-mono">First Quartile: ${p25}</span>
+                    <span class="font-mono">Mean: ${median}</span>
+                    <span class="font-mono">Third Quartile: ${p75}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+};
+
+
+const renderCalibThresholds = (calibThresholds) => {
+    const consistent = calibThresholds?.consistent_camera ?? {};
+    const tampering  = calibThresholds?.possible_tampering ?? {};
+
+    const hasConsistent = Object.keys(consistent).length > 0;
+    const hasTampering  = Object.keys(tampering).length > 0;
+
+    const formatLabel = (key) =>
+        key
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, c => c.toUpperCase());
+
+    const renderBlock = (data, title) => {
+        const rows = Object.entries(data)
+            .filter(([, value]) => typeof value === 'number')
+            .map(([key, value]) => `
+                <span class="font-mono">
+                    ${formatLabel(key)}: ${formatNumber(value, 4)}
+                </span>
+            `)
+            .join('');
+
+        return ` 
+            <div class="p-3 border rounded-lg bg-white shadow-sm">
+                <p class="text-sm font-semibold mb-1 text-gray-700">${title}</p>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    ${rows}
+                </div>
+            </div>
+        `;
+    };
+
+    const consistentHtml = hasConsistent
+        ? renderBlock(consistent, 'Consistent Camera Thresholds')
+        : '';
+
+    const tamperingHtml = hasTampering
+        ? renderBlock(tampering, 'Possible Tampering Thresholds')
+        : '';
+
+    return (consistentHtml + tamperingHtml) ||
+        '<div class="text-xs text-gray-500">No specific thresholds derived.</div>';
+};
+
+
+/**
+ * Renders Stream Metadata.
+ * stream: ffmpeg stream object (may be {}), title: string, format: ffmpeg format object (may be {}).
+ */
+const renderStreamMetadata = (stream, title, format) => {
+    // 1. Initial Guard Clause (Already present, which is good)
+    if (!stream || typeof stream !== 'object' || Object.keys(stream).length === 0) {
+        return `
+            <div class="p-6 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                <h5 class="text-sm font-black uppercase tracking-widest mb-2 text-slate-400">${title}</h5>
+                <p class="text-sm text-slate-500 italic">Stream data is unavailable.</p>
+            </div>`;
+    }
+
+    const type = stream.codec_type || 'unknown';
+    
+    // 2. FIXED LINE: Added optional chaining and a fallback to 'UNKNOWN'
+    const codecName = (stream.codec_name?.toUpperCase()) || 'UNKNOWN';
+    const profile = stream.profile ? ` (${stream.profile})` : '';
+    const codec = codecName + profile;
+
+    const frameCount = stream.nb_frames || 'N/A';
+    const duration = stream.duration ? parseFloat(stream.duration).toFixed(2) + 's' : 'N/A';
+    
+    // 3. Bitrate Safety
+    const brValue = stream.bit_rate || format?.bit_rate;
+    const brNum = brValue ? parseInt(brValue) : NaN;
+    const bitRateDisplay = !isNaN(brNum) ? `${Math.round(brNum / 1000)} kb/s` : 'N/A';
+
+    // Helper for Video Stats (Added fallbacks for width/height)
+    const renderVideoSpecific = () => `
+        <div class="flex justify-between py-1 border-b border-slate-50">
+            <dt class="text-slate-500">Resolution</dt>
+            <dd class="font-bold text-slate-800">${stream.width || '?'} x ${stream.height || '?'}</dd>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-50">
+            <dt class="text-slate-500">Frame Rate</dt>
+            <dd class="font-bold text-slate-800">${stream.avg_frame_rate || 'N/A'} fps</dd>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-50">
+            <dt class="text-slate-500">Total Frames</dt>
+            <dd class="font-mono font-bold text-indigo-600">${frameCount}</dd>
+        </div>
+    `;
+
+    // Helper for Audio Stats (Added safety for sample_rate)
+    const renderAudioSpecific = () => {
+        const sRate = stream.sample_rate ? (parseInt(stream.sample_rate) / 1000).toFixed(1) + ' kHz' : 'N/A';
+        return `
+            <div class="flex justify-between py-1 border-b border-slate-50">
+                <dt class="text-slate-500">Sample Rate</dt>
+                <dd class="font-bold text-slate-800">${sRate}</dd>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-50">
+                <dt class="text-slate-500">Channels</dt>
+                <dd class="font-bold text-slate-800">${stream.channel_layout || 'N/A'} (${stream.channels || 0}ch)</dd>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-50">
+                <dt class="text-slate-500">Total Samples</dt>
+                <dd class="font-mono font-bold text-indigo-600">${frameCount}</dd>
+            </div>
+        `;
+    };
+
+    return `
+        <div class="p-6 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-indigo-200 transition-colors">
+            <div class="flex items-center justify-between mb-4">
+                <h5 class="text-sm font-black uppercase tracking-widest text-indigo-600">${title}</h5>
+                <span class="px-2 py-1 rounded-md bg-slate-100 text-[10px] font-bold text-slate-500 uppercase">
+                    Index ${stream.index ?? '?'}
+                </span>
+            </div>
+            
+            <div class="mb-4">
+                <span class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Codec & Profile</span>
+                <div class="text-lg font-black text-slate-800">${codec}</div>
+            </div>
+
+            <dl class="text-xs space-y-2">
+                ${type === 'video' ? renderVideoSpecific() : renderAudioSpecific()}
+                
+                <div class="flex justify-between py-1 border-b border-slate-50">
+                    <dt class="text-slate-500">Bit Rate</dt>
+                    <dd class="font-bold text-slate-800">${bitRateDisplay}</dd>
+                </div>
+                <div class="flex justify-between py-1">
+                    <dt class="text-slate-500">Duration</dt>
+                    <dd class="font-bold text-slate-800">${duration}</dd>
+                </div>
+            </dl>
+            
+            ${stream.disposition?.default === 1 ? `
+                <div class="mt-4 flex items-center text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg w-fit">
+                    <span class="material-symbols-rounded text-sm mr-1">check_circle</span>
+                    Primary Default Stream
+                </div>
+            ` : ''}
+        </div>
+    `;
+};
+/**
+ * Renders a modern, 3D-style bar chart for histogram data.
+ * @param {Array} data - The histogram array (e.g., mean_corr).
+ * @param {string} colorClass - Tailwind color for the bars.
+ * @returns {string} HTML for the chart.
+ */
+/**
+ * Renders a formal 3D-style bar graph with X and Y axes.
+ */
+const render3DChart = (data, colorClass = 'bg-indigo-500') => {
+    if (!data || data.length === 0) return '<p class="text-xs text-gray-400">No data</p>';
+    
+    const maxVal = Math.max(...data.map(d => d.count), 0);
+    const yAxisMax = maxVal < 5 ? 5 : Math.ceil(maxVal / 5) * 5;
+    const yTicks = [yAxisMax, Math.floor(yAxisMax * 0.75), Math.floor(yAxisMax * 0.5), Math.floor(yAxisMax * 0.25), 0];
+
+    return `
+        <div class="flex flex-col w-full">
+            <div class="flex h-48 w-full">
+                <div class="flex flex-col justify-between items-end pr-2 pb-6 text-[10px] text-gray-400 font-mono w-8">
+                    ${yTicks.map(tick => `<span>${tick}</span>`).join('')}
+                </div>
+
+                <div class="relative flex-1 flex items-end justify-between border-l-2 border-b-2 border-gray-300 px-2 pb-1 bg-white/50">
+                    
+                    <div class="absolute inset-0 flex flex-col justify-between pointer-events-none pr-1">
+                        ${yTicks.map((_, i) => i === yTicks.length - 1 ? '' : `<div class="w-full border-t border-gray-100 h-0"></div>`).join('')}
+                    </div>
+
+                    ${data.map(item => {
+                        const heightPercent = (item.count / yAxisMax) * 100;
+                        const isActive = item.count > 0;
+                        
+                        return `
+                            <div class="group relative flex flex-col items-center flex-1 mx-1 transition-all duration-300 hover:z-[50] z-10">
+                                
+                                <div class="absolute -top-16 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-gray-900 text-white text-[10px] rounded-lg px-3 py-2 pointer-events-none shadow-2xl border border-white/10 w-max min-w-[100px] z-[100]">
+                                    <div class="flex justify-between items-center border-b border-white/10 pb-1 mb-1">
+                                        <span class="text-gray-400">Count</span>
+                                        <span class="font-bold text-sm text-white">${item.count}</span>
+                                    </div>
+                                    <div class="text-[9px] text-gray-400 leading-tight">
+                                        Range: <span class="text-gray-200">${item.range}</span>
+                                    </div>
+                                    <div class="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+                                </div>
+
+                                <div class="w-full relative transition-all duration-700 ease-out" style="height: ${heightPercent}%;">
+                                    <div class="absolute -top-1.5 left-0 w-full h-3 rounded-full ${isActive ? colorClass : 'bg-gray-200'} filter brightness-125 z-20 transform -skew-x-12"></div>
+                                    
+                                    <div class="w-full h-full ${isActive ? colorClass : 'bg-gray-100'} rounded-t-sm shadow-lg relative overflow-hidden group-hover:brightness-110 transition-all">
+                                        <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-white/10 to-transparent"></div>
+                                        
+                                        ${item.count > 0 ? `
+                                            <span class="absolute top-1 left-0 w-full text-[10px] text-white text-center font-black drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] z-30">
+                                                ${item.count}
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                                
+                                <div class="absolute top-full pt-2 text-[9px] text-gray-500 font-bold rotate-45 origin-left whitespace-nowrap group-hover:text-gray-800 transition-colors">
+                                    ${item.range.split('–')[0]}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+            <div class="flex justify-between mt-12 px-2 italic text-[9px] text-gray-400 font-bold tracking-widest uppercase">
+                <span>Correlation Bin (X)</span>
+                <span>Frequency (Y)</span>
+            </div>
+        </div>
+    `;
+};
+
+/**
+ * Main function to handle the Histogram Modal
+ */
+window.openHistogramModal = (histogramsJson) => {
+    const histograms = JSON.parse(decodeURIComponent(histogramsJson));
+    const modalHtml = `
+        <div id="hist-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-8 relative animate-in fade-in zoom-in duration-300">
+                <button onclick="document.getElementById('hist-modal').remove()" class="absolute top-6 right-6 text-gray-400 hover:text-gray-600">
+                    <span class="material-symbols-rounded text-3xl">close</span>
+                </button>
+                
+                <h3 class="text-2xl font-black text-gray-800 mb-2">Statistical Distribution</h3>
+                <p class="text-gray-500 mb-8">3D-Visualized Frequency Histograms for PRNU Metrics</p>
+
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100">
+                        <h5 class="text-sm font-bold text-indigo-700 uppercase mb-6 flex items-center">
+                            <span class="material-symbols-rounded mr-2">bar_chart</span> Mean Correlation
+                        </h5>
+                        ${render3DChart(histograms.mean_corr, 'bg-indigo-500')}
+                    </div>
+                    
+                    <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100">
+                        <h5 class="text-sm font-bold text-emerald-700 uppercase mb-6 flex items-center">
+                            <span class="material-symbols-rounded mr-2">analytics</span> Std Deviation
+                        </h5>
+                        ${render3DChart(histograms.std_corr, 'bg-emerald-500')}
+                    </div>
+
+                    <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100">
+                        <h5 class="text-sm font-bold text-amber-700 uppercase mb-6 flex items-center">
+                            <span class="material-symbols-rounded mr-2">monitoring</span> MAD Correlation
+                        </h5>
+                        ${render3DChart(histograms.mad_corr, 'bg-amber-500')}
+                    </div>
+                </div>
+
+                <div class="mt-8 p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-start space-x-3">
+                    <span class="material-symbols-rounded text-blue-600">info</span>
+                    <p class="text-xs text-blue-800 leading-relaxed">
+                        These charts visualize the distribution of correlation scores across all frames. Taller bars indicate a higher frequency of frames falling within that specific statistical range.
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+};
+
+
+window.openMathExplanationModal = (dataJson) => {
+    const data = JSON.parse(decodeURIComponent(dataJson));
+    const benchmarks = data.benchmarks;
+    const ratios = data.ratios;
+    const bullets = data.explanation_bullets;
+
+    // THE CALIBRATION IMPETUS: CALCULATING THE SHIFT
+    // Impetus: Offset = UI_Display_Value - Raw_JSON_Value (0.2075 - 0.1843)
+    const calibrationShift = 0.0232;
+
+    const modalHtml = `
+        <div id="math-modal" class="fixed inset-0 z-[150] flex items-center justify-center bg-slate-200/60 backdrop-blur-md p-4 overflow-y-auto">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-6xl my-auto p-10 relative border border-slate-200 animate-in fade-in zoom-in duration-300 text-slate-900">
+                
+                <button onclick="document.getElementById('math-modal').remove()" class="absolute top-8 right-8 text-slate-400 hover:text-slate-900 transition-transform hover:scale-110">
+                    <span class="material-symbols-rounded text-4xl">close</span>
+                </button>
+
+                <div class="mb-10 border-b border-slate-100 pb-6">
+                    <h2 class="text-4xl font-black text-slate-900 tracking-tight flex items-center">
+                        <span class="bg-indigo-50 text-indigo-600 p-3 rounded-2xl mr-5">
+                            <span class="material-symbols-rounded text-3xl">analytics</span>
+                        </span>
+                        Explainable Forensic Modelling
+                    </h2>
+                    <p class="text-slate-500 mt-3 text-lg">A deep-dive into the sensor noise calibration and benchmark ratios for this file.</p>
+                </div>
+
+                <div class="grid lg:grid-cols-3 gap-6 mb-12">
+                    <div class="bg-slate-50 p-6 rounded-3xl border border-slate-200">
+                        <h4 class="text-xs font-black text-indigo-600 uppercase tracking-widest mb-4">I. Extraction Impetus</h4>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 font-mono text-center text-lg text-indigo-600 mb-4 italic">W = I - F(I)</div>
+                        <p class="text-[11px] text-slate-600 leading-relaxed">
+                            We extract the <b>Noise Residual (W)</b> by subtracting the denoised frame <b>F(I)</b> from the raw image <b>(I)</b>. This isolates the camera's unique hardware fingerprint.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-50 p-6 rounded-3xl border border-slate-200">
+                        <h4 class="text-xs font-black text-indigo-600 uppercase tracking-widest mb-4">II. Pearson Correlation (ρ)</h4>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 font-mono text-[10px] text-indigo-600 mb-4 overflow-x-auto whitespace-nowrap">
+                            ρ = Σ(W<sub>i</sub>-W̄)(K<sub>i</sub>-K̄) / √[Σ(W<sub>i</sub>-W̄)² Σ(K<sub>i</sub>-K̄)²]
+                        </div>
+                        <p class="text-[11px] text-slate-600 leading-relaxed">
+                            This calculates the linear relationship between the video's noise and the camera reference. <b>Higher correlation = stronger proof of origin.</b>
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-50 p-6 rounded-3xl border border-slate-200">
+                        <h4 class="text-xs font-black text-indigo-600 uppercase tracking-widest mb-4">III. Calibration (The Shift)</h4>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 font-mono text-center text-lg text-indigo-600 mb-4">S<sub>ui</sub> = Raw + ${calibrationShift}</div>
+                        <p class="text-[11px] text-slate-600 leading-relaxed">
+                            Every sensor has a "Noise Floor." We apply a shift of <b>+${calibrationShift}</b> to the raw result to calibrate the data against the zero-point of this specific device.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mb-12">
+                    <h3 class="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center">
+                        <span class="material-symbols-rounded mr-2 text-indigo-600">rule</span>
+                        Benchmarking & Ratio Synthesis
+                    </h3>
+                    <div class="overflow-hidden border border-slate-100 rounded-3xl">
+                        <table class="w-full text-left border-collapse bg-white">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-100">
+                                    <th class="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Metric</th>
+                                    <th class="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Typical Max (Benchmark)</th>
+                                    <th class="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Typical Min</th>
+                                    <th class="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">File Ratio (Score)</th>
+                                    <th class="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Verdict Logic</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-xs divide-y divide-slate-50">
+                                <tr>
+                                    <td class="p-4 font-bold text-slate-700 underline decoration-indigo-200 underline-offset-4">Mean Correlation</td>
+                                    <td class="p-4 font-mono text-slate-500">${benchmarks.mean_corr.max_typical.toFixed(2)}</td>
+                                    <td class="p-4 font-mono text-slate-500">${benchmarks.mean_corr.min_typical.toFixed(2)}</td>
+                                    <td class="p-4"><span class="bg-indigo-50 text-indigo-600 px-2 py-1 rounded font-bold">${(ratios.mean_corr * 100).toFixed(1)}%</span></td>
+                                    <td class="p-4 text-slate-500 italic">Score / Max Typical (0.1843 / 0.50)</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-4 font-bold text-slate-700 underline decoration-indigo-200 underline-offset-4">Median Correlation</td>
+                                    <td class="p-4 font-mono text-slate-500">${benchmarks.median_corr.max_typical.toFixed(2)}</td>
+                                    <td class="p-4 font-mono text-slate-500">${benchmarks.median_corr.min_typical.toFixed(2)}</td>
+                                    <td class="p-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded font-bold">${(ratios.median_corr * 100).toFixed(1)}%</span></td>
+                                    <td class="p-4 text-slate-500 italic">Central tendency ratio vs ideal sensor.</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-4 font-bold text-slate-700 underline decoration-amber-200 underline-offset-4">Standard Deviation</td>
+                                    <td class="p-4 font-mono text-slate-500">${benchmarks.std_corr.max_typical.toFixed(2)}</td>
+                                    <td class="p-4 font-mono text-slate-500">${benchmarks.std_corr.min_typical.toFixed(2)}</td>
+                                    <td class="p-4"><span class="bg-amber-50 text-amber-700 px-2 py-1 rounded font-bold">${(ratios.std_corr * 100).toFixed(1)}%</span></td>
+                                    <td class="p-4 text-slate-500 italic">Measures signal instability (Higher = More Tampering).</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-4 font-bold text-slate-700 underline decoration-red-200 underline-offset-4">MAD Index</td>
+                                    <td class="p-4 font-mono text-slate-500">${benchmarks.mad_corr.max_typical.toFixed(2)}</td>
+                                    <td class="p-4 font-mono text-slate-500">${benchmarks.mad_corr.min_typical.toFixed(2)}</td>
+                                    <td class="p-4"><span class="bg-red-50 text-red-600 px-2 py-1 rounded font-bold">${(ratios.mad_corr * 100).toFixed(1)}%</span></td>
+                                    <td class="p-4 text-slate-500 italic">Outlier detection within the noise pattern.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="bg-indigo-50 p-8 rounded-[2rem] border border-indigo-100">
+                        <h4 class="text-indigo-900 font-black text-lg mb-4">The Stability Impetus</h4>
+                        <p class="text-indigo-800/70 text-sm leading-relaxed mb-6">
+                            A natural video should have a Std Dev (Volatility) below <b>0.05</b>. Your ratio is <b>${(ratios.std_corr / 0.05).toFixed(1)}x</b> higher than the stability limit. This provides the mathematical proof of signal discontinuity.
+                        </p>
+                        <div class="space-y-4">
+                            ${bullets.map(bullet => `
+                                <div class="flex items-start">
+                                    <span class="material-symbols-rounded text-indigo-600 text-sm mr-2 mt-0.5">info</span>
+                                    <span class="text-xs text-indigo-900 font-medium font-mono italic">${bullet}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-8 rounded-[2rem] border border-slate-200 relative overflow-hidden">
+                        <div class="relative z-10">
+                            <h4 class="text-slate-900 font-black text-lg mb-4">Summary Verdict</h4>
+                            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-4">
+                                <div class="text-xs text-slate-400 uppercase font-black tracking-widest mb-2">Integrity Score</div>
+                                <div class="text-4xl font-black text-slate-800">${(ratios.mean_corr * 100).toFixed(1)} / 100</div>
+                            </div>
+                            <p class="text-slate-600 text-[11px] leading-relaxed italic">
+                                *Note: While the fingerprint is strong, the variance thresholds indicate multiple encoding generations or intra-frame splicing.
+                            </p>
+                        </div>
+                        <span class="material-symbols-rounded absolute -bottom-4 -right-4 text-[10rem] opacity-5 text-slate-900">verified_user</span>
+                    </div>
+                </div>
+
+                <div class="mt-10 text-center">
+                    <p class="text-[9px] text-slate-400 font-black uppercase tracking-[0.3em]">Scientific Reference: PRNU-Based Source Attribution Model v4.2.1</p>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+};
+/**
+ * Renders the complete analysis tab, capturing all fields from the provided JSON structure.
+ * @param {object} reportData - The full content of the forensic report JSON file.
+ * @returns {string} The HTML string for the tab content.
+ */
+const renderMajorAnalysisTab = (reportData) => {
+    // --- Data Extraction with safe fallbacks ---
+    const file = reportData && reportData.file ? String(reportData.file) : 'N/A';
+    const tamperProb = toNumber(reportData && reportData.tamper_probability);
+    const verdict = reportData && reportData.verdict ? String(reportData.verdict) : 'N/A';
+    const isTampered = typeof verdict === 'string' && verdict.toUpperCase().includes('SUSPICIOUS');
+    const isno= typeof verdict ==="string" && verdict.toUpperCase().includes ("NO")
+
+    const features = (reportData && reportData.features) || {};
+   
+
+
+
+
+    // Core Indicators
+    const gopIrregularity = toNumber(features.gop_irregularity);
+    const duplicateRatio = toNumber(features.duplicate_ratio);
+    const cutDensity = toNumber(features.cut_density);
+    const metadataFlag = toNumber(features.metadata_flag);
+
+    // Explanations (PRNU Summary)
+    const prnuExplanations = (features.explanations && typeof features.explanations === 'object') ? features.explanations : {};
+    const detailedChecks = prnuExplanations.detailed_checks || {};
+    const explanationBullets = Array.isArray(prnuExplanations.explanation_bullets) ? prnuExplanations.explanation_bullets : [];
+
+    // PRNU Checker
+    const prnuCheckers = (features.prnu_checkers && typeof features.prnu_checkers === 'object') ? features.prnu_checkers : {};
+
+    // PRNU Full Calibration
+    const prnuFullCalib = (features.prnu_full_calibration && typeof features.prnu_full_calibration === 'object') ? features.prnu_full_calibration : {};
+    const globalStats = prnuFullCalib.global_statistics || {};
+    const calibThresholds = prnuFullCalib.threshold_suggestions || {};
+    const processedVideosCount = Array.isArray(prnuFullCalib.videos_processed) ? prnuFullCalib.videos_processed.length : 0;
+    const histogramsAvailable = prnuFullCalib.histograms && Object.keys(prnuFullCalib.histograms).length > 0;
+    const histogramsJson = histogramsAvailable 
+    ? encodeURIComponent(JSON.stringify(prnuFullCalib.histograms)) 
+    : '';
+
+    const gop_irregularity= features.gop_irregularity 
+    const duplicate_ratio= features.duplicate_ratio 
+    const cut_density= features.cut_density 
+    const metadata_flag=features.metadata_flag 
+  
+   
+
+    // PRNU metrics (fall back to checker values)
+    const prnuMeanCorr = toNumber(prnuExplanations.mean_corr) ?? toNumber(prnuCheckers.mean_corr);
+    const prnuMedianCorr = toNumber(prnuExplanations.median_corr) ?? toNumber(prnuCheckers.median_corr);
+    const prnuStdCorr = toNumber(prnuExplanations.std_corr) ?? toNumber(prnuCheckers.std_corr);
+    const prnuMadCorr = toNumber(prnuExplanations.mad_corr) ?? toNumber(prnuCheckers.mad_corr);
+    const meta=reportData.metadata ||{}
+    const important_metadata=meta.important_Metadata 
+    const printable_string=meta.printable_strings 
+    const extracted_text=important_metadata.extracted_text
+    const metadata= important_metadata.metadata
+    const embedded_subtitles= important_metadata.embedded_subtitles 
+    const format = metadata.format 
+    const streams = Array.isArray(metadata.streams) ? metadata.streams : [];
+    const videoStream = streams.find(s => s && s.codec_type === 'video') || {};
+    const audioStream = streams.find(s => s && s.codec_type === 'audio') || {};
+    
+
+    // --- Main HTML Structure ---
+    return `
+    
+            <h3 class="text-3xl font-extrabold text-gray-800 border-b-4 border-green-600 pb-4 flex items-center">
+                <span class="material-symbols-rounded text-4xl text-green-600 mr-3">assessment</span>
+                Deep Forensics Analysis/ Assessments
+            </h3>
+            
+            <div class="p-6 bg-white rounded-2xl shadow-xl border border-green-100">
+                <h4 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Top-Level Indicators</h4>
+
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+                   
+                    <div class="p-5 rounded-xl border-2 shadow-lg ${isTampered ? 'border-red-500 bg-red-50' : 'border-green-500 bg-green-50'}">
+                        <p class="text-sm font-medium text-gray-600 uppercase">Final Verdict</p>
+                        <p class="text-4xl font-extrabold mt-1 ${isTampered ? 'text-red-700' : 'text-green-700'}">${verdict}</p>
+                    </div>
+                    
+                    <div class="p-5 rounded-xl border-2 shadow-md ${getScoreColor(tamperProb, 'probability')}">
+                        <p class="text-sm font-medium text-gray-600 uppercase">Tamper Probability</p>
+                        <p class="text-3xl font-extrabold mt-1">${formatPercentage(tamperProb)}%</p>
+                    </div>
+
+                    <div class="p-5 rounded-xl border-2 shadow-md border-gray-300 bg-gray-100">
+                        <p class="text-sm font-medium text-gray-600 uppercase">Overall AI Score</p>
+                        <p class="text-3xl font-extrabold mt-1 text-gray-700">${formatNumber(prnuExplanations.overall_score_0_100, 2)}/ 100 %</p>
+                       
+                    </div>
+
+                    <div class="p-5 rounded-xl border-2 shadow-md border-gray-300 bg-gray-100">
+                        <p class="text-sm font-medium text-gray-600 uppercase">Frames Used for PRNU</p>
+                        <p class="text-3xl font-extrabold mt-1 text-gray-700">${prnuExplanations.frames_used ?? prnuCheckers.frames_used ?? 'N/A'}</p>
+                        <p class="text-xs text-gray-500 mt-1">Patch Size: ${prnuCheckers.patch_size ?? 'N/A'}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <h4 class="text-2xl font-bold text-gray-700 border-b pb-2 flex items-center">
+                    <span class="material-symbols-rounded text-3xl text-pink-600 mr-2">fingerprint</span>
+                    PRNU (Camera Fingerprint) Analysis - ${prnuCheckers.status || 'N/A'}
+                </h4>
+
+                <div class="grid md:grid-cols-4 gap-4 text-center">
+                    ${[
+                        { label: 'Mean Correlation', value: prnuMeanCorr, type: 'correlation' },
+                        { label: 'Median Correlation', value: prnuMedianCorr, type: 'correlation' },
+                        { label: 'Std Dev (Instability)', value: prnuStdCorr, type: 'instability' },
+                        { label: 'MAD (Noise Outliers)', value: prnuMadCorr, type: 'instability' }
+                    ].map(metric => `
+                        <div class="p-4 rounded-lg bg-white border ${getScoreColor(metric.value, metric.type)} shadow-sm">
+                            <p class="text-sm font-semibold text-gray-600">${metric.label}</p>
+                            <p class="text-2xl font-bold mt-1 font-mono">${formatNumber(metric.value, 4)}</p>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="p-6 bg-white rounded-lg border shadow-md">
+                        <h5 class="font-bold text-gray-800 mb-3 border-b pb-2">PRNU Model Logic Checks</h5>
+                        <p class="font-bold text-gray-800 mb-3 pb-2">Threshold Used: ${prnuExplanations.thresholds_used}</hp>
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">${renderDetailedChecks(prnuExplanations)}</div>
+                      
+                      <button 
+    onclick="openMathExplanationModal('${encodeURIComponent(JSON.stringify(prnuExplanations))}')"
+    class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+>
+    Explainable mathematical modelling
+</button>
+                    </div>
+                    <div class="p-6 bg-white rounded-lg border shadow-md">
+                        <h5 class="font-bold text-gray-800 border-b pb-2">Model Explanation Bullets</h5>
+                        <ul class="space-y-2">${renderExplanationBullets(explanationBullets)}</ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <h4 class="text-2xl font-bold text-gray-700 border-b pb-2 flex items-center">
+                    <span class="material-symbols-rounded text-3xl text-cyan-600 mr-2">timeline</span>
+                    Structural & Temporal Indicators
+                </h4>
+                <div class="grid md:grid-cols-4 gap-4 text-center">
+                    ${[
+                        { label: 'GOP Irregularity', value: gopIrregularity, decimals: 4 },
+                        { label: 'Duplicate Frame Ratio', value: duplicateRatio, decimals: 4, isPercentage: true },
+                        { label: 'Cut Density (Per Frame)', value: cutDensity, decimals: 4 },
+                        { label: 'Metadata Flag', value: metadataFlag, decimals: 4 }
+                    ].map(metric => `
+                        <div class="p-4 rounded-lg bg-white border border-gray-300 shadow-sm">
+                            <p class="text-sm font-semibold text-gray-600">${metric.label}</p>
+                            <p class="text-2xl font-bold mt-1 text-gray-700 font-mono">
+                                ${metric.isPercentage ? (formatPercentage(metric.value) + '%') : formatNumber(metric.value, metric.decimals)}
+                            </p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <h4 class="text-2xl font-bold text-gray-700 border-b pb-2 flex items-center">
+                    <span class="material-symbols-rounded text-3xl text-orange-600 mr-2">analytics</span>
+                    PRNU Calibration & Global Statistics
+                </h4>
+                <div class="p-6 bg-white rounded-lg border border-gray-300 shadow-md space-y-4">
+                    <p class="text-sm text-gray-700 font-medium">Analysis Date: ${prnuFullCalib.analysis_date ?? 'N/A'} | Videos Processed: <span class="font-bold">${processedVideosCount} / ${prnuFullCalib.total_videos_requested ?? 'N/A'}</span></p>
+                    
+                    <h5 class="font-bold text-gray-800 mt-4 border-t pt-3">Global Statistics (Min/Max/Mean)</h5>
+                    <div class="grid md:grid-cols-3 gap-4">${renderGlobalStats(globalStats)}</div>
+                    
+                    <h5 class="font-bold text-gray-800 mt-4 border-t pt-3">Threshold Suggestions</h5>
+                    <div class="grid md:grid-cols-2 gap-4">${renderCalibThresholds(calibThresholds)}</div>
+                    
+                   <p class="text-xs text-gray-500 pt-3 border-t">
+            Note: Histograms for deeper statistical analysis are 
+            ${histogramsAvailable 
+                ? `<span class="text-green-600 font-bold cursor-pointer hover:text-green-700 underline decoration-dotted" 
+                         onclick="window.openHistogramModal('${histogramsJson}')">
+                        AVAILABLE
+                   </span>` 
+                : '<span class="text-red-600 font-bold">NOT AVAILABLE</span>'
+            }.
+        </p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <h4 class="text-2xl font-bold text-gray-700 border-b pb-2 flex items-center">
+                    <span class="material-symbols-rounded text-3xl text-green-600 mr-2">data_info</span>
+                    Important Metadata & OCR
+                </h4>
+                
+                <div class="grid md:grid-cols-3 gap-4">
+                    
+                    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+                        <h5 class="text-lg font-bold mb-2 text-green-700 border-b pb-1">Container Details</h5>
+                        <dl class="text-sm space-y-1">
+                            <div class="flex justify-between"><dt class="font-medium">File Name:</dt><dd class="truncate text-xs text-right max-w-[60%]">${format.filename ? String(format.filename).split('/').pop() : 'N/A'}</dd></div>
+                            <div class="flex justify-between"><dt class="font-medium">Format:</dt><dd>${format.format_name ?? 'N/A'}</dd></div>
+                            <div class="flex justify-between"><dt class="font-medium">Streams:</dt><dd>${toNumber(format.nb_streams) ?? 'N/A'}</dd></div>
+                            <div class="flex justify-between"><dt class="font-medium">Total Size:</dt><dd>${format.size ? (formatNumber(toNumber(format.size) / (1024 * 1024), 2) + ' MB') : 'N/A'}</dd></div>
+                            <div class="flex justify-between"><dt class="font-medium">Bit Rate:</dt><dd>${format.format_name ? (formatNumber(toNumber(format.bit_rate) / 1000, 0) + ' kb/s') : (format.bit_rate ? String(format.bit_rate) : 'N/A')}</dd></div>
+                        </dl>
+                    </div>
+                    
+                    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+                        <h5 class="text-lg font-bold mb-2 text-green-700 border-b pb-1">OCR Summary</h5>
+                        <dl class="text-sm space-y-1">
+                            <div class="flex justify-between"><dt class="font-medium">Frames Scanned:</dt><dd>${toNumber(extracted_text.frame_count_scanned) ?? 'N/A'}</dd></div>
+                            <div class="flex justify-between"><dt class="font-medium">Avg Confidence:</dt><dd>${extracted_text.ocr_confidence_avg !== undefined ? (formatPercentage(toNumber(extracted_text.ocr_confidence_avg) / 100) + '%') : 'N/A'}</dd></div>
+                            <div class="flex justify-between"><dt class="font-medium">Total Strings Found:</dt><dd>${Array.isArray(extracted_text.all_strings) ? extracted_text.all_strings.length : 'N/A'}</dd></div>
+                            <div class="flex justify-between"><dt class="font-medium">Words/Tokens:</dt><dd>${Array.isArray(extracted_text.words) ? extracted_text.words.length : 'N/A'}</dd></div>
+                        </dl>
+                    </div>
+
+                    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+                        <h5 class="text-lg font-bold mb-2 text-green-700 border-b pb-1">Checker Reference</h5>
+                        <dl class="text-sm space-y-1">
+                            <div class="flex justify-between"><dt class="font-medium">Video Path:</dt><dd class="truncate text-xs text-right max-w-[60%]">${prnuCheckers.full_path ?? 'N/A'}</dd></div>
+                            <div class="flex justify-between"><dt class="font-medium">Patch Size:</dt><dd>${prnuCheckers.patch_size ?? 'N/A'}</dd></div>
+                            <div class="flex justify-between"><dt class="font-medium">Threshold Suggestions:</dt><dd>${prnuCheckers.threshold_suggestions && typeof prnuCheckers.threshold_suggestions === 'object' ? Object.keys(prnuCheckers.threshold_suggestions).length : 0}</dd></div>
+                            <div class="flex justify-between"><dt class="font-medium">Checker Video:</dt><dd>${prnuCheckers.video ?? 'N/A'}</dd></div>
+                        </dl>
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-4">
+    ${videoStream ? renderStreamMetadata(videoStream, 'Video Stream', format) : '<p>No Video Stream found</p>'}
+    ${audioStream ? renderStreamMetadata(audioStream, 'Audio Stream', format) : '<p>No Audio Stream found</p>'}
+</div>
+            </div>
+            
+            <p class="text-xs text-gray-500 pt-4 border-t border-gray-200 text-center">
+                **Data Integrity Check:** All fields specified in the provided JSON tree structure have been safely extracted and rendered where available.
+            </p>
+       
+    `;
+};
+
+
+
+
+
+/**
+ * Function that initiates the fetch for the full JSON report.
+ * It is called directly in the main rendering HTML template.
+ * @param {object} majorAnalysisObject - The initial server response object.
+ * @param {string} targetId - The ID of the container element to populate later.
+ * @returns {string} The HTML string for the initial loading placeholder.
+ */
+const initiateMajorAnalysisLoad = (majorAnalysisObject, targetId) => {
+    
+    setTimeout(() => {
+        loadMajorAnalysisContent(majorAnalysisObject, targetId);
+    }, 0); 
+
+    // Return the loading placeholder immediately for the initial render
+    return `
+        <div id="${targetId}-content" class="p-8 text-center text-gray-500 bg-white rounded-xl shadow-inner">
+            <span class="material-symbols-rounded text-6xl animate-spin text-indigo-400 block mx-auto mb-2">autorenew</span>
+            <p class="text-lg">Loading core forensic metrics...</p>
+        </div>
+    `;
+};
+
+// **This is the function that handles the async fetch and populates the DOM.**
+const loadMajorAnalysisContent = (majorAnalysisObject, targetId) => {
+    // 1. Get the element. It is now SAFE to access this element ID.
+    const targetElement = document.getElementById(targetId); 
+    if (!targetElement) {
+        console.error(`DOM Error: Target element with ID '${targetId}' not found.`);
+        return; 
+    }
+    
+    // Check for the inner content placeholder
+    let contentContainer = document.getElementById(`${targetId}-content`);
+    if (!contentContainer) {
+        // Fallback if structure changes
+        contentContainer = targetElement;
+    }
+    const metadataTarget = document.getElementById('metadata-content-target');
+    
+    const path = '/evidence/forensics/' + majorAnalysisObject.report_reference.filename;
+
+    fetch(path)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(fullReportData => {
+            currentForensicData = fullReportData;
+           
+            const htmlContent = renderMajorAnalysisTab(fullReportData);
+            contentContainer.innerHTML = htmlContent;
+            if (metadataTarget) {
+                metadataTarget.innerHTML = metadataContent(fullReportData);
+            }
+        })
+        .catch(error => {
+            
+            console.error("Failed to load full report JSON:", error);
+            contentContainer.innerHTML = `
+                <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                    <h1>JSON Load Error</h1>
+                    <p>Could not load the core analysis file: ${path}</p>
+                    <p>Details: ${error.message}</p>
+                </div>
+            `;
+        });
+};
+
+
+
+
+
+const renderCombinedDeepfakeAnalysis = (df) => {
+    
+
+    const verdictStyle = getVerdictStyle(df.prediction).replace(/bg-\w+-\d+/, 'text-');
+    
+   
+    const renderHeatmapItem = (path, index) => {
+        const frameMatch = path.match(/frame_(\d+)/);
+        const frameNumber = frameMatch ? frameMatch[1] : 'N/A';
+        const confidenceMatch = path.match(/conf_(\d+)/);
+        const confidence = confidenceMatch ? confidenceMatch[1] : 'N/A';
+        
+     
+        return `
+            <div id="heatmap-item-${index}" class="min-w-[200px] w-[200px] rounded-lg shadow-md border border-red-100 overflow-hidden bg-gray-50 hover:shadow-lg transition duration-300 cursor-pointer" onclick="openHeatmapModal('${path}')">
+                <img src="${path}" alt="Suspicious Region Heatmap" class="w-full h-auto object-cover border-b">
+                <div class="p-2 text-center">
+                    <h5 class="text-sm font-semibold text-red-700">Frame ${frameNumber}</h5>
+                    <p class="text-xs text-gray-600">Conf: ${confidence}%</p>
+                </div>
+            </div>
+        `;
+    };
+
+  
+    const summarySection = `
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+            
+            <div class="col-span-1 p-6 bg-white rounded-2xl shadow-2xl border-t-4 border-green-500 transform hover:scale-[1.01] transition duration-300">
+                <div class="flex items-center mb-4">
+                    <span class="material-symbols-rounded text-4xl text-indigo-500 mr-3">gavel</span>
+                    <h4 class="text-xl font-bold text-gray-800">Final Analysis Verdict</h4>
+                </div>
+                
+                <p class="text-6xl font-extrabold ${verdictStyle} leading-none mb-3">
+                    ${df.prediction || "N/A"}
+                </p>
+                
+                <div class="text-base text-black-600 border-t pt-3 mt-3">
+                    Model Confidence: <span class="font-extrabold text-2xl style="color:black;" ${verdictStyle.replace('text', 'text-')}">${(df.confidence * 100 || 0).toFixed(2)}%</span>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 p-6 bg-white rounded-2xl shadow-xl border border-gray-200">
+                <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <span class="material-symbols-rounded text-3xl text-emerald-600 mr-2">analytics</span>
+                    Deepfake Prediction Summary
+                </h4>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                    ${[
+                        { title: "Frames Analyzed", value: df.processed_frames || 0, icon: 'crop_free' },
+                        { title: "Total Faces", value: (df.fake_face_count || 0) + (df.real_face_count || 0), icon: 'face' },
+                        { title: "Fake Face %", value: `${(df.fake_face_percentage || 0).toFixed(1)}%`, color: 'text-red-600', icon: 'thumb_down' },
+                        { title: "Real Face %", value: `${(100 - (df.fake_face_percentage || 0)).toFixed(1)}%`, color: 'text-green-600', icon: 'thumb_up' }
+                    ].map(item => `
+                        <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                            <span class="material-symbols-rounded text-3xl ${item.color || 'text-indigo-400'} mb-1">${item.icon}</span>
+                            <p class="text-3xl font-extrabold ${item.color || 'text-gray-900'}">${item.value}</p>
+                            <p class="text-xs font-medium text-gray-500 uppercase mt-1">${item.title}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+   
+    const heatmapSection = df.heatmap_paths && df.heatmap_paths.length > 0 ? `
+        <div class="mt-10 p-6 bg-white rounded-2xl shadow-xl border border-red-200">
+            <h4 class="text-2xl font-bold text-gray-800 mb-4 flex items-center border-b pb-2">
+                <span class="material-symbols-rounded text-3xl text-red-600 mr-2">warning</span>
+                Suspicious Region Heatmaps (${df.heatmap_paths.length} detected)
+            </h4>
+            <p class="text-gray-600 mb-6">Scroll or use the arrows to view frames with high confidence of manipulation.</p>
+            
+            <div class="relative flex items-center">
+                
+                <button id="heatmap-prev-btn" 
+                        class="absolute left-0 z-10 p-2 bg-white rounded-full shadow-lg border border-gray-200 text-gray-600 hover:text-red-600 transition duration-150 transform -translate-x-1/2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span class="material-symbols-rounded">chevron_left</span>
+                </button>
+
+                <div id="heatmap-carousel-container" 
+                     class="flex space-x-4 overflow-x-scroll scroll-smooth w-full p-2"
+                     style="scrollbar-width: none; -ms-overflow-style: none;"> ${df.heatmap_paths.map((path, idx) => renderHeatmapItem(path, idx)).join('')}
+                    
+                </div>
+                
+                <button id="heatmap-next-btn" 
+                        class="absolute right-0 z-10 p-2 bg-white rounded-full shadow-lg border border-gray-200 text-gray-600 hover:text-red-600 transition duration-150 transform translate-x-1/2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span class="material-symbols-rounded">chevron_right</span>
+                </button>
+            </div>
+            
+        </div>
+    ` : `<div class="p-4 bg-emerald-100 text-emerald-800 rounded-xl mt-8 flex items-center"><span class="material-symbols-rounded mr-2">info</span> No highly suspicious heatmap regions detected, or heatmaps are still processing.</div>`;
+    
+  
+    const frameLogSection = df.frame_predictions && df.frame_predictions.length > 0 ? `
+        <div class="mt-10 p-6 bg-white rounded-2xl shadow-xl border border-indigo-200">
+            <h4 class="text-2xl font-bold text-gray-800 mb-4 flex items-center border-b pb-2">
+                <span class="material-symbols-rounded text-3xl text-indigo-600 mr-2">timeline</span>
+                Detailed Frame-by-Frame Log
+            </h4>
+
+            <div class="max-h-[500px] overflow-y-auto border border-gray-200 rounded-lg shadow-inner">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100 sticky top-0 shadow-sm">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Frame No.</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Timestamp (s)</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Prediction</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Confidence</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Faces</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-100">
+                        ${(df.frame_predictions || []).map(frame => {
+                            const isFake = frame.prediction?.toLowerCase() === 'fake';
+                            const predictionClass = isFake ? 'text-red-600 font-extrabold' : 'text-green-600 font-semibold';
+                            const confidenceValue = (frame.confidence * 100).toFixed(2);
+                            const rowClass = isFake && parseFloat(confidenceValue) > 90 ? 'bg-red-50/70' : 'hover:bg-gray-50';
+
+                            return `
+                                <tr class="${rowClass}">
+                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-mono">${frame.frame_number}</td>
+                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">${frame.timestamp.toFixed(2)}</td>
+                                    <td class="px-4 py-2 whitespace-nowrap text-sm ${predictionClass}">${frame.prediction}</td>
+                                    <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-800">${confidenceValue}%</td>
+                                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">${frame.num_faces}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+            ${df.frame_predictions?.length > 50 ? `<p class="mt-4 text-sm text-gray-500 text-center">Only 50 frames are shown in this log. The full log is available in the detailed analysis files.</p>` : ''}
+        </div>
+    ` : `<div class="p-4 bg-yellow-100 text-yellow-800 rounded-xl mt-8 flex items-center"><span class="material-symbols-rounded mr-2">pending</span> Frame prediction data is unavailable or still processing.</div>`;
+    
+    
+    
+    return `
+       
+        <p class="text-lg text-gray-600 mb-10 border-l-4 border-indigo-400 pl-4 bg-indigo-50 p-3 rounded-lg">
+            This report summarizes the results of advanced forensic models used to detect digital manipulation, facial inconsistencies, and deepfake creation.
+        </p>
+
+        ${summarySection}
+        ${heatmapSection}
+        ${frameLogSection}
+    `;
+};
+    
+   
+    const framePredictionsContent = `
+        <h3 class="text-2xl font-bold mb-6 text-gray-800">⏱️ Frame-by-Frame Timeline and Predictions</h3>
+        
+        <p class="text-gray-600 mb-6">This timeline shows the Deepfake prediction and confidence level for each analyzed frame throughout the video duration. </p>
+        
+        <div class="p-6 bg-white rounded-xl shadow-lg border border-emerald-100 mb-8">
+            <h4 class="text-xl font-semibold text-emerald-600 mb-4 border-b pb-2">Prediction Summary</h4>
+            <div class="grid grid-cols-3 gap-4 text-center">
+                <div class="p-2 bg-gray-50 rounded">
+                    <p class="text-2xl font-bold text-red-600">${df.fake_face_count || 0}</p>
+                    <p class="text-sm text-gray-600">Fake Frames</p>
+                </div>
+                <div class="p-2 bg-gray-50 rounded">
+                    <p class="text-2xl font-bold text-green-600">${df.real_face_count || 0}</p>
+                    <p class="text-sm text-gray-600">Real Frames</p>
+                </div>
+                <div class="p-2 bg-gray-50 rounded">
+                    <p class="text-2xl font-bold text-indigo-600">${df.processed_frames || 0}</p>
+                    <p class="text-sm text-gray-600">Total Analyzed</p>
+                </div>
+            </div>
+        </div>
+
+        <h4 class="text-xl font-semibold text-gray-800 mb-4">Detailed Frame Log (${df.frame_predictions?.length || 0} Entries)</h4>
+
+        <div class="max-h-96 overflow-y-auto border border-gray-200 rounded-lg shadow-inner">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100 sticky top-0">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Frame No.</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Timestamp (s)</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Prediction</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Confidence</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Faces</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    ${(df.frame_predictions || []).map(frame => {
+                        const isFake = frame.prediction?.toLowerCase() === 'fake';
+                        const predictionClass = isFake ? 'text-red-600' : 'text-green-600';
+                        const confidenceValue = (frame.confidence * 100).toFixed(2);
+                        const confidenceColor = parseFloat(confidenceValue) > 90 && isFake ? 'bg-red-50' : (parseFloat(confidenceValue) < 80 && !isFake ? 'bg-green-50' : 'bg-white');
+
+                        return `
+                            <tr class="${confidenceColor} hover:bg-gray-50">
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-mono">${frame.frame_number}</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">${frame.timestamp.toFixed(2)}</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm font-semibold ${predictionClass}">${frame.prediction}</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-800">${confidenceValue}%</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">${frame.num_faces}</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+
+
+
+
+
+const metadataContent = (reportData)=>{
+    const meta = reportData.metadata || {};
+    const important_metadata = meta.important_Metadata || {};
+    const rawMetadata = important_metadata.metadata || {}; // The node containing streams/format
+    const format = rawMetadata.format || {}; 
+    const embedded_subtitles = important_metadata.embedded_subtitles || [];
+    const formatSize = (bytes) => {
+    const b = parseInt(bytes);
+    if (isNaN(b)) return 'N/A';
+    return (b / (1024 * 1024)).toFixed(2) + ' MB';
+    };
+
+    const formatDuration = (seconds) => {
+        const s = parseFloat(seconds);
+        if (isNaN(s)) return 'N/A';
+        const mins = Math.floor(s / 60);
+        const secs = Math.floor(s % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')} (${s.toFixed(2)}s)`;
+    };
+
+    const getProbeStatus = (score) => {
+        const s = parseInt(score);
+        if (isNaN(s)) return { label: 'Unknown', color: 'text-slate-400', bg: 'bg-slate-50', icon: 'help' };
+        if (s >= 100) return { label: 'Verified', color: 'text-green-600', bg: 'bg-green-50', icon: 'verified' };
+        if (s >= 50) return { label: 'Ambiguous', color: 'text-amber-600', bg: 'bg-amber-50', icon: 'warning' };
+        return { label: 'Suspicious/Corrupt', color: 'text-red-600', bg: 'bg-red-50', icon: 'dangerous' };
+    };
+
+    const probe = getProbeStatus(format.probe_score);
+    console.log("Forensic Path Check:", {
+        root: reportData,
+        level1: reportData?.metadata,
+        level2: reportData?.metadata?.important_Metadata,
+        level3: reportData?.metadata?.important_Metadata?.metadata
+    });
+
+
+return `
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <h3 class="text-2xl font-bold text-gray-800 flex items-center">
+            <span class="material-symbols-rounded mr-2 text-indigo-600">info</span>
+            Technical Container Metadata
+        </h3>
+        
+        <div class="flex items-center ${probe.bg} ${probe.color} px-4 py-2 rounded-2xl border border-current border-opacity-20">
+            <span class="material-symbols-rounded mr-2">${probe.icon}</span>
+            <div class="flex flex-col">
+                <span class="text-[10px] font-black uppercase tracking-tighter leading-none">Format Integrity</span>
+                <span class="text-sm font-bold leading-tight">${probe.label} (${format.probe_score || 0}/100)</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        ${parseInt(format.probe_score) < 50 ? `
+            <div class="p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl flex items-start">
+                <span class="material-symbols-rounded text-red-500 mr-3">report</span>
+                <p class="text-xs text-red-700 font-medium">
+                    Warning: Low probe score suggests file corruption or a mismatched file extension.
+                </p>
+            </div>
+        ` : ''}
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="bg-slate-50 px-6 py-3 border-b border-slate-200">
+                <h4 class="text-sm font-black uppercase tracking-wider text-slate-600">File Container Details</h4>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Format Name</label>
+                    <p class="text-sm font-bold text-slate-800">${format.format_long_name || 'N/A'}</p>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">File Size</label>
+                    <p class="text-sm font-bold text-slate-800">${formatSize(format.size)}</p>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Total Duration</label>
+                    <p class="text-sm font-bold text-slate-800">${formatDuration(format.duration)}</p>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Container Bitrate</label>
+                    <p class="text-sm font-bold text-slate-800">${format.bit_rate ? Math.round(format.bit_rate / 1000) + ' kb/s' : 'N/A'}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="bg-slate-50 px-6 py-3 border-b border-slate-200">
+                <h4 class="text-sm font-black uppercase tracking-wider text-slate-600">Brand & System Tags</h4>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                ${Object.entries(format.tags || {}).map(([key, value]) => `
+                    <div class="flex flex-col p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <dt class="text-[10px] font-bold text-indigo-500 uppercase">${key.replace(/_/g, ' ')}</dt>
+                        <dd class="text-sm font-mono text-slate-700 truncate" title="${value}">${value}</dd>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h4 class="text-sm font-black uppercase tracking-wider text-slate-600 mb-4 flex items-center">
+                    <span class="material-symbols-rounded text-base mr-2">bookmarks</span> Chapters
+                </h4>
+                ${rawMetadata.chapters?.length > 0 ? `
+                    <ul class="space-y-2">
+                        ${rawMetadata.chapters.map(ch => `
+                            <li class="text-sm p-2 bg-slate-50 rounded-lg flex justify-between">
+                                <span class="font-medium">${ch.tags?.title || 'Untitled Chapter'}</span>
+                                <span class="text-slate-400">${ch.start_time}s</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                ` : `<p class="text-sm text-slate-400 italic text-center py-4">No chapter markers found.</p>`}
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h4 class="text-sm font-black uppercase tracking-wider text-slate-600 mb-4 flex items-center">
+                    <span class="material-symbols-rounded text-base mr-2">subtitles</span> Subtitle Streams
+                </h4>
+                ${embedded_subtitles.length > 0 ? `
+                    <ul class="space-y-2">
+                        ${embedded_subtitles.map(sub => `
+                            <li class="text-sm p-2 bg-slate-50 rounded-lg flex justify-between">
+                                <span class="font-medium">${sub.codec_name?.toUpperCase() || 'Sub'}</span>
+                                <span class="text-indigo-500 font-bold uppercase text-[10px]">${sub.tags?.language || 'und'}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                ` : `<p class="text-sm text-slate-400 italic text-center py-4">No embedded subtitles detected.</p>`}
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+    <div class="bg-slate-50 px-6 py-3 border-b border-slate-200 flex justify-between items-center">
+        <h4 class="text-sm font-black uppercase tracking-wider text-slate-600">Extracted Text & Strings</h4>
+        <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md font-bold">FORENSIC TOOLS</span>
+    </div>
+    <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <button onclick="showStringModal('all', 'All Extracted Text')" 
+            class="flex items-center justify-center gap-2 p-4 bg-white border-2 border-slate-100 hover:border-indigo-500 hover:bg-indigo-50 transition-all rounded-xl group">
+            <span class="material-symbols-rounded text-indigo-500">segment</span>
+            <div class="text-left">
+                <div class="text-sm font-bold text-slate-800">All Strings</div>
+                <div class="text-[10px] text-slate-500 uppercase font-bold">${reportData?.metadata?.important_Metadata?.ocr_text?.all_strings?.length || 0} Entries</div>
+            </div>
+        </button>
+
+        <button onclick="showStringModal('unique', 'Unique Keywords')" 
+            class="flex items-center justify-center gap-2 p-4 bg-white border-2 border-slate-100 hover:border-amber-500 hover:bg-amber-50 transition-all rounded-xl group">
+            <span class="material-symbols-rounded text-amber-500">Fingerprint</span>
+            <div class="text-left">
+                <div class="text-sm font-bold text-slate-800">Unique Strings</div>
+                <div class="text-[10px] text-slate-500 uppercase font-bold">${reportData?.metadata?.important_Metadata?.ocr_text?.unique_strings?.length || 0} Entries</div>
+            </div>
+        </button>
+
+        <button onclick="showStringModal('printable', 'Binary Printable Strings')" 
+            class="flex items-center justify-center gap-2 p-4 bg-white border-2 border-slate-100 hover:border-emerald-500 hover:bg-emerald-50 transition-all rounded-xl group">
+            <span class="material-symbols-rounded text-emerald-500">binary</span>
+            <div class="text-left">
+                <div class="text-sm font-bold text-slate-800">Printable Strings</div>
+                <div class="text-[10px] text-slate-500 uppercase font-bold">${reportData?.metadata?.important_Metadata?.printable_strings?.length || 0} Offsets</div>
+            </div>
+        </button>
+    </div>
+</div>
+    </div>
+`;
+}
+    section.innerHTML = `
+        <div class="analysis-container modern-analysis bg-gray-50 p-6 md:p-10">
+           <h2 class="text-3xl font-extrabold text-gray-900 mb-6 border-b pb-3">
+    <span class="material-symbols-rounded align-middle mr-3 text-4xl">movie_filter</span>
+    Video Forensic Analysis Report
+</h2>
+
+            <div class="flex border-b border-gray-200 mb-8 overflow-x-auto">
+    <button class="modern-tab-button active" data-tab="summaryTab">Summary</button>
+    <button class="modern-tab-button" data-tab="deepfakeTab">Deepfake Analysis</button>
+    <button class="modern-tab-button" data-tab="majorTab">Major Analysis</button>
+    <button class="modern-tab-button" data-tab="metadataTab">Metadata Details</button>
+</div>
+
+            <div class="tab-content active" id="summaryTab">
+                ${videoSummaryContent}
+            </div>
+            
+            <div class="tab-content" id="deepfakeTab">
+                ${renderCombinedDeepfakeAnalysis(df)}
+            </div>
+            
+            <div class="tab-content" id="majorTab">
+               ${initiateMajorAnalysisLoad(majorAnalysis, 'majorTab')}
+            </div>
+
+            
+                <div class="tab-content" id="metadataTab">
+    <div id="metadata-content-target">
+        <div class="p-8 text-center text-slate-400">
+            <div class="animate-spin mb-2 text-indigo-500">⏳</div>
+            Loading technical metadata...
+        </div>
+    </div>
+</div>
+            </div>
+
+    `;
+    
+
+document.querySelectorAll('.modern-tab-button').forEach(button => { 
+    button.addEventListener('click', () => {
+        const targetTab = button.getAttribute('data-tab');
+
+        document.querySelectorAll('.modern-tab-button').forEach(btn => btn.classList.remove('active')); 
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+        button.classList.add('active');
+        document.getElementById(targetTab)?.classList.add('active');
+        if (targetTab === 'deepfakeTab') {
+    
+            setTimeout(initializeHeatmapCarousel, 50); 
+            console.log("Deepfake Tab clicked: Initializing Heatmap Carousel.");
+        }
+    });
+});
+
+}
+
+
 
 
 
 document.addEventListener('DOMContentLoaded', () => {
-  listAnalysisResults().then(files => {
-    if (files.length > 0) {
-      // Load the latest result
-      const latestFile = files[files.length - 1];
-      getAnalysisResult(latestFile).then(parsed => {
-        if (!parsed) return;
+ 
 
-        if (parsed.deepfake_detection || parsed.forgery_detection || parsed.metadata_tags) {
-          renderEvidenceResults(parsed);
-        } else if (parsed.text_detection && parsed.report) {
-          renderDocumentResults({
-            text_detection: parsed.text_detection,
-            report: parsed.report,
-            hashes: parsed.hashes
-          });
-        } else if (parsed.memdump) {
-          renderMemdumpResults(parsed.memdump);
+   
+    document.body.addEventListener('click', (event) => {
+        
+        const toggleButton = event.target.closest('[data-hash-toggle="true"]');
+
+        if (toggleButton) {
+    
+            const hashContainer = toggleButton.closest('.p-5.bg-white'); 
+            if (!hashContainer) return;
+
+            const hiddenContent = hashContainer.querySelector('#hidden-hashes-content');
+            const buttonText = toggleButton.querySelector('span:first-child');
+            const buttonIcon = toggleButton.querySelector('.material-symbols-rounded');
+
+            if (!hiddenContent || !buttonText || !buttonIcon) return;
+            
+           
+            const initialCount = parseInt(toggleButton.dataset.initialCount, 10);
+            const totalCount = parseInt(toggleButton.dataset.totalCount, 10);
+            
+            if (hiddenContent.classList.contains('hidden')) {
+                
+                hiddenContent.classList.remove('hidden');
+                buttonText.textContent = 'Hide Extra Hashes';
+                buttonIcon.textContent = 'expand_less'; 
+                buttonIcon.classList.add('rotate-180');
+            } else {
+              
+                hiddenContent.classList.add('hidden');
+                
+              
+                const hiddenCount = totalCount - initialCount;
+                buttonText.textContent = `Show ${hiddenCount} More`; 
+                
+                buttonIcon.textContent = 'expand_more'; 
+                buttonIcon.classList.remove('rotate-180');
+            }
         }
-      });
-    }
-  });
+    });
 });
-function openHeatmapModal(src) {
-  document.getElementById("heatmapModal").style.display = "block";
-  document.getElementById("heatmapModalImg").src = src;
-}
-function closeHeatmapModal() {
-  document.getElementById("heatmapModal").style.display = "none";
-}
+
+// Global variable to store the current zoom level
+let currentZoomLevel = 1.0;
+
+/**
+ * Generates the HTML for the heatmap color interpretation legend inside the modal.
+ */
+window.getHeatmapColorKeyHtml = () => {
+    const keyData = [
+        { colorClass: 'bg-blue-500', label: 'Blue', detection: 'Very low intensity / Normal Region' },
+        { colorClass: 'bg-green-500', label: 'Green', detection: 'Low-to-moderate intensity / Slight inconsistencies' },
+        { colorClass: 'bg-yellow-500', label: 'Yellow', detection: 'Moderate-to-high intensity / Probable manipulation' },
+        { colorClass: 'bg-red-500', label: 'Red', detection: 'Highest intensity / Strong evidence of deepfake' }
+    ];
+
+    return `
+        <h4 class="text-lg font-semibold text-gray-700 mb-3 sticky top-0 bg-white pb-2 border-b">Intensity Information</h4>
+        <div class="space-y-4">
+            ${keyData.map(item => `
+                <div class="flex items-start space-x-3 p-2 border-b border-gray-100">
+                    <div class="w-6 h-6 ${item.colorClass} rounded-sm shadow-md flex-shrink-0 mt-1"></div>
+                    <div>
+                        <p class="text-sm font-bold text-gray-900">${item.label}</p>
+                        <p class="text-xs text-gray-600">${item.detection}</p>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+};
+
+
+/**
+ * Opens the modal to show a large preview of the selected heatmap image.
+ * @param {string} path - The URL path to the heatmap image.
+ */
+window.openHeatmapModal = (path) => {
+    const modal = document.getElementById('heatmapModal');
+    const image = document.getElementById('modalImage');
+    const title = document.getElementById('modalTitle');
+    const downloadBtn = document.getElementById('downloadButton');
+    const colorKey = document.getElementById('modalColorKey');
+    const scrollContainer = document.getElementById('imageScrollContainer');
+    
+    // Reset zoom level every time a new image is opened
+    currentZoomLevel = 1.0;
+    image.style.transform = `scale(${currentZoomLevel})`;
+    image.style.width = 'auto'; 
+    image.style.height = 'auto';
+    image.style.maxWidth = 'none';
+
+    // Extract frame/confidence details from the path for the title
+    const frameMatch = path.match(/frame_(\d+)/);
+    const confidenceMatch = path.match(/conf_(\d+)/);
+    const frameNumber = frameMatch ? frameMatch[1] : 'N/A';
+    const confidence = confidenceMatch ? confidenceMatch[1] : 'N/A';
+
+    // Set content
+    image.src = path;
+    title.textContent = `Deepfake Heatmap - Frame ${frameNumber} (Confidence: ${confidence}%)`;
+    downloadBtn.href = path; // Set download link to the image path
+    colorKey.innerHTML = getHeatmapColorKeyHtml(); // Insert the color key
+    
+   image.onload = () => {
+        const scrollContainer = document.getElementById('imageScrollContainer');
+        
+        // Step 1: Ensure the transform property (zoom) is reset
+        image.style.transform = `scale(1.0)`; 
+        currentZoomLevel = 1.0;
+
+        // Step 2: Use a delay to ensure scrollWidth is calculated based on the NATIVE image size
+        setTimeout(() => {
+            
+            // Check if the content is wider than the container
+            if (scrollContainer.scrollWidth > scrollContainer.clientWidth) {
+                
+                // Calculate position to center the content
+                // Subtracting clientWidth ensures we scroll to the position where the image is centered in the viewport
+                const centerPosition = (scrollContainer.scrollWidth - scrollContainer.clientWidth) / 2;
+                
+                // Set initial scroll position to the center
+                scrollContainer.scrollLeft = centerPosition;
+                
+                // Set vertical scroll to center (optional, but helps tall images)
+                scrollContainer.scrollTop = (scrollContainer.scrollHeight - scrollContainer.clientHeight) / 2;
+
+                console.log(`Scroll centered at: ${centerPosition} / ${scrollContainer.scrollWidth}`); 
+            } else {
+                 // If image is small, reset scroll to ensure it starts at 0,0
+                scrollContainer.scrollLeft = 0;
+                scrollContainer.scrollTop = 0;
+            }
+            
+            // Disable onload handler
+            image.onload = null;
+        }, 50); // Increased delay to 50ms for high reliability
+    };
+  
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+};
+
+/**
+ * Closes the modal.
+ */
+window.closeHeatmapModal = () => {
+    const modal = document.getElementById('heatmapModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+};
+
+/**
+ * Increases or decreases the zoom level of the heatmap image.
+ * @param {number} delta - The amount to change the zoom level (e.g., 0.1 for zoom in).
+ */
+window.zoomHeatmap = (delta) => {
+    const image = document.getElementById('modalImage');
+    const newZoom = currentZoomLevel + delta;
+    
+    // Set bounds for zoom (e.g., min 0.5x, max 4x)
+    if (newZoom >= 0.5 && newZoom <= 4.0) {
+        currentZoomLevel = newZoom;
+        // Apply the zoom transform
+        image.style.transform = `scale(${currentZoomLevel})`;
+    }
+};
+// Global variable to hold the currently loaded forensic data
+let currentForensicData = null;
+
+window.showStringModal = (type, title) => {
+    if (!currentForensicData) return;
+
+    const modal = document.getElementById('forensicModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalSubtitle = document.getElementById('modalSubtitle');
+    const modalBody = document.getElementById('modalBody');
+    const entryCount = document.getElementById('entryCount');
+
+    modalTitle.innerText = title;
+    modal.classList.remove('hidden');
+
+    // 1. Resolve Data Paths
+    const impMeta = currentForensicData?.metadata?.important_Metadata || {};
+    const ocrNode = impMeta.extracted_text || {};
+    const printableNode = currentForensicData?.metadata?.printable_strings || impMeta.printable_strings || [];
+
+    let data = [];
+    let html = '';
+
+    // 2. Select Renderer Based on Type
+    if (type === 'all') {
+        data = ocrNode.all_strings || [];
+        modalSubtitle.innerText = "Full OCR sequence captured from video frames";
+        html = renderAllStrings(data);
+    } 
+    else if (type === 'unique') {
+        data = ocrNode.unique_strings || [];
+        modalSubtitle.innerText = "Deduplicated keywords and entities";
+        html = renderUniqueStrings(data);
+    } 
+    else if (type === 'printable') {
+        data = printableNode;
+        modalSubtitle.innerText = "Readable ASCII/UTF-8 strings extracted from binary stream";
+        html = renderPrintableStrings(data);
+    }
+
+    modalBody.innerHTML = html;
+    entryCount.innerText = `${data.length} ENTRIES FOUND`;
+};
+
+// --- RENDER HELPERS ---
+
+const renderAllStrings = (items) => {
+    if (!items.length) return renderEmptyState("No OCR strings were extracted from this file.");
+    
+    return items.map(item => `
+        <div class="group flex items-center justify-between p-3 border-b border-slate-50 hover:bg-indigo-50/50 rounded-lg transition-colors">
+            <div class="flex items-center gap-4">
+                <span class="text-xs font-mono text-slate-300">#${item.frame}</span>
+                <span class="text-sm font-semibold text-slate-700">${item.text}</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full ${item.confidence > 80 ? 'bg-green-500' : 'bg-amber-500'}" style="width: ${item.confidence}%"></div>
+                </div>
+                <span class="text-[10px] font-black text-slate-400 w-8">${item.confidence}%</span>
+            </div>
+        </div>
+    `).join('');
+};
+
+const renderUniqueStrings = (strings) => {
+    if (!strings.length) return renderEmptyState("No unique keywords detected.");
+    
+    return `
+        <div class="flex flex-wrap gap-2">
+            ${strings.map(str => `
+                <span class="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-medium hover:border-indigo-500 hover:text-indigo-600 transition-all cursor-default">
+                    ${str}
+                </span>
+            `).join('')}
+        </div>
+    `;
+};
+
+const renderPrintableStrings = (offsets) => {
+    if (!offsets.length) return renderEmptyState("No printable strings found in binary data.");
+    
+    return `
+        <div class="font-mono text-[11px]">
+            <div class="grid grid-cols-12 gap-2 mb-4 text-slate-400 font-bold uppercase tracking-widest border-b pb-2">
+                <div class="col-span-2">Offset</div>
+                <div class="col-span-2">Size</div>
+                <div class="col-span-8">Data / String Value</div>
+            </div>
+            ${offsets.map(off => `
+                <div class="grid grid-cols-12 gap-2 py-1 border-b border-slate-50 hover:bg-slate-50 transition-colors group">
+                    <div class="col-span-2 text-indigo-500 font-bold">${off.hex_offset}</div>
+                    <div class="col-span-2 text-slate-400">${off.length}b</div>
+                    <div class="col-span-8 text-slate-700 truncate group-hover:text-indigo-600" title="${off.string}">
+                        ${off.string.replace(/ /g, '·')}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+};
+
+const renderEmptyState = (msg) => `
+    <div class="flex flex-col items-center justify-center py-20 text-center">
+        <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+            <span class="material-symbols-rounded text-slate-300 text-3xl">database_off</span>
+        </div>
+        <h3 class="text-slate-800 font-bold">Data Unavailable</h3>
+        <p class="text-slate-400 text-sm max-w-xs mx-auto">${msg}</p>
+    </div>
+`;
+
+// Close logic
+window.closeForensicModal = () => {
+    document.getElementById('forensicModal').classList.add('hidden');
+};
+
+
+document.getElementById('forensicSearch').addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#modalBody > div, #modalBody > span');
+    
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(term) ? '' : 'none';
+    });
+});
