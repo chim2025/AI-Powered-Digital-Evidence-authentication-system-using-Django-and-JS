@@ -1,0 +1,243 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Video Forensics Analysis Schema",
+  "type": "object",
+
+  "properties": {
+    "file": { "type": "string" },
+    "tamper_probability": { "type": "number" },
+    "verdict": { "type": "string" },
+
+    "features": {
+      "$ref": "#/definitions/features"
+    }
+  },
+
+  "required": ["file", "tamper_probability", "features"],
+
+  "definitions": {
+
+    "features": {
+      "type": "object",
+      "properties": {
+        "important_Metadata": {
+          "$ref": "#/definitions/important_Metadata"
+        },
+        "gop_irregularity": { "type": "number" },
+        "duplicate_ratio": { "type": "number" },
+        "cut_density": { "type": "number" },
+        "metadata_flag": { "type": "number" },
+
+        "prnu_full_calibration": {
+          "$ref": "#/definitions/prnu_full_calibration"
+        },
+
+        "prnu_checkers": {
+          "$ref": "#/definitions/prnu_checker"
+        },
+
+        "explanations": {
+          "$ref": "#/definitions/explanations"
+        }
+      }
+    },
+
+    "important_Metadata": {
+      "type": "object",
+      "properties": {
+        "extracted_text": { "$ref": "#/definitions/extracted_text" },
+        "metadata": { "$ref": "#/definitions/ffmpeg_metadata" }
+      }
+    },
+
+    "extracted_text": {
+      "type": "object",
+      "properties": {
+        "all_strings": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/ocr_string_item" }
+        },
+        "words": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "frame_count_scanned": { "type": "number" },
+        "ocr_confidence_avg": { "type": "number" }
+      }
+    },
+
+    "ocr_string_item": {
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "confidence": { "type": "number" },
+        "frame": { "type": "number" }
+      }
+    },
+
+    "ffmpeg_metadata": {
+      "type": "object",
+      "properties": {
+        "streams": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/ffmpeg_stream" }
+        },
+        "format": { "$ref": "#/definitions/ffmpeg_format" }
+      }
+    },
+
+    "ffmpeg_stream": {
+      "type": "object",
+      "properties": {
+        "index": { "type": "number" },
+        "codec_name": { "type": "string" },
+        "codec_type": { "type": "string" },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "sample_rate": { "type": "string" },
+        "channels": { "type": "number" },
+        "bit_rate": { "type": "string" },
+        "nb_frames": { "type": "string" },
+        "duration": { "type": "string" },
+        "tags": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "ffmpeg_format": {
+      "type": "object",
+      "properties": {
+        "filename": { "type": "string" },
+        "nb_streams": { "type": "number" },
+        "format_name": { "type": "string" },
+        "format_long_name": { "type": "string" },
+        "size": { "type": "string" },
+        "duration": { "type": "string" },
+        "bit_rate": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+
+    "prnu_full_calibration": {
+      "type": "object",
+      "properties": {
+        "analysis_date": { "type": "string" },
+        "total_videos_requested": { "type": "number" },
+
+        "videos_processed": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/prnu_video_entry" }
+        },
+
+        "global_statistics": {
+          "type": "object",
+          "properties": {
+            "videos_analyzed": { "type": "number" },
+            "mean_correlation": { "$ref": "#/definitions/stats_block" },
+            "std_correlation": { "$ref": "#/definitions/stats_block" },
+            "mad_corr": { "$ref": "#/definitions/stats_block" }
+          }
+        },
+
+        "threshold_suggestions": {
+          "type": "object",
+          "properties": {
+            "consistent_camera": { "$ref": "#/definitions/stats_block" },
+            "possible_tampering": { "$ref": "#/definitions/stats_block" }
+          }
+        },
+
+        "histograms": {
+          "type": "object",
+          "properties": {
+            "mean_corr": { "$ref": "#/definitions/histogram_array" },
+            "std_corr": { "$ref": "#/definitions/histogram_array" },
+            "mad_corr": { "$ref": "#/definitions/histogram_array" }
+          }
+        }
+      }
+    },
+
+    "prnu_video_entry": {
+      "type": "object",
+      "properties": {
+        "video": { "type": "string" },
+        "full_path": { "type": "string" },
+        "frames_used": { "type": "number" },
+        "patch_size": { "type": "number" },
+        "mean_corr": { "type": "number" },
+        "median_corr": { "type": "number" },
+        "std_corr": { "type": "number" },
+        "mad_corr": { "type": "number" },
+        "status": { "type": "string" }
+      }
+    },
+
+    "stats_block": {
+      "type": "object",
+      "properties": {
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "mean": { "type": "number" }
+      }
+    },
+
+    "histogram_array": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "range": { "type": "string" },
+          "count": { "type": "number" }
+        }
+      }
+    },
+
+    "prnu_checker": {
+      "type": "object",
+      "properties": {
+        "video": { "type": "string" },
+        "full_path": { "type": "string" },
+        "frames_used": { "type": "number" },
+        "patch_size": { "type": "number" },
+        "mean_corr": { "type": "number" },
+        "median_corr": { "type": "number" },
+        "std_corr": { "type": "number" },
+        "mad_corr": { "type": "number" },
+        "status": { "type": "string" },
+        "threshold_suggestions": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        }
+      }
+    },
+
+    "explanations": {
+      "type": "object",
+      "properties": {
+        "classification": { "type": "string" },
+        "confidence": { "type": "string" },
+        "overall_score_0_100": { "type": "number" },
+        "mean_corr": { "type": "number" },
+        "median_corr": { "type": "number" },
+        "std_corr": { "type": "number" },
+        "mad_corr": { "type": "number" },
+        "frames_used": { "type": "number" },
+        "thresholds_used": { "type": "string" },
+
+        "detailed_checks": {
+          "type": "object",
+          "additionalProperties": { "type": "boolean" }
+        },
+
+        "explanation_bullets": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

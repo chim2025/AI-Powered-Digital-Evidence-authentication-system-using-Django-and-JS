@@ -330,7 +330,7 @@ class VideoGradCAM:
             )
             
             if face_data is None:
-                print(f"  ⚠ Frame {frame_pred.frame_number}: Face data not found")
+                print(f"  âš  Frame {frame_pred.frame_number}: Face data not found")
                 continue
             
             face_image = face_data['face']
@@ -357,9 +357,9 @@ class VideoGradCAM:
             saved_paths.append(str(output_path))
             
             print(f"  [{i}/{len(suspicious_frames)}] Frame {frame_pred.frame_number} "
-                  f"(conf: {confidence*100:.1f}%) → {output_path.name}")
+                  f"(conf: {confidence*100:.1f}%) â†’ {output_path.name}")
         
-        print(f"\n✓ Generated {len(saved_paths)} heatmaps in: {output_dir}")
+        print(f"\nâœ“ Generated {len(saved_paths)} heatmaps in: {output_dir}")
         
         return saved_paths
 
@@ -406,7 +406,7 @@ def demo_gradcam(
         confidence=confidence
     )
     
-    print(f"✓ Saved visualization to: {output_path}")
+    print(f"âœ“ Saved visualization to: {output_path}")
 
 
 if __name__ == '__main__':

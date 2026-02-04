@@ -18,3 +18,4 @@ ascii_text = f.renderText("ProPhispher")
 # Print the logo in color
 print(f"{cyan}{ascii_text}{yellow}[v1.0]{reset}")
 print(f"{green}By KasRoudra{reset}")
+

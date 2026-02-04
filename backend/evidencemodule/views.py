@@ -11,6 +11,8 @@ import numpy as np
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.http import FileResponse, Http404, JsonResponse
+
+from .polling import run_virustotal_in_background
 from .utils.file_utils import save_uploaded_file
 
 from .process_folder.process_metrics import get_process_metrics
@@ -56,7 +58,7 @@ def _save_uploaded_files(uploaded_files, folder_path):
     static_rel_paths = []      # paths relative to COMPARATOR_ROOT (for URLs)
 
     for uploaded_file in uploaded_files:
-        # keep the original name – Django already sanitises it
+       
         original_name = uploaded_file.name
         abs_path      = os.path.join(folder_path, original_name)
 
@@ -65,7 +67,7 @@ def _save_uploaded_files(uploaded_files, folder_path):
                 dest.write(chunk)
 
         saved_paths.append(abs_path)
-        # relative path → will be served as static/comparator/<folder>/<name>
+     
         rel_path = os.path.join(os.path.basename(folder_path), original_name)
         static_rel_paths.append(rel_path)
 
@@ -95,7 +97,7 @@ def save_analysis_json(result_obj, prefix="analysis"):
     filename = f"{prefix}_{ts}_{uuid.uuid4().hex}.json"
     filepath = os.path.join(out_dir, filename)
 
-    # Recursive conversion
+    
     def _convert(obj):
         if isinstance(obj, dict):
             return {k: _convert(v) for k, v in obj.items()}
@@ -113,11 +115,11 @@ def save_analysis_json(result_obj, prefix="analysis"):
         return settings.MEDIA_URL.rstrip("/") + "/" + rel
     return filepath
 
-#Index Page
+
 def index(request):
     return render(request, 'index.html')
 
-# User Registration
+
 def register_user(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -271,6 +273,34 @@ def analyze_evidence(request):
             'file_name': file_name,
             'file_size': file_size
         }
+       try:
+            task_id = str(uuid.uuid4())
+
+            vt_folder = os.path.join(settings.FORENSIC_ROOT, 'vt_files')
+            os.makedirs(vt_folder, exist_ok=True)
+
+            task_info = {
+                "task_id": task_id,
+                "file_path": file_path,
+                "created_at": datetime.datetime.now().isoformat(),
+                "vt_status": "queued",
+                "vt_result": None
+            }
+
+            vt_json_path = os.path.join(vt_folder, f"{task_id}.json")
+            with open(vt_json_path, 'w') as f:
+                json.dump(task_info, f, indent=2)
+
+            #print(f"VT task created: {vt_json_path}")
+
+            
+            #run_virustotal_in_background(task_id, file_path)
+
+       except Exception as e:
+            print("Failed to start VT background scan:", e)
+            task_id = None
+                
+
 
        def event_stream():
             try:
@@ -288,10 +318,12 @@ def analyze_evidence(request):
                 yield 'data: {"progress": 15, "message": "Initializing analysis..."}\n\n'
                 result = {
                     "meta": {
+                        "task_id":task_id,
                         "original_filename": evidence_file.name,
                         "upload_time": start_time.isoformat(),
                         "file_path": file_path,
-                        "file_type": file_type
+                        "file_type": file_type,
+                        'vt_status':"sleep mode"
                     },
                     "plugins": {},
                     "summary": {}
@@ -344,12 +376,28 @@ def analyze_evidence(request):
                     try:
                         detector = VideoDeepfakeDetector()
                         yield 'data: {"progress": 30, "message": "Intitializing deefake detection scripts (this may take a while)..."}\n\n'
+                        heatmap_rel_dir = f"heatmaps/{uuid.uuid4().hex}"
+                        heatmap_abs_dir = os.path.join(settings.MEDIA_ROOT, heatmap_rel_dir)
                         
-                        
-                        video_result = detector.predict_video(file_path, verbose=False)
+
+                        video_result = detector.predict_video(
+                            file_path, 
+                            verbose=False,
+                            heatmap_output_dir=heatmap_abs_dir
+                        )
+                        video_result_dict = video_result.to_dict()
+                        if video_result_dict.get('heatmap_paths'):
+                            heatmap_urls = []
+                            for abs_path in video_result_dict['heatmap_paths']:
+                                # Get path relative to MEDIA_ROOT
+                                rel_path = os.path.relpath(abs_path, settings.MEDIA_ROOT).replace("\\", "/")
+                                # Construct URL
+                                url = settings.MEDIA_URL.rstrip("/") + "/" + rel_path
+                                heatmap_urls.append(url)
+                            video_result_dict['heatmap_paths'] = heatmap_urls
                         
                         # Convert to dict
-                        video_result_dict = video_result.to_dict()
+                        
                         
                         
                         result["deepfake_video"] = video_result_dict
@@ -358,7 +406,7 @@ def analyze_evidence(request):
                         result["summary"]["verdict"] = video_result_dict["prediction"]
                         result["summary"]["confidence"] = video_result_dict["confidence"]
 
-                        yield 'data: {"progress": 59, "message": "Analyzing bit by bit frames of the video..."}\n\n'
+                        yield 'data: {"progress": 69, "message": "Analyzing bit by bit frames of the video..."}\n\n'
                         result["major_analysis"]=executors(file_path)
                         print(result["major_analysis"])
                         
@@ -415,7 +463,13 @@ def analyze_evidence(request):
                 end_time = datetime.datetime.now()
                 end_msg = f"Analysis ended at: {end_time.strftime('%H:%M:%S')}"
                 yield f'data: {json.dumps({"progress": 99, "message": end_msg})}\n\n'
+                result["meta"]['vt_status']="queued"
                 yield f'data: {json.dumps({"progress": 100, "message": "Analysis complete", "result": result})}\n\n'
+                try:
+                    print(f"[VT] Starting background scan for task_id={task_id}")
+                    run_virustotal_in_background(task_id, file_path)
+                except Exception as e:
+                    print("Failed to start VT background scan:", e)
 
             except Exception as e:
                 yield f'data: {json.dumps({"progress": 100, "message": "Error: " + str(e), "error": True})}\n\n'
@@ -423,6 +477,21 @@ def analyze_evidence(request):
        return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
 
     return HttpResponse(json.dumps({"error": "No file or invalid request."}), content_type="application/json")
+
+def vt_status(request, task_id):
+    vt_file = os.path.join(settings.FORENSIC_ROOT, 'vt_files', f"{task_id}.json")
+    
+    if not os.path.exists(vt_file):
+        return JsonResponse({"vt_status": "not_found"})
+
+    with open(vt_file) as f:
+        data = json.load(f)
+
+    return JsonResponse({
+        "vt_status": data.get("vt_status", "queued"),
+        "vt_result": data.get("vt_result"),
+        "scanned_at": data.get("vt_completed_at")
+    })
 
 def get_process(request):
     """
