@@ -543,6 +543,46 @@ def get_analysis_result(request, filename):
     if not os.path.exists(full) or not filename.endswith(".json"):
         raise Http404("Analysis result not found")
     return FileResponse(open(full, "rb"), content_type="application/json")
+
+
+@csrf_exempt
+def save_analysis_result(request):
+    """
+    Endpoint to save analysis results from the frontend.
+    Expects JSON body: {"filename": "...", "data": {...}}
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    try:
+        body = json.loads(request.body)
+        filename = body.get("filename")
+        data = body.get("data")
+
+        if not data:
+             return JsonResponse({"error": "No data provided"}, status=400)
+
+        # Use the existing save mechanism or just save directly to the results dir
+        out_dir = getattr(settings, "ANALYSIS_RESULTS_DIR", os.path.join(settings.BASE_DIR, "analysis_results"))
+        os.makedirs(out_dir, exist_ok=True)
+
+        if not filename:
+            ts = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+            filename = f"analysis_{ts}_{uuid.uuid4().hex}.json"
+        
+        # Ensure filename ends with .json and has no directory traversal
+        filename = os.path.basename(filename)
+        if not filename.endswith(".json"):
+            filename += ".json"
+
+        filepath = os.path.join(out_dir, filename)
+
+        with open(filepath, "w", encoding="utf-8") as f:
+             json.dump(data, f, indent=2, ensure_ascii=False)
+
+        return JsonResponse({"status": "ok", "filename": filename})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 @csrf_exempt
 def file_comparator(request):
     print(f"Request method: {request.method}")  

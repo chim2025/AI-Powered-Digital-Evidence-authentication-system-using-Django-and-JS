@@ -14,78 +14,78 @@ const evidencePreview = document.getElementById("evidencePreview");
 const uploadText = document.getElementById("uploadText");
 const toast = document.getElementById("toast");
 const forensicQuotes = [
-  "🕵️‍♂️ <b>‘Digital forensics</b>: where code becomes testimony.’",
-  "📁 <b>‘Every byte</b> leaves a trace — we analyze them all.’",
-  "🔍 <b>‘Truth hides in pixels</b>. Let's uncover it.’",
-  "🧠 <b>‘High-resolution evidence</b> may take longer. Hang tight.’",
-  "📸 <b>‘One frame can reveal</b> a thousand secrets.’",
-  "💡 <b>‘No data is useless</b> — every detail matters.’",
+    "🕵️‍♂️ <b>‘Digital forensics</b>: where code becomes testimony.’",
+    "📁 <b>‘Every byte</b> leaves a trace — we analyze them all.’",
+    "🔍 <b>‘Truth hides in pixels</b>. Let's uncover it.’",
+    "🧠 <b>‘High-resolution evidence</b> may take longer. Hang tight.’",
+    "📸 <b>‘One frame can reveal</b> a thousand secrets.’",
+    "💡 <b>‘No data is useless</b> — every detail matters.’",
 ];
 
 
 function loadHexy(callback) {
-  if (window.hexy) {
-    callback(window.hexy);
-    return;
-  }
-  const script = document.createElement("script");
-  script.src = "https://unpkg.com/hexy@0.3.3/lib/hexy.js";
-  script.onload = () => callback(window.hexy);
-  script.onerror = () => {
-    console.error("Failed to load hexy from CDN");
-    callback(null);
-  };
-  document.head.appendChild(script);
+    if (window.hexy) {
+        callback(window.hexy);
+        return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/hexy@0.3.3/lib/hexy.js";
+    script.onload = () => callback(window.hexy);
+    script.onerror = () => {
+        console.error("Failed to load hexy from CDN");
+        callback(null);
+    };
+    document.head.appendChild(script);
 }
 
 function cycleQuotes() {
-  const quoteBox = document.querySelector(".modern-quote-box");
-  if (!quoteBox) return;
+    const quoteBox = document.querySelector(".modern-quote-box");
+    if (!quoteBox) return;
 
-  let current = 0;
+    let current = 0;
 
-  setInterval(() => {
-    quoteBox.classList.remove("show");
-    setTimeout(() => {
-      quoteBox.innerHTML = forensicQuotes[current];
-      quoteBox.classList.add("show");
-      current = (current + 1) % forensicQuotes.length;
-    }, 300);
-  }, 6000);
+    setInterval(() => {
+        quoteBox.classList.remove("show");
+        setTimeout(() => {
+            quoteBox.innerHTML = forensicQuotes[current];
+            quoteBox.classList.add("show");
+            current = (current + 1) % forensicQuotes.length;
+        }, 300);
+    }, 6000);
 }
 
 function saveAnalysisResult(result) {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const filename = `analysis_result_${timestamp}.json`;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const filename = `analysis_result_${timestamp}.json`;
 
-  fetch("/save_analysis_result/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ filename, data: result })
-  })
-    .then(r => r.json())
-    .then(resp => console.log("Saved analysis result:", resp))
-    .catch(err => console.error("Error saving analysis result:", err));
+    fetch("/save_analysis_result/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename, data: result })
+    })
+        .then(r => r.json())
+        .then(resp => console.log("Saved analysis result:", resp))
+        .catch(err => console.error("Error saving analysis result:", err));
 }
 
 
 function listAnalysisResults() {
-  return fetch("/list_analysis_results/")
-    .then(r => r.json())
-    .catch(err => {
-      console.error("Error listing analysis results:", err);
-      return [];
-    });
+    return fetch("/list_analysis_results/")
+        .then(r => r.json())
+        .catch(err => {
+            console.error("Error listing analysis results:", err);
+            return [];
+        });
 }
 
 
 function getAnalysisResult(filename) {
-  return fetch(`/get_analysis_result/${filename}`)
-    .then(r => r.json())
-    .catch(err => {
-      console.error("Error loading analysis result:", err);
-      return null;
-    });
+    return fetch(`/get_analysis_result/${filename}`)
+        .then(r => r.json())
+        .catch(err => {
+            console.error("Error loading analysis result:", err);
+            return null;
+        });
 }
 
 
@@ -93,114 +93,114 @@ let currentStep = 1;
 
 
 openModalBtn.addEventListener("click", () => {
-  modal.style.display = "block";
-  updateProgress();
+    modal.style.display = "block";
+    updateProgress();
 });
 
 closeModalBtn.addEventListener("click", () => {
-  modal.style.display = "none";
+    modal.style.display = "none";
 });
 
 
 
 nextStepBtn.addEventListener("click", () => {
-  step1.classList.remove("active");
-  step2.classList.add("active");
-  currentStep = 2;
-  updateProgress();
+    step1.classList.remove("active");
+    step2.classList.add("active");
+    currentStep = 2;
+    updateProgress();
 });
 
 prevStepBtn.addEventListener("click", () => {
-  step2.classList.remove("active");
-  step1.classList.add("active");
-  currentStep = 1;
-  updateProgress();
+    step2.classList.remove("active");
+    step1.classList.add("active");
+    currentStep = 1;
+    updateProgress();
 });
 
 function updateProgress() {
-  progress.style.width = (currentStep === 1) ? "50%" : "100%";
+    progress.style.width = (currentStep === 1) ? "50%" : "100%";
 }
 
 
 uploadArea.addEventListener("click", () => {
-  evidenceInput.click();
+    evidenceInput.click();
 });
 evidenceInput.addEventListener("change", () => handleFiles(evidenceInput.files));
 uploadArea.addEventListener("dragover", e => {
-  e.preventDefault();
-  uploadArea.style.backgroundColor = "#e0f0ff";
+    e.preventDefault();
+    uploadArea.style.backgroundColor = "#e0f0ff";
 });
 uploadArea.addEventListener("dragleave", () => (uploadArea.style.backgroundColor = ""));
 
 
 function formatFileSize(bytes) {
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  if (bytes === 0) return '0 Byte';
-  const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-  return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    if (bytes === 0) return '0 Byte';
+    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+    return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
 }
 function handleFiles(files) {
-  if (files.length > 0) {
-    uploadText.innerText = "Upload or Drag Another File";
-  }
-
-  evidencePreview.innerHTML = "";
-
-  Array.from(files).forEach(file => {
-    const previewItem = document.createElement("div");
-    previewItem.classList.add("preview-item", "fade-in");
-
-    let media;
-    const fileURL = URL.createObjectURL(file);
-
-    if (file.type.startsWith("image/")) {
-      media = document.createElement("img");
-      media.classList.add("preview-image");
-      media.src = fileURL;
-      media.style.width = "50%";
-      media.style.height = "250px";
-    } else if (file.type.startsWith("video/")) {
-      media = document.createElement("video");
-      media.src = fileURL;
-      media.style.width = "50%";
-      media.style.height = "250px";
-      media.controls = true;
-    } else if (file.type === "application/pdf") {
-      media = document.createElement("iframe");
-      media.src = fileURL;
-      media.style.width = "50%";
-      media.style.height = "250px";
-      media.style.border = "1px solid #ccc";
-      media.style.borderRadius = "8px";
-    } else if (file.type.startsWith("text/")) {
-      media = document.createElement("pre");
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        media.textContent = e.target.result;
-      };
-      reader.readAsText(file);
-      media.style.maxHeight = "250px";
-      media.style.border = "1px solid #ccc";
-      media.style.width = "50%";
-      media.style.overflow = "auto";
-      media.style.background = "#f9f9f9";
-      media.style.padding = "10px";
-      media.style.borderRadius = "8px";
-    } else {
-      media = document.createElement("div");
-      media.className = "file-icon";
-      media.innerHTML = '<i class="fas fa-file-alt" style="font-size:50px;display:flex;align-items:center;justify-content:center;height:100%;color:#555;"></i>';
+    if (files.length > 0) {
+        uploadText.innerText = "Upload or Drag Another File";
     }
 
-    previewItem.appendChild(media);
+    evidencePreview.innerHTML = "";
 
-    const fileInfo = document.createElement("div");
-    fileInfo.classList.add("file-info");
+    Array.from(files).forEach(file => {
+        const previewItem = document.createElement("div");
+        previewItem.classList.add("preview-item", "fade-in");
+
+        let media;
+        const fileURL = URL.createObjectURL(file);
+
+        if (file.type.startsWith("image/")) {
+            media = document.createElement("img");
+            media.classList.add("preview-image");
+            media.src = fileURL;
+            media.style.width = "50%";
+            media.style.height = "250px";
+        } else if (file.type.startsWith("video/")) {
+            media = document.createElement("video");
+            media.src = fileURL;
+            media.style.width = "50%";
+            media.style.height = "250px";
+            media.controls = true;
+        } else if (file.type === "application/pdf") {
+            media = document.createElement("iframe");
+            media.src = fileURL;
+            media.style.width = "50%";
+            media.style.height = "250px";
+            media.style.border = "1px solid #ccc";
+            media.style.borderRadius = "8px";
+        } else if (file.type.startsWith("text/")) {
+            media = document.createElement("pre");
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                media.textContent = e.target.result;
+            };
+            reader.readAsText(file);
+            media.style.maxHeight = "250px";
+            media.style.border = "1px solid #ccc";
+            media.style.width = "50%";
+            media.style.overflow = "auto";
+            media.style.background = "#f9f9f9";
+            media.style.padding = "10px";
+            media.style.borderRadius = "8px";
+        } else {
+            media = document.createElement("div");
+            media.className = "file-icon";
+            media.innerHTML = '<i class="fas fa-file-alt" style="font-size:50px;display:flex;align-items:center;justify-content:center;height:100%;color:#555;"></i>';
+        }
+
+        previewItem.appendChild(media);
+
+        const fileInfo = document.createElement("div");
+        fileInfo.classList.add("file-info");
 
 
-    const lastModifiedDate = new Date(file.lastModified).toLocaleDateString();
+        const lastModifiedDate = new Date(file.lastModified).toLocaleDateString();
 
-    fileInfo.innerHTML = `
+        fileInfo.innerHTML = `
   <div class="file-card">
     <div class="file-details">
       <div class="detail">
@@ -225,127 +225,127 @@ function handleFiles(files) {
 
 
 
-    const progressContainer = document.createElement("div");
-    progressContainer.classList.add("upload-progress-container");
-    const progressBar = document.createElement("div");
-    progressBar.classList.add("upload-progress-bar");
-    progressContainer.appendChild(progressBar);
+        const progressContainer = document.createElement("div");
+        progressContainer.classList.add("upload-progress-container");
+        const progressBar = document.createElement("div");
+        progressBar.classList.add("upload-progress-bar");
+        progressContainer.appendChild(progressBar);
 
-    previewItem.appendChild(fileInfo);
-    previewItem.appendChild(progressContainer);
+        previewItem.appendChild(fileInfo);
+        previewItem.appendChild(progressContainer);
 
-    evidencePreview.appendChild(previewItem);
+        evidencePreview.appendChild(previewItem);
 
 
-    let percent = 0;
-    const fakeUpload = setInterval(() => {
-      percent += Math.random() * 10;
-      if (percent >= 100) {
-        percent = 100;
-        clearInterval(fakeUpload);
-      }
-      progressBar.style.width = percent + "%";
-    }, 200);
-  });
+        let percent = 0;
+        const fakeUpload = setInterval(() => {
+            percent += Math.random() * 10;
+            if (percent >= 100) {
+                percent = 100;
+                clearInterval(fakeUpload);
+            }
+            progressBar.style.width = percent + "%";
+        }, 200);
+    });
 
-  showToast("File(s) Uploaded Successfully!");
+    showToast("File(s) Uploaded Successfully!");
 }
 
 
 uploadArea.addEventListener("drop", (e) => {
-  e.preventDefault();
-  uploadArea.style.backgroundColor = "";
+    e.preventDefault();
+    uploadArea.style.backgroundColor = "";
 
-  const droppedFiles = e.dataTransfer.files;
-  handleFiles(droppedFiles);
+    const droppedFiles = e.dataTransfer.files;
+    handleFiles(droppedFiles);
 });
 
 function showToast(message) {
-  const toast = document.getElementById("toast");
-  if (!toast) {
-    console.warn("Toast element not found.");
-    alert(message);
-    return;
-  }
-  toast.innerHTML = `<div class="Information">
+    const toast = document.getElementById("toast");
+    if (!toast) {
+        console.warn("Toast element not found.");
+        alert(message);
+        return;
+    }
+    toast.innerHTML = `<div class="Information">
     <div class="init-text"><p> <span class="fas fa-info-circle"></span>  Information Center</p></div></br>
     <p>${message}</p>
   </div>`;
-  toast.classList.add("show");
-  setTimeout(() => {
-    toast.classList.remove("show");
-  }, 30000);
+    toast.classList.add("show");
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, 30000);
 }
 
 function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-      cookie = cookie.trim();
-      if (cookie.startsWith(name + '=')) {
-        cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
-        break;
-      }
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
+                break;
+            }
+        }
     }
-  }
-  return cookieValue;
+    return cookieValue;
 }
 function get_task_data() {
-  const task_data = {};
-  let task_name = document.getElementById("taskName")?.value || ""; // Use optional chaining and default to empty string
-  let task_description = document.getElementById("taskDescription")?.value || "";
-  let file_type = document.getElementById("filetype_")?.value || "";
-  let file_name = document.getElementById("filename_")?.value || "";
-  let file_size = document.getElementById("filesize_")?.value || "";
+    const task_data = {};
+    let task_name = document.getElementById("taskName")?.value || ""; // Use optional chaining and default to empty string
+    let task_description = document.getElementById("taskDescription")?.value || "";
+    let file_type = document.getElementById("filetype_")?.value || "";
+    let file_name = document.getElementById("filename_")?.value || "";
+    let file_size = document.getElementById("filesize_")?.value || "";
 
-  // Validate required fields
-  if (!task_name.trim() || !task_description.trim()) {
-    console.warn("Task name and description are required.");
-    return null; // Return null to indicate failure
-  }
+    // Validate required fields
+    if (!task_name.trim() || !task_description.trim()) {
+        console.warn("Task name and description are required.");
+        return null; // Return null to indicate failure
+    }
 
-  // Populate task_data
-  task_data.task_name = task_name;
-  task_data.task_description = task_description;
-  task_data.file_type = file_type;
-  task_data.file_name = file_name;
-  task_data.file_size = file_size;
+    // Populate task_data
+    task_data.task_name = task_name;
+    task_data.task_description = task_description;
+    task_data.file_type = file_type;
+    task_data.file_name = file_name;
+    task_data.file_size = file_size;
 
-  return task_data; // Return the populated object
+    return task_data; // Return the populated object
 }
 
 function startEvidenceAnalysis() {
-  const evidenceInput = document.getElementById("evidenceFiles");
-  const file = evidenceInput.files[0];
-  if (!file) {
-    showToast("Please upload a file before starting analysis.");
-    return;
-  }
+    const evidenceInput = document.getElementById("evidenceFiles");
+    const file = evidenceInput.files[0];
+    if (!file) {
+        showToast("Please upload a file before starting analysis.");
+        return;
+    }
 
-  // Hide the modal and clean up
-  modal.style.display = "none";
-  document.body.classList.remove('modal-open');
-  document.querySelector('.modal-backdrop')?.remove();
+    // Hide the modal and clean up
+    modal.style.display = "none";
+    document.body.classList.remove('modal-open');
+    document.querySelector('.modal-backdrop')?.remove();
 
-  // Navigate to analytics section
-  if (typeof showSection === 'function') {
-    showSection("analytics");
-  } else {
-    console.warn("showSection function not found, analytics section may not display correctly");
-  }
+    // Navigate to analytics section
+    if (typeof showSection === 'function') {
+        showSection("analytics");
+    } else {
+        console.warn("showSection function not found, analytics section may not display correctly");
+    }
 
-  // Set up analytics section
-  const analyticsSection = document.getElementById("analytics_section");
-  if (!analyticsSection) {
-    console.error("analytics_section element not found");
-    showToast("Error: Analytics section not found.");
-    return;
-  }
-  document.querySelector(".no-process")?.remove();
+    // Set up analytics section
+    const analyticsSection = document.getElementById("analytics_section");
+    if (!analyticsSection) {
+        console.error("analytics_section element not found");
+        showToast("Error: Analytics section not found.");
+        return;
+    }
+    document.querySelector(".no-process")?.remove();
 
-  // Auto-generate loading overlay within analytics_section with unique progress bar class
-  analyticsSection.innerHTML = `
+    // Auto-generate loading overlay within analytics_section with unique progress bar class
+    analyticsSection.innerHTML = `
     <div class="analysis-loading-overlay" role="status" aria-live="assertive" aria-busy="true" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; transition: opacity 0.3s ease-in-out;">
       <div class="modal-spinner-container" style="display: flex; align-items: center; justify-content: center; position: relative; width: 60px; height: 60px; margin: 0 auto 12px;">
         <div class="modal-spinner-ring" style="position: absolute; width: 100%; height: 100%; border: 5px solid transparent; border-top-color: #00cc00; border-left-color: #00cc00; border-radius: 50%; animation: modal-spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;"></div>
@@ -388,235 +388,237 @@ function startEvidenceAnalysis() {
     </style>
   `;
 
-  // Cache DOM elements
-  const loadingOverlay = analyticsSection.querySelector(".analysis-loading-overlay");
-  const loadingText = loadingOverlay.querySelector("span");
-  const progressBar = analyticsSection.querySelector(".analysis-progress-bar");
-  const percentDisplay = loadingOverlay.querySelector("#percent-text");
-  const quoteBox = loadingOverlay.querySelector(".modern-quote-box");
+    // Cache DOM elements
+    const loadingOverlay = analyticsSection.querySelector(".analysis-loading-overlay");
+    const loadingText = loadingOverlay.querySelector("span");
+    const progressBar = analyticsSection.querySelector(".analysis-progress-bar");
+    const percentDisplay = loadingOverlay.querySelector("#percent-text");
+    const quoteBox = loadingOverlay.querySelector(".modern-quote-box");
 
-  // Debug element presence and initial styles
-  console.log("Generated overlay elements:", {
-    loadingOverlay: !!loadingOverlay,
-    loadingText: !!loadingText,
-    progressBar: !!progressBar,
-    progressBarBackground: progressBar ? window.getComputedStyle(progressBar).backgroundColor : null,
-    percentDisplay: !!percentDisplay,
-    quoteBox: !!quoteBox
-  });
+    // Debug element presence and initial styles
+    console.log("Generated overlay elements:", {
+        loadingOverlay: !!loadingOverlay,
+        loadingText: !!loadingText,
+        progressBar: !!progressBar,
+        progressBarBackground: progressBar ? window.getComputedStyle(progressBar).backgroundColor : null,
+        percentDisplay: !!percentDisplay,
+        quoteBox: !!quoteBox
+    });
 
-  // Start cycling quotes
-  cycleQuotes();
-  // Fetch analysis
-  const formData = new FormData();
-  formData.append('file', file);
-  const taskData = get_task_data()
-  if (taskData) {
-    for (const [key, value] of Object.entries(taskData)) {
-      formData.append(`task_${key}`, value)
-    }
-  }
-  console.log("FormData entries:", [...formData.entries()]);
-  fetch("/evidence/analyze/", {
-    method: "POST",
-    headers: {
-      "X-CSRFToken": getCookie("csrftoken")
-    },
-    body: formData
-  }).then(response => {
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-    let buffer = ""; // Buffer to accumulate partial chunks
-
-    function readChunk({ done, value }) {
-      if (done) {
-        // Process remaining buffer
-        if (buffer) {
-          processBuffer(buffer);
+    // Start cycling quotes
+    cycleQuotes();
+    // Fetch analysis
+    const formData = new FormData();
+    formData.append('file', file);
+    const taskData = get_task_data()
+    if (taskData) {
+        for (const [key, value] of Object.entries(taskData)) {
+            formData.append(`task_${key}`, value)
         }
+    }
+    console.log("FormData entries:", [...formData.entries()]);
+    fetch("/evidence/analyze/", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: formData
+    }).then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = ""; // Buffer to accumulate partial chunks
+
+        function readChunk({ done, value }) {
+            if (done) {
+                // Process remaining buffer
+                if (buffer) {
+                    processBuffer(buffer);
+                }
+                loadingOverlay.classList.add("hidden");
+                console.log("Streaming done, hiding analysis-loading-overlay");
+                return;
+            }
+
+            // Decode and append to buffer
+            const chunk = decoder.decode(value, { stream: true });
+            console.log("Received chunk:", chunk); // Debug streaming data
+            buffer += chunk;
+
+            // Process complete messages
+            processBuffer(buffer);
+
+            return reader.read().then(readChunk);
+        }
+
+        function processBuffer(currentBuffer) {
+            let lastValidIndex = 0;
+            let i = 0;
+            while (i < currentBuffer.length) {
+                if (currentBuffer.substr(i, 5) === "data:") {
+                    const endIndex = currentBuffer.indexOf("\n\n", i + 5);
+                    if (endIndex !== -1) {
+                        const msg = currentBuffer.substring(i, endIndex);
+                        processMessage(msg);
+                        i = endIndex + 2;
+                        lastValidIndex = i;
+                    } else {
+                        // Partial message, keep in buffer
+                        break;
+                    }
+                } else {
+                    // Skip invalid data
+                    i++;
+                }
+            }
+            buffer = currentBuffer.substring(lastValidIndex);
+        }
+
+        function processMessage(msg) {
+            let json;
+            try {
+                json = JSON.parse(msg.slice(5));
+                console.log("Parsed JSON:", json); // Debug parsed data
+                console.log("Stego data:", json.result?.steganographic_detection); // Debug stego data
+            } catch (e) {
+                console.error("Failed to parse JSON:", msg, e);
+                showToast("Error parsing analysis data, continuing...");
+                return; // Skip invalid message
+            }
+
+            const progress = json.progress || 0;
+            const message = json.message || "Processing...";
+            if (progressBar) {
+                progressBar.style.width = `${progress}%`;
+                progressBar.style.backgroundColor = "#b3ffb3 !important";
+                console.log("Updated progressBar:", {
+                    width: progressBar.style.width,
+                    backgroundColor: window.getComputedStyle(progressBar).backgroundColor,
+                    inlineStyle: progressBar.getAttribute("style")
+                });
+            } else {
+                console.warn("analysis-progress-bar not found during update");
+            }
+            if (percentDisplay) {
+                percentDisplay.textContent = `Progress: ${progress}%`;
+                console.log("Updated percentDisplay to:", `Progress: ${progress}%`);
+            } else {
+                console.warn("percent-text not found during update");
+            }
+            if (loadingText) {
+                loadingText.innerHTML = `${message}<br><small>It can take up to two minutes</small>`;
+                console.log("Updated loadingText to:", message);
+            } else {
+                console.warn("loadingText not found during update");
+            }
+            if (json.result) {
+                localStorage.setItem("evidenceResults", JSON.stringify(json.result));
+                saveAnalysisResult(json.result)
+                try {
+                    if (json.result.memdump) {
+                        renderMemdumpResults(json.result.memdump);
+                    } else if (json.result.steganographic_detection) {
+                        renderEvidenceResults({
+                            ...json.result,
+                            stego: json.result.steganographic_detection // Map to 'stego' for renderEvidenceResults
+                        });
+                        const vtStatus = document.getElementById("vt-status");
+                        if (vtStatus) vtStatus.innerHTML = "VirusTotal: queued (starting now...)";
+                        startVTPolling(json.result.meta.task_id);
+                    } else if (json.result.deepfake_detection || json.result.forgery_detection || json.result.metadata) {
+                        renderEvidenceResults(json.result);
+                    }
+                    else if (json.result.deepfake_video) {
+                        videoForensics(json.result)
+                        const vtStatus = document.getElementById("vt-status");
+                        if (vtStatus) vtStatus.innerHTML = "VirusTotal: queued (starting now...)";
+                        startVTPolling(json.result.meta.task_id);
+                    }
+                    else if (json.result.report && json.result.text_detection) {
+                        renderDocumentResults({
+                            text_detection: json.result.text_detection,
+                            report: json.result.report,
+                            hashes: json.result.hashes
+                        });
+                    } else {
+                        console.warn("Unknown evidence result format", json.result);
+                    }
+                    showToast("Analysis complete.");
+                } catch (e) {
+                    console.error("Error rendering results:", e);
+                    const analyticsSection = document.getElementById("analytics_section");
+                    if (analyticsSection) {
+                        analyticsSection.innerHTML = `<p class="text-danger">Rendering error: ${e.message}</p>`;
+                    }
+                    showToast("Error rendering analysis results");
+                }
+            }
+            if (json.error) {
+                if (loadingText) {
+                    loadingText.innerHTML = `${json.message}<br><small>But it’s not a problem, continuing analysis...</small>`;
+                }
+                showToast("Notice: " + json.message);
+            }
+        }
+
+        return reader.read().then(readChunk);
+    }).catch(err => {
+        console.error("Streaming fetch error:", err);
         loadingOverlay.classList.add("hidden");
-        console.log("Streaming done, hiding analysis-loading-overlay");
-        return;
-      }
-
-      // Decode and append to buffer
-      const chunk = decoder.decode(value, { stream: true });
-      console.log("Received chunk:", chunk); // Debug streaming data
-      buffer += chunk;
-
-      // Process complete messages
-      processBuffer(buffer);
-
-      return reader.read().then(readChunk);
-    }
-
-    function processBuffer(currentBuffer) {
-      let lastValidIndex = 0;
-      let i = 0;
-      while (i < currentBuffer.length) {
-        if (currentBuffer.substr(i, 5) === "data:") {
-          const endIndex = currentBuffer.indexOf("\n\n", i + 5);
-          if (endIndex !== -1) {
-            const msg = currentBuffer.substring(i, endIndex);
-            processMessage(msg);
-            i = endIndex + 2;
-            lastValidIndex = i;
-          } else {
-            // Partial message, keep in buffer
-            break;
-          }
-        } else {
-          // Skip invalid data
-          i++;
+        const analyticsSection = document.getElementById("analytics_section");
+        if (analyticsSection) {
+            analyticsSection.innerHTML = `<p class="text-danger">An error occurred during analysis: ${err.message}</p>`;
         }
-      }
-      buffer = currentBuffer.substring(lastValidIndex);
+        showToast("Streaming error occurred.");
+    });
+    try {
+        new Audio('/static/audio/processing-start.mp3').play();
+    } catch (err) {
+        console.warn("Audio failed:", err);
     }
-
-    function processMessage(msg) {
-      let json;
-      try {
-        json = JSON.parse(msg.slice(5));
-        console.log("Parsed JSON:", json); // Debug parsed data
-        console.log("Stego data:", json.result?.steganographic_detection); // Debug stego data
-      } catch (e) {
-        console.error("Failed to parse JSON:", msg, e);
-        showToast("Error parsing analysis data, continuing...");
-        return; // Skip invalid message
-      }
-
-      const progress = json.progress || 0;
-      const message = json.message || "Processing...";
-      if (progressBar) {
-        progressBar.style.width = `${progress}%`;
-        progressBar.style.backgroundColor = "#b3ffb3 !important";
-        console.log("Updated progressBar:", {
-          width: progressBar.style.width,
-          backgroundColor: window.getComputedStyle(progressBar).backgroundColor,
-          inlineStyle: progressBar.getAttribute("style")
-        });
-      } else {
-        console.warn("analysis-progress-bar not found during update");
-      }
-      if (percentDisplay) {
-        percentDisplay.textContent = `Progress: ${progress}%`;
-        console.log("Updated percentDisplay to:", `Progress: ${progress}%`);
-      } else {
-        console.warn("percent-text not found during update");
-      }
-      if (loadingText) {
-        loadingText.innerHTML = `${message}<br><small>It can take up to two minutes</small>`;
-        console.log("Updated loadingText to:", message);
-      } else {
-        console.warn("loadingText not found during update");
-      }
-      if (json.result) {
-        localStorage.setItem("evidenceResults", JSON.stringify(json.result));
-        saveAnalysisResult(json.result)
-        try {
-          if (json.result.memdump) {
-            renderMemdumpResults(json.result.memdump);
-          } else if (json.result.steganographic_detection) {
-            renderEvidenceResults({
-              ...json.result,
-              stego: json.result.steganographic_detection // Map to 'stego' for renderEvidenceResults
-            });
-            document.getElementById("vt-status").innerHTML = "VirusTotal: queued (starting now...)";
-            startVTPolling(json.result.meta.task_id);
-          } else if (json.result.deepfake_detection || json.result.forgery_detection || json.result.metadata) {
-            renderEvidenceResults(json.result);
-          }
-          else if(json.result.deepfake_video){
-            videoForensics(json.result)
-            document.getElementById("vt-status").innerHTML = "VirusTotal: queued (starting now...)";
-            startVTPolling(json.result.meta.task_id);
-          }
-          else if (json.result.report && json.result.text_detection) {
-            renderDocumentResults({
-              text_detection: json.result.text_detection,
-              report: json.result.report,
-              hashes: json.result.hashes
-            });
-          } else {
-            console.warn("Unknown evidence result format", json.result);
-          }
-          showToast("Analysis complete.");
-        } catch (e) {
-          console.error("Error rendering results:", e);
-          const analyticsSection = document.getElementById("analytics_section");
-          if (analyticsSection) {
-            analyticsSection.innerHTML = `<p class="text-danger">Rendering error: ${e.message}</p>`;
-          }
-          showToast("Error rendering analysis results");
-        }
-      }
-      if (json.error) {
-        if (loadingText) {
-          loadingText.innerHTML = `${json.message}<br><small>But it’s not a problem, continuing analysis...</small>`;
-        }
-        showToast("Notice: " + json.message);
-      }
-    }
-
-    return reader.read().then(readChunk);
-  }).catch(err => {
-    console.error("Streaming fetch error:", err);
-    loadingOverlay.classList.add("hidden");
-    const analyticsSection = document.getElementById("analytics_section");
-    if (analyticsSection) {
-      analyticsSection.innerHTML = `<p class="text-danger">An error occurred during analysis: ${err.message}</p>`;
-    }
-    showToast("Streaming error occurred.");
-  });
-  try {
-    new Audio('/static/audio/processing-start.mp3').play();
-  } catch (err) {
-    console.warn("Audio failed:", err);
-  }
 }
 
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Is showSection available?", typeof showSection);
+    console.log("Is showSection available?", typeof showSection);
 
-  startAnalysisBtn.addEventListener("click", startEvidenceAnalysis);
+    startAnalysisBtn.addEventListener("click", startEvidenceAnalysis);
 });
 
 
 window.addEventListener('DOMContentLoaded', () => {
-  const evidenceDateInput = document.getElementById('evidenceDate');
+    const evidenceDateInput = document.getElementById('evidenceDate');
 
-  const now = new Date();
-  const formattedDateTime = now.toLocaleString();
-  evidenceDateInput.value = formattedDateTime;
+    const now = new Date();
+    const formattedDateTime = now.toLocaleString();
+    evidenceDateInput.value = formattedDateTime;
 });
 
 
 const RESPONSE_URL = '/response/steganography/';
 async function renderEvidenceResults(data) {
-  console.log('renderEvidenceResults called with data:', data); // Log 1: Input data
-  const section = document.getElementById("analytics_section");
+    console.log('renderEvidenceResults called with data:', data); // Log 1: Input data
+    const section = document.getElementById("analytics_section");
 
-  // Check if this is video data
-  const isVideo = data.video_duration !== undefined;
+    // Check if this is video data
+    const isVideo = data.video_duration !== undefined;
 
-  const filepath = data.file_path || data.video_path || '';
-  const fileName = filepath.substring(filepath.lastIndexOf('\\') + 1);
-  const df = data.deepfake || {};
-  const task = data.task_data || {};
-  const forgery = data.forgery_detection || {};
-  const meta = data.metadata_tags || {};
-  const hashes = data.hashes || {};
-  const stego_file = data.steganographic_detection?.filename || '';
-  console.log('Stego file path:', stego_file); // Log 2: Stego filename
-  console.log('Is video:', isVideo); // Log: Video detection
-  let stego = { stego_detected: "Loading...", message: 'Loading Steganography Results...', loading: true };
+    const filepath = data.file_path || data.video_path || '';
+    const fileName = filepath.substring(filepath.lastIndexOf('\\') + 1);
+    const df = data.deepfake || {};
+    const task = data.task_data || {};
+    const forgery = data.forgery_detection || {};
+    const meta = data.metadata_tags || {};
+    const hashes = data.hashes || {};
+    const stego_file = data.steganographic_detection?.filename || '';
+    console.log('Stego file path:', stego_file); // Log 2: Stego filename
+    console.log('Is video:', isVideo); // Log: Video detection
+    let stego = { stego_detected: "Loading...", message: 'Loading Steganography Results...', loading: true };
 
-  // Render initial HTML with conditional tabs based on file type
-  section.innerHTML = `
+    // Render initial HTML with conditional tabs based on file type
+    section.innerHTML = `
         <div class="analysis-container modern-analysis">
             <h3 class="section-title">Evidence Analysis Results ${isVideo ? '(Video)' : '(Image)'}</h3>
             <div class="tabs">
@@ -762,6 +764,12 @@ async function renderEvidenceResults(data) {
                         <div class="result-card">
                             <h4><i class="fas fa-eye"></i> Steganography Presence</h4>
                             <p id="stegoPresence">${stego.stego_detected ? "Detected" : "Not Detected"}</p>
+                        </div>
+                    </div>
+                    <div id="vt-section" style="margin-top: 30px; padding: 15px; border: 1px solid #444; border-radius: 8px; background: #1e1e1e;">
+                        <h3>VirusTotal Scan</h3>
+                        <div id="vt-status" style="font-style: italic; color: #888;">
+                            Not started yet...
                         </div>
                     </div>
                 `}
@@ -1054,51 +1062,51 @@ async function renderEvidenceResults(data) {
             </div>
         </div>
     `;
-  // Tab switching logic
-  document.querySelectorAll(".tab-button").forEach(btn => {
-    btn.addEventListener("click", function () {
-      console.log('Tab clicked:', this.dataset.tab); // Log 3: Tab switch
-      document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
-      document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
-      this.classList.add("active");
-      document.getElementById(this.dataset.tab).classList.add("active");
+    // Tab switching logic
+    document.querySelectorAll(".tab-button").forEach(btn => {
+        btn.addEventListener("click", function () {
+            console.log('Tab clicked:', this.dataset.tab); // Log 3: Tab switch
+            document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
+            this.classList.add("active");
+            document.getElementById(this.dataset.tab).classList.add("active");
+        });
     });
-  });
-  // Initialize hex editor elements
-  const hexEditorPopup = document.getElementById("hexEditorPopup");
-  const closeHexEditor = document.getElementById("closeHexEditor");
-  const hexView = document.getElementById("hexView");
-  const searchHex = document.getElementById("searchHex");
-  const fontSize = document.getElementById("fontSize");
-  const zoomIn = document.getElementById("zoomIn");
-  const zoomOut = document.getElementById("zoomOut");
-  const themeToggle = document.getElementById("themeToggle");
-  const fullscreenHex = document.getElementById("fullscreenHex");
-  const copyHexBtn = document.getElementById("copyHexBtn");
-  const saveRawBtn = document.getElementById("saveRawBtn");
-  // Fetch stego data asynchronously
-  if (stego_file) {
-    console.log('Fetching stego data from:', RESPONSE_URL + stego_file); // Log 4: Fetch start
-    try {
-      const response = await fetch(RESPONSE_URL + stego_file);
-      console.log('Fetch response status:', response.status); // Log 5: Fetch response
-      if (!response.ok) {
-        throw new Error(`Failed to fetch stego data: ${response.status}`);
-      }
-      stego = await response.json();
-      console.log('Fetched stego data:', stego); // Log 6: Fetched data
-      // Update stegoTab content
-      const stegoDetails = document.getElementById('stegoDetails');
-      const stegoLoading = document.getElementById('stegoLoading');
-      const stegoStatus = document.getElementById('stegoStatus');
-      if (stegoDetails && stegoLoading && stegoStatus) {
-        stegoStatus.innerHTML = `
+    // Initialize hex editor elements
+    const hexEditorPopup = document.getElementById("hexEditorPopup");
+    const closeHexEditor = document.getElementById("closeHexEditor");
+    const hexView = document.getElementById("hexView");
+    const searchHex = document.getElementById("searchHex");
+    const fontSize = document.getElementById("fontSize");
+    const zoomIn = document.getElementById("zoomIn");
+    const zoomOut = document.getElementById("zoomOut");
+    const themeToggle = document.getElementById("themeToggle");
+    const fullscreenHex = document.getElementById("fullscreenHex");
+    const copyHexBtn = document.getElementById("copyHexBtn");
+    const saveRawBtn = document.getElementById("saveRawBtn");
+    // Fetch stego data asynchronously
+    if (stego_file) {
+        console.log('Fetching stego data from:', RESPONSE_URL + stego_file); // Log 4: Fetch start
+        try {
+            const response = await fetch(RESPONSE_URL + stego_file);
+            console.log('Fetch response status:', response.status); // Log 5: Fetch response
+            if (!response.ok) {
+                throw new Error(`Failed to fetch stego data: ${response.status}`);
+            }
+            stego = await response.json();
+            console.log('Fetched stego data:', stego); // Log 6: Fetched data
+            // Update stegoTab content
+            const stegoDetails = document.getElementById('stegoDetails');
+            const stegoLoading = document.getElementById('stegoLoading');
+            const stegoStatus = document.getElementById('stegoStatus');
+            if (stegoDetails && stegoLoading && stegoStatus) {
+                stegoStatus.innerHTML = `
                     <i class="fas ${stego.stego_detected ? 'fa-times-circle' : 'fa-check-circle'}"></i>
                     ${stego.stego_detected ? "Detected" : "Not Detected"}
                 `;
-        stegoStatus.className = stego.stego_detected ? 'badge-fake' : 'badge-real';
-        document.getElementById('stegoPresence').textContent = stego.stego_detected ? "Detected" : "Not Detected";
-        stegoDetails.innerHTML = `
+                stegoStatus.className = stego.stego_detected ? 'badge-fake' : 'badge-real';
+                document.getElementById('stegoPresence').textContent = stego.stego_detected ? "Detected" : "Not Detected";
+                stegoDetails.innerHTML = `
                     ${stego.is_encrypted ? `
                         <h5><i class="fas fa-lock"></i> Encryption Status</h5>
                         <p>Password protection: <span class="badge-fake">Detected</span></p>
@@ -1122,485 +1130,488 @@ async function renderEvidenceResults(data) {
                         <button id="viewRawBtn" aria-label="View raw data in hex editor">View in Hex Editor</button>
                     ` : ""}
                 `;
-        stegoLoading.style.display = 'none';
-        stegoDetails.style.display = 'block';
-        console.log('Stego content updated'); // Log 7: Content updated
-        // Initialize hex editor after stego data is fetched
-        const viewRawBtn = document.getElementById("viewRawBtn");
-        if (viewRawBtn && hexEditorPopup && closeHexEditor && hexView) {
-          if (!window.hexy) {
-            hexView.textContent = "Error: Hex viewer library not loaded.";
-            console.error("hexy.js not loaded"); // Log 21: hexy.js missing
-            showToast("Hex viewer library not loaded.", 3000);
-            return;
-          }
-          console.log('Attaching hex editor listeners'); // Log 22: Listener setup
-          const toggleHexEditor = () => {
-            console.log('toggleHexEditor called, open:', hexEditorPopup.classList.contains("open")); // Log 23: Toggle state
-            if (hexEditorPopup.classList.contains("open")) {
-              hexEditorPopup.classList.remove("open");
-              viewRawBtn.textContent = "View in Hex Editor";
-            } else {
-              renderRawStegoData(stego, hexView, window.hexy);
-              hexEditorPopup.classList.add("open");
-              hexEditorPopup.style.display = 'block'; // Ensure visibility
-              viewRawBtn.textContent = "Hide Hex Editor";
-              console.log('Hex editor opened, hexView content:', hexView.innerHTML.substring(0, 100)); // Log 24: Hex view content
-            }
-          };
-          viewRawBtn.addEventListener("click", () => {
-            console.log('View Raw button clicked'); // Log 8: Hex editor toggle
-            toggleHexEditor();
-          });
-          closeHexEditor.addEventListener("click", () => {
-            hexEditorPopup.classList.remove("open");
-            hexEditorPopup.style.display = 'none';
-            viewRawBtn.textContent = "View in Hex Editor";
-            console.log('Hex editor closed'); // Log 25: Hex editor closed
-          });
-          // Ctrl+Q keyboard shortcut
-          document.addEventListener("keydown", (e) => {
-            if (e.ctrlKey && e.key === "q" && (stego.raw_output || stego.hex_output)) {
-              e.preventDefault();
-              toggleHexEditor();
-              console.log('Ctrl+Q triggered'); // Log 26: Keyboard shortcut
-            }
-          });
-          // Drag functionality for popup
-          const header = hexEditorPopup.querySelector(".hex-editor-header");
-          let isDragging = false;
-          let currentX, currentY, initialX, initialY, xOffset = 0, yOffset = 0;
-          header.addEventListener("mousedown", dragStart);
-          document.addEventListener("mousemove", drag);
-          document.addEventListener("mouseup", dragEnd);
-          function dragStart(e) {
-            initialX = e.clientX - xOffset;
-            initialY = e.clientY - yOffset;
-            if (e.target === header || e.target.classList.contains("hex-editor-header")) {
-              isDragging = true;
-            }
-          }
-          function drag(e) {
-            if (isDragging) {
-              e.preventDefault();
-              currentX = e.clientX - initialX;
-              currentY = e.clientY - initialY;
-              xOffset = currentX;
-              yOffset = currentY;
-              setTranslate(currentX, currentY, hexEditorPopup);
-            }
-          }
-          function dragEnd(e) {
-            initialX = currentX;
-            initialY = currentY;
-            isDragging = false;
-          }
-          function setTranslate(xPos, yPos, el) {
-            if (!el.classList.contains("fullscreen")) {
-              el.style.transform = `translate(-50%, -50%) translate3d(${xPos}px, ${yPos}px, 0)`;
-            }
-          }
-          // Debounce function for search
-          function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-              const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-              };
-              clearTimeout(timeout);
-              timeout = setTimeout(later, wait);
-            };
-          }
-          // Search functionality
-          const originalHexContent = { value: "" };
-          const performSearch = debounce((searchValue) => {
-            let hexText = originalHexContent.value;
-            if (!hexText) {
-              hexText = hexView.textContent;
-              originalHexContent.value = hexText;
-            }
-            if (searchValue) {
-              const regex = new RegExp(searchValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-              const highlighted = hexText.replace(regex, (match) => `<span class="search-highlight">${match}</span>`);
-              hexView.innerHTML = highlighted;
-            } else {
-              hexView.innerHTML = originalHexContent.value
-                .replace(/([0-9a-f]{8}:)/gi, '<span class="hex-offset">$1</span>')
-                .replace(/([0-9A-F]{2})/gi, '<span class="hex-byte">$1</span>')
-                .replace(/([^\s].*)$/gm, '<span class="hex-ascii">$1</span>');
-            }
-            console.log('Search performed, value:', searchValue); // Log 27: Search
-          }, 300);
-          searchHex.addEventListener("input", (e) => {
-            performSearch(e.target.value.toLowerCase());
-          });
-          // Font size adjustment
-          fontSize.addEventListener("input", (e) => {
-            hexView.style.fontSize = `${e.target.value}px`;
-            console.log('Font size changed:', e.target.value); // Log 28: Font size
-          });
-          zoomIn.addEventListener("click", () => {
-            let currentSize = parseInt(fontSize.value) || 12;
-            currentSize = Math.min(currentSize + 1, 20);
-            fontSize.value = currentSize;
-            hexView.style.fontSize = `${currentSize}px`;
-            console.log('Zoom in, new size:', currentSize); // Log 29: Zoom in
-          });
-          zoomOut.addEventListener("click", () => {
-            let currentSize = parseInt(fontSize.value) || 12;
-            currentSize = Math.max(currentSize - 1, 10);
-            fontSize.value = currentSize;
-            hexView.style.fontSize = `${currentSize}px`;
-            console.log('Zoom out, new size:', currentSize); // Log 30: Zoom out
-          });
-          // Theme toggle
-          themeToggle.addEventListener("click", () => {
-            hexEditorPopup.classList.toggle("light-theme");
-            themeToggle.textContent = hexEditorPopup.classList.contains("light-theme") ? "Dark Theme" : "Light Theme";
-            console.log('Theme toggled:', hexEditorPopup.classList.contains("light-theme") ? "light" : "dark"); // Log 31: Theme
-          });
-          // Full screen toggle
-          fullscreenHex.addEventListener("click", () => {
-            if (!document.fullscreenElement) {
-              hexEditorPopup.requestFullscreen().then(() => {
-                hexEditorPopup.classList.add("fullscreen");
-                fullscreenHex.textContent = "Exit Full Screen";
-                hexEditorPopup.style.transform = "none";
-                console.log('Entered fullscreen'); // Log 32: Fullscreen
-              }).catch(err => {
-                console.error("Fullscreen error:", err);
-                showToast("Failed to enter full screen");
-              });
-            } else {
-              document.exitFullscreen().then(() => {
-                hexEditorPopup.classList.remove("fullscreen");
-                fullscreenHex.textContent = "Full Screen";
-                xOffset = 0;
-                yOffset = 0;
-                hexEditorPopup.style.transform = "translate(-50%, -50%) translate3d(0, 0, 0)";
-                console.log('Exited fullscreen'); // Log 33: Exit fullscreen
-              }).catch(err => {
-                console.error("Exit fullscreen error:", err);
-                showToast("Failed to exit full screen");
-              });
-            }
-          });
-          document.addEventListener("fullscreenchange", () => {
-            if (!document.fullscreenElement && hexEditorPopup.classList.contains("fullscreen")) {
-              hexEditorPopup.classList.remove("fullscreen");
-              fullscreenHex.textContent = "Full Screen";
-              xOffset = 0;
-              yOffset = 0;
-              hexEditorPopup.style.transform = "translate(-50%, -50%) translate3d(0, 0, 0)";
-              console.log('Fullscreen exited via browser'); // Log 34: Fullscreen change
-            }
-          });
-          // Copy hex
-          copyHexBtn.addEventListener("click", () => {
-            navigator.clipboard.writeText(hexView.textContent).then(() => {
-              showToast("Hex dump copied to clipboard!");
-              console.log('Hex dump copied'); // Log 35: Copy hex
-            }).catch(err => {
-              console.error("Copy failed", err);
-              showToast("Failed to copy hex dump");
-            });
-          });
-          // Save button
-          saveRawBtn.addEventListener("click", () => {
-            const blob = new Blob([hexView.textContent], { type: "text/plain" });
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = "hex_dump.txt";
-            a.click();
-            URL.revokeObjectURL(a.href);
-            showToast("Hex dump saved!");
-            console.log('Hex dump saved'); // Log 36: Save hex
-          });
-        } else {
-          console.error('Hex editor elements missing:', { viewRawBtn, hexEditorPopup, closeHexEditor, hexView }); // Log 37: Missing elements
-          showToast("Hex editor initialization failed.", 3000);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching steganography results:', error); // Log 9: Fetch error
-      const stegoDetails = document.getElementById('stegoDetails');
-      const stegoLoading = document.getElementById('stegoLoading');
-      if (stegoDetails && stegoLoading) {
-        stegoDetails.innerHTML = `<h5><i class="fas fa-exclamation-triangle"></i> Error</h5><p>Failed to load steganography results</p>`;
-        stegoLoading.style.display = 'none';
-        stegoDetails.style.display = 'block';
-      }
-    }
-  } else {
-    console.warn('No steganography filename provided'); // Log 10: No filename
-    const stegoDetails = document.getElementById('stegoDetails');
-    const stegoLoading = document.getElementById('stegoLoading');
-    if (stegoDetails && stegoLoading) {
-      stegoDetails.innerHTML = `<h5><i class="fas fa-info-circle"></i> Message</h5><p>No steganography results available</p>`;
-      stegoLoading.style.display = 'none';
-      stegoDetails.style.display = 'block';
-    }
-  }
-  // Progress circle animation
-  setTimeout(() => {
-    document.querySelectorAll('.progress-circle').forEach(circle => {
-      const percentage = parseInt(circle.getAttribute('data-percentage')) || 0;
-      const degrees = (percentage / 100) * 360;
-      circle.style.setProperty('--progress', `${degrees}deg`);
-    });
-  }, 300);
-  // Charts
-  setTimeout(() => {
-    if (df.model_scores) {
-      const ctx = document.getElementById("dfChart").getContext("2d");
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: Object.keys(df.model_scores),
-          datasets: [{
-            label: 'Model Confidence',
-            data: Object.values(df.model_scores),
-            backgroundColor: [
-              'rgba(46, 204, 113, 0.7)',
-              'rgba(52, 152, 219, 0.7)',
-              'rgba(155, 89, 182, 0.7)',
-              'rgba(241, 196, 15, 0.7)'
-            ],
-            borderColor: [
-              'rgba(46, 204, 113, 1)',
-              'rgba(52, 152, 219, 1)',
-              'rgba(155, 89, 182, 1)',
-              'rgba(241, 196, 15, 1)'
-            ],
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              max: 100,
-              title: {
-                display: true,
-                text: 'Confidence %'
-              }
-            },
-            x: {
-              title: {
-                display: true,
-                text: 'Detection Models'
-              }
-            }
-          },
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              callbacks: {
-                label: function (context) {
-                  return `${context.parsed.y}% confidence`;
+                stegoLoading.style.display = 'none';
+                stegoDetails.style.display = 'block';
+                console.log('Stego content updated'); // Log 7: Content updated
+                // Initialize hex editor after stego data is fetched
+                const viewRawBtn = document.getElementById("viewRawBtn");
+                if (viewRawBtn && hexEditorPopup && closeHexEditor && hexView) {
+                    if (!window.hexy) {
+                        hexView.textContent = "Error: Hex viewer library not loaded.";
+                        console.error("hexy.js not loaded"); // Log 21: hexy.js missing
+                        showToast("Hex viewer library not loaded.", 3000);
+                        return;
+                    }
+                    console.log('Attaching hex editor listeners'); // Log 22: Listener setup
+                    const toggleHexEditor = () => {
+                        console.log('toggleHexEditor called, open:', hexEditorPopup.classList.contains("open")); // Log 23: Toggle state
+                        if (hexEditorPopup.classList.contains("open")) {
+                            hexEditorPopup.classList.remove("open");
+                            viewRawBtn.textContent = "View in Hex Editor";
+                        } else {
+                            renderRawStegoData(stego, hexView, window.hexy);
+                            hexEditorPopup.classList.add("open");
+                            hexEditorPopup.style.display = 'block'; // Ensure visibility
+                            viewRawBtn.textContent = "Hide Hex Editor";
+                            console.log('Hex editor opened, hexView content:', hexView.innerHTML.substring(0, 100)); // Log 24: Hex view content
+                        }
+                    };
+                    viewRawBtn.addEventListener("click", () => {
+                        console.log('View Raw button clicked'); // Log 8: Hex editor toggle
+                        toggleHexEditor();
+                    });
+                    closeHexEditor.addEventListener("click", () => {
+                        hexEditorPopup.classList.remove("open");
+                        hexEditorPopup.style.display = 'none';
+                        viewRawBtn.textContent = "View in Hex Editor";
+                        console.log('Hex editor closed'); // Log 25: Hex editor closed
+                    });
+                    // Ctrl+Q keyboard shortcut
+                    document.addEventListener("keydown", (e) => {
+                        if (e.ctrlKey && e.key === "q" && (stego.raw_output || stego.hex_output)) {
+                            e.preventDefault();
+                            toggleHexEditor();
+                            console.log('Ctrl+Q triggered'); // Log 26: Keyboard shortcut
+                        }
+                    });
+                    // Drag functionality for popup
+                    const header = hexEditorPopup.querySelector(".hex-editor-header");
+                    let isDragging = false;
+                    let currentX, currentY, initialX, initialY, xOffset = 0, yOffset = 0;
+                    header.addEventListener("mousedown", dragStart);
+                    document.addEventListener("mousemove", drag);
+                    document.addEventListener("mouseup", dragEnd);
+                    function dragStart(e) {
+                        initialX = e.clientX - xOffset;
+                        initialY = e.clientY - yOffset;
+                        if (e.target === header || e.target.classList.contains("hex-editor-header")) {
+                            isDragging = true;
+                        }
+                    }
+                    function drag(e) {
+                        if (isDragging) {
+                            e.preventDefault();
+                            currentX = e.clientX - initialX;
+                            currentY = e.clientY - initialY;
+                            xOffset = currentX;
+                            yOffset = currentY;
+                            setTranslate(currentX, currentY, hexEditorPopup);
+                        }
+                    }
+                    function dragEnd(e) {
+                        initialX = currentX;
+                        initialY = currentY;
+                        isDragging = false;
+                    }
+                    function setTranslate(xPos, yPos, el) {
+                        if (!el.classList.contains("fullscreen")) {
+                            el.style.transform = `translate(-50%, -50%) translate3d(${xPos}px, ${yPos}px, 0)`;
+                        }
+                    }
+                    // Debounce function for search
+                    function debounce(func, wait) {
+                        let timeout;
+                        return function executedFunction(...args) {
+                            const later = () => {
+                                clearTimeout(timeout);
+                                func(...args);
+                            };
+                            clearTimeout(timeout);
+                            timeout = setTimeout(later, wait);
+                        };
+                    }
+                    // Search functionality
+                    const originalHexContent = { value: "" };
+                    const performSearch = debounce((searchValue) => {
+                        let hexText = originalHexContent.value;
+                        if (!hexText) {
+                            hexText = hexView.textContent;
+                            originalHexContent.value = hexText;
+                        }
+                        if (searchValue) {
+                            const regex = new RegExp(searchValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+                            const highlighted = hexText.replace(regex, (match) => `<span class="search-highlight">${match}</span>`);
+                            hexView.innerHTML = highlighted;
+                        } else {
+                            hexView.innerHTML = originalHexContent.value
+                                .replace(/([0-9a-f]{8}:)/gi, '<span class="hex-offset">$1</span>')
+                                .replace(/([0-9A-F]{2})/gi, '<span class="hex-byte">$1</span>')
+                                .replace(/([^\s].*)$/gm, '<span class="hex-ascii">$1</span>');
+                        }
+                        console.log('Search performed, value:', searchValue); // Log 27: Search
+                    }, 300);
+                    searchHex.addEventListener("input", (e) => {
+                        performSearch(e.target.value.toLowerCase());
+                    });
+                    // Font size adjustment
+                    fontSize.addEventListener("input", (e) => {
+                        hexView.style.fontSize = `${e.target.value}px`;
+                        console.log('Font size changed:', e.target.value); // Log 28: Font size
+                    });
+                    zoomIn.addEventListener("click", () => {
+                        let currentSize = parseInt(fontSize.value) || 12;
+                        currentSize = Math.min(currentSize + 1, 20);
+                        fontSize.value = currentSize;
+                        hexView.style.fontSize = `${currentSize}px`;
+                        console.log('Zoom in, new size:', currentSize); // Log 29: Zoom in
+                    });
+                    zoomOut.addEventListener("click", () => {
+                        let currentSize = parseInt(fontSize.value) || 12;
+                        currentSize = Math.max(currentSize - 1, 10);
+                        fontSize.value = currentSize;
+                        hexView.style.fontSize = `${currentSize}px`;
+                        console.log('Zoom out, new size:', currentSize); // Log 30: Zoom out
+                    });
+                    // Theme toggle
+                    themeToggle.addEventListener("click", () => {
+                        hexEditorPopup.classList.toggle("light-theme");
+                        themeToggle.textContent = hexEditorPopup.classList.contains("light-theme") ? "Dark Theme" : "Light Theme";
+                        console.log('Theme toggled:', hexEditorPopup.classList.contains("light-theme") ? "light" : "dark"); // Log 31: Theme
+                    });
+                    // Full screen toggle
+                    fullscreenHex.addEventListener("click", () => {
+                        if (!document.fullscreenElement) {
+                            hexEditorPopup.requestFullscreen().then(() => {
+                                hexEditorPopup.classList.add("fullscreen");
+                                fullscreenHex.textContent = "Exit Full Screen";
+                                hexEditorPopup.style.transform = "none";
+                                console.log('Entered fullscreen'); // Log 32: Fullscreen
+                            }).catch(err => {
+                                console.error("Fullscreen error:", err);
+                                showToast("Failed to enter full screen");
+                            });
+                        } else {
+                            document.exitFullscreen().then(() => {
+                                hexEditorPopup.classList.remove("fullscreen");
+                                fullscreenHex.textContent = "Full Screen";
+                                xOffset = 0;
+                                yOffset = 0;
+                                hexEditorPopup.style.transform = "translate(-50%, -50%) translate3d(0, 0, 0)";
+                                console.log('Exited fullscreen'); // Log 33: Exit fullscreen
+                            }).catch(err => {
+                                console.error("Exit fullscreen error:", err);
+                                showToast("Failed to exit full screen");
+                            });
+                        }
+                    });
+                    document.addEventListener("fullscreenchange", () => {
+                        if (!document.fullscreenElement && hexEditorPopup.classList.contains("fullscreen")) {
+                            hexEditorPopup.classList.remove("fullscreen");
+                            fullscreenHex.textContent = "Full Screen";
+                            xOffset = 0;
+                            yOffset = 0;
+                            hexEditorPopup.style.transform = "translate(-50%, -50%) translate3d(0, 0, 0)";
+                            console.log('Fullscreen exited via browser'); // Log 34: Fullscreen change
+                        }
+                    });
+                    // Copy hex
+                    copyHexBtn.addEventListener("click", () => {
+                        navigator.clipboard.writeText(hexView.textContent).then(() => {
+                            showToast("Hex dump copied to clipboard!");
+                            console.log('Hex dump copied'); // Log 35: Copy hex
+                        }).catch(err => {
+                            console.error("Copy failed", err);
+                            showToast("Failed to copy hex dump");
+                        });
+                    });
+                    // Save button
+                    saveRawBtn.addEventListener("click", () => {
+                        const blob = new Blob([hexView.textContent], { type: "text/plain" });
+                        const a = document.createElement("a");
+                        a.href = URL.createObjectURL(blob);
+                        a.download = "hex_dump.txt";
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                        showToast("Hex dump saved!");
+                        console.log('Hex dump saved'); // Log 36: Save hex
+                    });
+                } else {
+                    console.error('Hex editor elements missing:', { viewRawBtn, hexEditorPopup, closeHexEditor, hexView }); // Log 37: Missing elements
+                    showToast("Hex editor initialization failed.", 3000);
                 }
-              }
             }
-          }
-        }
-      });
-    }
-    if (forgery.ela) {
-      const ctx2 = document.getElementById("elaChart").getContext("2d");
-      new Chart(ctx2, {
-        type: 'radar',
-        data: {
-          labels: ['ELA Score', 'Histogram STD', 'Edge Density', 'Blur Score', 'Copy-Move'],
-          datasets: [{
-            label: 'Detection Metrics',
-            data: [
-              forgery.ela.ela_score || 0,
-              forgery.ela.histogram_std || 0,
-              forgery.edges?.edge_density || 0,
-              forgery.edges?.blur_score || 0,
-              forgery.copy_move?.score || 0
-            ],
-            backgroundColor: 'rgba(231, 76, 60, 0.2)',
-            borderColor: 'rgba(231, 76, 60, 1)',
-            pointBackgroundColor: 'rgba(231, 76, 60, 1)',
-            pointBorderColor: '#fff',
-            pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: 'rgba(231, 76, 60, 1)'
-          }]
-        },
-        options: {
-          scales: {
-            r: {
-              angleLines: {
-                display: true
-              },
-              suggestedMin: 0,
-              suggestedMax: 100
+        } catch (error) {
+            console.error('Error fetching steganography results:', error); // Log 9: Fetch error
+            const stegoDetails = document.getElementById('stegoDetails');
+            const stegoLoading = document.getElementById('stegoLoading');
+            if (stegoDetails && stegoLoading) {
+                stegoDetails.innerHTML = `<h5><i class="fas fa-exclamation-triangle"></i> Error</h5><p>Failed to load steganography results</p>`;
+                stegoLoading.style.display = 'none';
+                stegoDetails.style.display = 'block';
             }
-          }
         }
-      });
+    } else {
+        console.warn('No steganography filename provided'); // Log 10: No filename
+        const stegoDetails = document.getElementById('stegoDetails');
+        const stegoLoading = document.getElementById('stegoLoading');
+        if (stegoDetails && stegoLoading) {
+            stegoDetails.innerHTML = `<h5><i class="fas fa-info-circle"></i> Message</h5><p>No steganography results available</p>`;
+            stegoLoading.style.display = 'none';
+            stegoDetails.style.display = 'block';
+        }
     }
-  }, 500);
+    // Progress circle animation
+    setTimeout(() => {
+        document.querySelectorAll('.progress-circle').forEach(circle => {
+            const percentage = parseInt(circle.getAttribute('data-percentage')) || 0;
+            const degrees = (percentage / 100) * 360;
+            circle.style.setProperty('--progress', `${degrees}deg`);
+        });
+    }, 300);
+    // Charts
+    setTimeout(() => {
+        if (df.model_scores) {
+            const chartCanvas = document.getElementById("dfChart");
+            if (chartCanvas) {
+                const ctx = chartCanvas.getContext("2d");
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(df.model_scores),
+                        datasets: [{
+                            label: 'Model Confidence',
+                            data: Object.values(df.model_scores),
+                            backgroundColor: [
+                                'rgba(46, 204, 113, 0.7)',
+                                'rgba(52, 152, 219, 0.7)',
+                                'rgba(155, 89, 182, 0.7)',
+                                'rgba(241, 196, 15, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgba(46, 204, 113, 1)',
+                                'rgba(52, 152, 219, 1)',
+                                'rgba(155, 89, 182, 1)',
+                                'rgba(241, 196, 15, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'Confidence %'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Detection Models'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return `${context.parsed.y}% confidence`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        if (forgery.ela) {
+            const ctx2 = document.getElementById("elaChart").getContext("2d");
+            new Chart(ctx2, {
+                type: 'radar',
+                data: {
+                    labels: ['ELA Score', 'Histogram STD', 'Edge Density', 'Blur Score', 'Copy-Move'],
+                    datasets: [{
+                        label: 'Detection Metrics',
+                        data: [
+                            forgery.ela.ela_score || 0,
+                            forgery.ela.histogram_std || 0,
+                            forgery.edges?.edge_density || 0,
+                            forgery.edges?.blur_score || 0,
+                            forgery.copy_move?.score || 0
+                        ],
+                        backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        pointBackgroundColor: 'rgba(231, 76, 60, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(231, 76, 60, 1)'
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            });
+        }
+    }, 500);
 }
 function renderRawStegoData(stegoData, containerElement, hexy) {
-  console.log('renderRawStegoData called with stegoData:', stegoData); // Log 1: Input data
-  console.log('containerElement:', containerElement); // Log 2: Container element
-  if (!containerElement) {
-    console.error('Error: containerElement is null or undefined');
-    showToast("Error: Hex viewer container not found.", 3000);
-    return;
-  }
-  if (!stegoData.raw_output && !stegoData.hex_output && !stegoData.lsb_output) {
-    containerElement.textContent = "No raw data available.";
-    showToast("No data available to display in hex editor.", 3000);
-    console.log('No raw data available'); // Log 3: No data
-    return;
-  }
-  let hexInput = stegoData.lsb_output || stegoData.hex_output || stegoData.raw_output;
-  console.log('hexInput:', hexInput); // Log 4: Selected input
-  if (!hexInput) {
-    containerElement.textContent = "No raw data available.";
-    showToast("No data available to display in hex editor.", 3000);
-    console.log('No hexInput provided'); // Log 5: No hexInput
-    return;
-  }
-  let dataBuffer;
-  try {
-    dataBuffer = new Uint8Array(
-      hexInput.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) ||
-      new TextEncoder().encode(stegoData.raw_output || "")
-    );
-    console.log('dataBuffer length:', dataBuffer.length); // Log 6: Buffer size
-  } catch (e) {
-    containerElement.textContent = "Error: Invalid hex data.";
-    console.error("Failed to parse hex data:", e); // Log 7: Parse error
-    showToast("Error processing hex data.", 3000);
-    return;
-  }
-  const pageSize = 4096;
-  let currentPage = 0;
-  const totalPages = Math.ceil(dataBuffer.length / pageSize);
-  console.log('totalPages:', totalPages); // Log 8: Total pages
-  function renderPage(page) {
-    const start = page * pageSize;
-    const end = Math.min(start + pageSize, dataBuffer.length);
-    const pageData = dataBuffer.slice(start, end);
-    let hexDump = hexy(pageData, {
-      width: 16,
-      numbering: 'hex_bytes',
-      format: 'twos',
-      caps: 'upper',
-      annotate: 'ascii',
-      prefix: '',
-      indent: 0,
-      html: false
-    });
-    console.log('hexDump sample:', hexDump.substring(0, 100)); // Log 9: Hex dump sample
-    hexDump = hexDump.replace(
-      /(def |import |class |print\(|input\()/g,
-      '<span class="python-keyword">$1</span>'
-    );
-    const colorizedDump = hexDump
-      .replace(/([0-9a-fA-F]{8}:)/gi, '<span class="hex-offset">$1</span>')
-      .replace(/([0-9A-F]{2})/gi, '<span class="hex-byte">$1</span>')
-      .replace(/([^\s].*)$/gm, '<span class="hex-ascii">$1</span>');
-    console.log('colorizedDump sample:', colorizedDump.substring(0, 100)); // Log 10: Colorized dump
-    containerElement.innerHTML = colorizedDump;
-    console.log('containerElement updated with innerHTML'); // Log 11: DOM update
-    updatePaginationControls(page, totalPages);
-  }
-  function updatePaginationControls(page, totalPages) {
-    let controls = document.querySelector('.hex-pagination');
-    if (!controls) {
-      controls = document.createElement('div');
-      controls.className = 'hex-pagination';
-      containerElement.parentElement.appendChild(controls);
-      console.log('Created hex-pagination controls'); // Log 12: Pagination created
+    console.log('renderRawStegoData called with stegoData:', stegoData); // Log 1: Input data
+    console.log('containerElement:', containerElement); // Log 2: Container element
+    if (!containerElement) {
+        console.error('Error: containerElement is null or undefined');
+        showToast("Error: Hex viewer container not found.", 3000);
+        return;
     }
-    controls.innerHTML = `
+    if (!stegoData.raw_output && !stegoData.hex_output && !stegoData.lsb_output) {
+        containerElement.textContent = "No raw data available.";
+        showToast("No data available to display in hex editor.", 3000);
+        console.log('No raw data available'); // Log 3: No data
+        return;
+    }
+    let hexInput = stegoData.lsb_output || stegoData.hex_output || stegoData.raw_output;
+    console.log('hexInput:', hexInput); // Log 4: Selected input
+    if (!hexInput) {
+        containerElement.textContent = "No raw data available.";
+        showToast("No data available to display in hex editor.", 3000);
+        console.log('No hexInput provided'); // Log 5: No hexInput
+        return;
+    }
+    let dataBuffer;
+    try {
+        dataBuffer = new Uint8Array(
+            hexInput.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) ||
+            new TextEncoder().encode(stegoData.raw_output || "")
+        );
+        console.log('dataBuffer length:', dataBuffer.length); // Log 6: Buffer size
+    } catch (e) {
+        containerElement.textContent = "Error: Invalid hex data.";
+        console.error("Failed to parse hex data:", e); // Log 7: Parse error
+        showToast("Error processing hex data.", 3000);
+        return;
+    }
+    const pageSize = 4096;
+    let currentPage = 0;
+    const totalPages = Math.ceil(dataBuffer.length / pageSize);
+    console.log('totalPages:', totalPages); // Log 8: Total pages
+    function renderPage(page) {
+        const start = page * pageSize;
+        const end = Math.min(start + pageSize, dataBuffer.length);
+        const pageData = dataBuffer.slice(start, end);
+        let hexDump = hexy(pageData, {
+            width: 16,
+            numbering: 'hex_bytes',
+            format: 'twos',
+            caps: 'upper',
+            annotate: 'ascii',
+            prefix: '',
+            indent: 0,
+            html: false
+        });
+        console.log('hexDump sample:', hexDump.substring(0, 100)); // Log 9: Hex dump sample
+        hexDump = hexDump.replace(
+            /(def |import |class |print\(|input\()/g,
+            '<span class="python-keyword">$1</span>'
+        );
+        const colorizedDump = hexDump
+            .replace(/([0-9a-fA-F]{8}:)/gi, '<span class="hex-offset">$1</span>')
+            .replace(/([0-9A-F]{2})/gi, '<span class="hex-byte">$1</span>')
+            .replace(/([^\s].*)$/gm, '<span class="hex-ascii">$1</span>');
+        console.log('colorizedDump sample:', colorizedDump.substring(0, 100)); // Log 10: Colorized dump
+        containerElement.innerHTML = colorizedDump;
+        console.log('containerElement updated with innerHTML'); // Log 11: DOM update
+        updatePaginationControls(page, totalPages);
+    }
+    function updatePaginationControls(page, totalPages) {
+        let controls = document.querySelector('.hex-pagination');
+        if (!controls) {
+            controls = document.createElement('div');
+            controls.className = 'hex-pagination';
+            containerElement.parentElement.appendChild(controls);
+            console.log('Created hex-pagination controls'); // Log 12: Pagination created
+        }
+        controls.innerHTML = `
             <button id="prevPage" ${page === 0 ? 'disabled' : ''}>Previous</button>
             <span>Page ${page + 1} of ${totalPages}</span>
             <button id="nextPage" ${page >= totalPages - 1 ? 'disabled' : ''}>Next</button>
         `;
-    const prevButton = controls.querySelector('#prevPage');
-    const nextButton = controls.querySelector('#nextPage');
-    if (prevButton) {
-      prevButton.addEventListener('click', () => {
-        if (currentPage > 0) {
-          currentPage--;
-          renderPage(currentPage);
-          console.log('Previous page clicked, currentPage:', currentPage); // Log 13: Prev page
+        const prevButton = controls.querySelector('#prevPage');
+        const nextButton = controls.querySelector('#nextPage');
+        if (prevButton) {
+            prevButton.addEventListener('click', () => {
+                if (currentPage > 0) {
+                    currentPage--;
+                    renderPage(currentPage);
+                    console.log('Previous page clicked, currentPage:', currentPage); // Log 13: Prev page
+                }
+            });
         }
-      });
-    }
-    if (nextButton) {
-      nextButton.addEventListener('click', () => {
-        if (currentPage < totalPages - 1) {
-          currentPage++;
-          renderPage(currentPage);
-          console.log('Next page clicked, currentPage:', currentPage); // Log 14: Next page
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (currentPage < totalPages - 1) {
+                    currentPage++;
+                    renderPage(currentPage);
+                    console.log('Next page clicked, currentPage:', currentPage); // Log 14: Next page
+                }
+            });
         }
-      });
     }
-  }
-  let decodedText = '';
-  try {
-    const decoded = new TextDecoder('utf-8', { fatal: false }).decode(dataBuffer);
-    console.log('Decoded text sample:', decoded.substring(0, 100)); // Log 15: Decoded text
-    if (decoded.includes('def ') || decoded.includes('import ') || decoded.includes('class ')) {
-      decodedText = decoded;
+    let decodedText = '';
+    try {
+        const decoded = new TextDecoder('utf-8', { fatal: false }).decode(dataBuffer);
+        console.log('Decoded text sample:', decoded.substring(0, 100)); // Log 15: Decoded text
+        if (decoded.includes('def ') || decoded.includes('import ') || decoded.includes('class ')) {
+            decodedText = decoded;
+        }
+    } catch (e) {
+        console.warn("Decoding as text failed:", e); // Log 16: Text decode error
     }
-  } catch (e) {
-    console.warn("Decoding as text failed:", e); // Log 16: Text decode error
-  }
-  if (decodedText && (decodedText.includes('def ') || decodedText.includes('import '))) {
-    const codeCard = document.createElement('div');
-    codeCard.className = 'stego-card';
-    codeCard.innerHTML = `
+    if (decodedText && (decodedText.includes('def ') || decodedText.includes('import '))) {
+        const codeCard = document.createElement('div');
+        codeCard.className = 'stego-card';
+        codeCard.innerHTML = `
             <h5><i class="fas fa-code"></i> Extracted Python Code</h5>
             <pre class="python-code">${decodedText}</pre>
         `;
-    const stegoGrid = document.querySelector('.stego-grid');
-    if (stegoGrid) {
-      stegoGrid.prepend(codeCard);
-      console.log('Python code card added to stego-grid'); // Log 17: Python code added
-    } else {
-      console.error('Error: .stego-grid not found'); // Log 18: Stego-grid missing
+        const stegoGrid = document.querySelector('.stego-grid');
+        if (stegoGrid) {
+            stegoGrid.prepend(codeCard);
+            console.log('Python code card added to stego-grid'); // Log 17: Python code added
+        } else {
+            console.error('Error: .stego-grid not found'); // Log 18: Stego-grid missing
+        }
     }
-  }
-  renderPage(currentPage);
-  if (saveRawBtn) {
-    saveRawBtn.addEventListener('click', () => {
-      const blob = new Blob([dataBuffer], { type: 'application/octet-stream' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'raw_stego_data.bin';
-      a.click();
-      URL.revokeObjectURL(a.href);
-      showToast('Raw data saved!');
-      console.log('Raw data saved'); // Log 19: Save clicked
-    });
-  } else {
-    console.warn('saveRawBtn not found'); // Log 20: Save button missing
-  }
+    renderPage(currentPage);
+    if (saveRawBtn) {
+        saveRawBtn.addEventListener('click', () => {
+            const blob = new Blob([dataBuffer], { type: 'application/octet-stream' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'raw_stego_data.bin';
+            a.click();
+            URL.revokeObjectURL(a.href);
+            showToast('Raw data saved!');
+            console.log('Raw data saved'); // Log 19: Save clicked
+        });
+    } else {
+        console.warn('saveRawBtn not found'); // Log 20: Save button missing
+    }
 }
 
 
 
 function renderDocumentResults(data) {
-  const section = document.getElementById("analytics_section");
-  const text = data.text_detection || {};
-  const report = data.report || {};
-  const hashes = data.hashes || {};
-  let textAuthHTML = "";
+    const section = document.getElementById("analytics_section");
+    const text = data.text_detection || {};
+    const report = data.report || {};
+    const hashes = data.hashes || {};
+    let textAuthHTML = "";
 
-  if (text.chunk_results && text.chunk_results.length > 0) {
-    textAuthHTML = text.chunk_results.map(chunk => `
+    if (text.chunk_results && text.chunk_results.length > 0) {
+        textAuthHTML = text.chunk_results.map(chunk => `
     <div class="chunk-card">
       <div class="chunk-header">
         <h5><i class="fas fa-file-alt"></i> Chunk ${chunk.chunk_index}</h5>
@@ -1625,12 +1636,12 @@ function renderDocumentResults(data) {
       </details>
     </div>
   `).join("");
-  } else {
-    textAuthHTML = "<p class='no-chunks'><i class='fas fa-exclamation-circle'></i> No chunked results available</p>";
-  }
+    } else {
+        textAuthHTML = "<p class='no-chunks'><i class='fas fa-exclamation-circle'></i> No chunked results available</p>";
+    }
 
 
-  section.innerHTML = `
+    section.innerHTML = `
     <div class="analysis-container modern-analysis">
     <div class="tabs-container">
       <div class="tabs">
@@ -1733,21 +1744,21 @@ function renderDocumentResults(data) {
   <h5><i class="fas fa-database"></i> Metadata Fields</h5>
   <div class="field-grid">
     ${Object.entries(report.field_values || {}).map(([k, v]) => {
-    const lowerKey = k.toLowerCase();
-    let colorClass = "default-card";
+        const lowerKey = k.toLowerCase();
+        let colorClass = "default-card";
 
-    if (lowerKey.includes("author")) colorClass = "author-card";
-    else if (lowerKey.includes("creator")) colorClass = "creator-card";
-    else if (lowerKey.includes("encrypted")) colorClass = v === true ? "encrypted-card" : "safe-card";
-    else if (["producer", "creationdate", "moddate"].includes(lowerKey)) colorClass = "purple-card";
+        if (lowerKey.includes("author")) colorClass = "author-card";
+        else if (lowerKey.includes("creator")) colorClass = "creator-card";
+        else if (lowerKey.includes("encrypted")) colorClass = v === true ? "encrypted-card" : "safe-card";
+        else if (["producer", "creationdate", "moddate"].includes(lowerKey)) colorClass = "purple-card";
 
-    return `
+        return `
       <div class="field-card ${colorClass}">
         <h6><i class="fas fa-tag"></i> ${k}</h6>
         <p>${v}</p>
       </div>
     `;
-  }).join("")}
+    }).join("")}
   </div>
 </div>
 
@@ -1759,87 +1770,87 @@ function renderDocumentResults(data) {
 </div>
     </div>
   `;
-  section.querySelectorAll(".copy-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const index = btn.getAttribute("data-index");
-      const textElement = document.getElementById(`chunkText-${index}`);
-      const text = textElement?.innerText || "";
-      if (text) {
-        navigator.clipboard.writeText(text).then(() => {
-          showToast("📋 Text copied to clipboard!", "success");
-        }).catch(err => {
-          console.error("Copy failed", err);
-          showToast("⚠️ Failed to copy text", "error");
+    section.querySelectorAll(".copy-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const index = btn.getAttribute("data-index");
+            const textElement = document.getElementById(`chunkText-${index}`);
+            const text = textElement?.innerText || "";
+            if (text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast("📋 Text copied to clipboard!", "success");
+                }).catch(err => {
+                    console.error("Copy failed", err);
+                    showToast("⚠️ Failed to copy text", "error");
+                });
+            }
         });
-      }
     });
-  });
 
-  setTimeout(() => {
-    document.querySelectorAll('.progress-circle').forEach(circle => {
-      const percentage = parseInt(circle.getAttribute('data-percentage')) || 0;
-      const degrees = (percentage / 100) * 360;
-      circle.style.setProperty('--progress', `${degrees}deg`);
+    setTimeout(() => {
+        document.querySelectorAll('.progress-circle').forEach(circle => {
+            const percentage = parseInt(circle.getAttribute('data-percentage')) || 0;
+            const degrees = (percentage / 100) * 360;
+            circle.style.setProperty('--progress', `${degrees}deg`);
+        });
+    }, 300);
+    setTimeout(() => {
+        const counters = document.querySelectorAll('.issue-count');
+
+        counters.forEach(counter => {
+            const target = +counter.getAttribute('data-count');
+            let current = 0;
+            const duration = 1000;
+            const stepTime = Math.max(Math.floor(duration / target), 30);
+
+            const timer = setInterval(() => {
+                current++;
+                counter.textContent = current;
+                if (current >= target) {
+                    clearInterval(timer);
+                }
+            }, stepTime);
+        });
+    }, 300);
+    setTimeout(() => {
+        const counters = document.querySelectorAll('.pages-count');
+
+        counters.forEach(counter => {
+            const target = +counter.getAttribute('data-count');
+            let current = 0;
+            const duration = 1000;
+            const stepTime = Math.max(Math.floor(duration / target), 30);
+
+            const timer = setInterval(() => {
+                current++;
+                counter.textContent = current;
+                if (current >= target) {
+                    clearInterval(timer);
+                }
+            }, stepTime);
+        });
+    }, 300);
+
+
+
+
+
+    // Tabs interaction
+    document.querySelectorAll(".tab-button").forEach(btn => {
+        btn.addEventListener("click", function () {
+            document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
+
+            this.classList.add("active");
+            document.getElementById(this.dataset.tab).classList.add("active");
+        });
     });
-  }, 300);
-  setTimeout(() => {
-    const counters = document.querySelectorAll('.issue-count');
-
-    counters.forEach(counter => {
-      const target = +counter.getAttribute('data-count');
-      let current = 0;
-      const duration = 1000;
-      const stepTime = Math.max(Math.floor(duration / target), 30);
-
-      const timer = setInterval(() => {
-        current++;
-        counter.textContent = current;
-        if (current >= target) {
-          clearInterval(timer);
-        }
-      }, stepTime);
-    });
-  }, 300);
-  setTimeout(() => {
-    const counters = document.querySelectorAll('.pages-count');
-
-    counters.forEach(counter => {
-      const target = +counter.getAttribute('data-count');
-      let current = 0;
-      const duration = 1000;
-      const stepTime = Math.max(Math.floor(duration / target), 30);
-
-      const timer = setInterval(() => {
-        current++;
-        counter.textContent = current;
-        if (current >= target) {
-          clearInterval(timer);
-        }
-      }, stepTime);
-    });
-  }, 300);
-
-
-
-
-
-  // Tabs interaction
-  document.querySelectorAll(".tab-button").forEach(btn => {
-    btn.addEventListener("click", function () {
-      document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
-      document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
-
-      this.classList.add("active");
-      document.getElementById(this.dataset.tab).classList.add("active");
-    });
-  });
 
 }
 
 function renderMemdumpResults(data) {
-  const section = document.getElementById("analytics_section");
+    const section = document.getElementById("analytics_section");
 
-  section.innerHTML = `
+    section.innerHTML = `
     <div class="analysis-container modern-analysis">
       <h3 class="section-title">🧠 Memory Dump Analysis Results</h3>
 
@@ -1885,7 +1896,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (parsed) {
                 console.log('Using cached EXIF report');
                 videoForensics(parsed);
-                startVTPolling(parsed.meta.task_id);  
+                startVTPolling(parsed.meta.task_id);
             }
         } catch (e) {
             console.error('Failed to parse cached EXIF data', e);
@@ -1896,23 +1907,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 function createHeatmapModal() {
-  if (document.getElementById('heatmapModalDisplay')) return;
+    if (document.getElementById('heatmapModalDisplay')) return;
 
-  const modalHtml = `
+    const modalHtml = `
     <div id="heatmapModalDisplay" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.9); justify-content: center; align-items: center;">
         <span style="position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer;" onclick="closeHeatmapModal()">&times;</span>
         <img class="modal-content" id="img01" style="margin: auto; display: block; max-width: 90%; max-height: 90vh; border-radius: 4px; box-shadow: 0 0 20px rgba(0,0,0,0.5);">
     </div>
     `;
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-  // Close when clicking outside
-  const modal = document.getElementById('heatmapModalDisplay');
-  modal.onclick = function (event) {
-    if (event.target === modal) {
-      closeHeatmapModal();
+    // Close when clicking outside
+    const modal = document.getElementById('heatmapModalDisplay');
+    modal.onclick = function (event) {
+        if (event.target === modal) {
+            closeHeatmapModal();
+        }
     }
-  }
 }
 
 /**
@@ -1922,10 +1933,10 @@ function createHeatmapModal() {
  * @returns {string} The resulting HTML string.
  */
 const getSpinnerHTML = (statusText, showSpinner) => {
-    const spinnerIcon = showSpinner 
+    const spinnerIcon = showSpinner
         ? `<span class="material-symbols-rounded spinner-spin text-lg text-green-600">sync</span>`
         : '';
-    
+
     // Uses the flex container structure defined in the HTML above
     return `
         ${spinnerIcon}
@@ -1936,7 +1947,7 @@ const getSpinnerHTML = (statusText, showSpinner) => {
 
 function startVTPolling(taskId) {
     const statusEl = document.getElementById("vt-status");
-    
+
     // Initial state set with spinner (queued)
     statusEl.innerHTML = getSpinnerHTML("VirusTotal: queued (will start automatically)", true);
 
@@ -1980,7 +1991,7 @@ function startVTPolling(taskId) {
                         VT Polling Failed. Check Console.
                     </span>`;
             });
-    }, 12000); 
+    }, 12000);
 }
 
 
@@ -1991,33 +2002,33 @@ function startVTPolling(taskId) {
 
 
 async function videoForensics(data) {
-    
- 
+
+
 
     const section = document.getElementById("analytics_section");
 
- 
+
     if (!section) {
         console.error("Error: Could not find element with ID 'analytics_section'. The function cannot render the content.");
-      
-        return; 
+
+        return;
     }
-    
-   
+
+
     const result = data || {};
 
-   
+
     const df = result.deepfake_video || {};
-    const metadatasection= ""
+    const metadatasection = ""
     const task = result.task_data || {};
     const meta = result.meta || {};
     const hashes = result.hashes || {};
     const majorAnalysis = result.major_analysis || {};
-    
+
     // Core data extraction
     const filepath = df.video_path || meta.file_path || '';
     const fileName = filepath.substring(filepath.lastIndexOf('\\') + 1) || task.file_name;
-    const isVideo = df.video_duration !== undefined; 
+    const isVideo = df.video_duration !== undefined;
 
     if (!isVideo) {
         section.innerHTML = `<div class="p-8 bg-red-100 text-red-800 rounded-lg">Error: Data is not recognized as a video analysis result.</div>`;
@@ -2025,22 +2036,22 @@ async function videoForensics(data) {
     }
 
 
-const getVerdictStyle = (verdict) => {
-    const v = verdict?.toLowerCase() || 'n/a';
-    
-    if (v.includes('fake') || v.includes('tampered') || v.includes('tamper')) {
-        return 'bg-red-500 text-white shadow-red-300';
-    }
-    
-    if (v.includes('real') || v.includes('intact') || v.includes('clean')) {
-        return 'bg-green-500 text-white shadow-green-300';
-    }
-    
-    return 'bg-gray-300 text-gray-800 shadow-gray-200';
-};
+    const getVerdictStyle = (verdict) => {
+        const v = verdict?.toLowerCase() || 'n/a';
+
+        if (v.includes('fake') || v.includes('tampered') || v.includes('tamper')) {
+            return 'bg-red-500 text-white shadow-red-300';
+        }
+
+        if (v.includes('real') || v.includes('intact') || v.includes('clean')) {
+            return 'bg-green-500 text-white shadow-green-300';
+        }
+
+        return 'bg-gray-300 text-gray-800 shadow-gray-200';
+    };
 
 
-const renderDataList = (items) => `
+    const renderDataList = (items) => `
     <div class="space-y-3">
         ${items.map(item => `
             <div class="flex justify-between items-start py-1 border-b border-gray-100 last:border-b-0">
@@ -2051,30 +2062,30 @@ const renderDataList = (items) => `
     </div>
 `;
 
-// --- NEW HELPER FUNCTION: Renders the VT Polling Section ---
-const renderVTPollingSection = (vtStatus) => {
-    // 1. Define the initial status text
-    let statusText = 'N/A';
-    let showSpinner = false;
-    
-    if (vtStatus === 'queued') {
-        statusText = 'Queued (will start automatically)';
-        showSpinner = true;
-    } else if (vtStatus === 'scanning') {
-        statusText = 'Scanning with 70+ engines...';
-        showSpinner = true;
-    } else if (vtStatus === 'completed') {
-        statusText = 'Completed (polling will not start)';
-    } else if (vtStatus === 'error') {
-        statusText = 'Error during previous scan.';
-    }
+    // --- NEW HELPER FUNCTION: Renders the VT Polling Section ---
+    const renderVTPollingSection = (vtStatus) => {
+        // 1. Define the initial status text
+        let statusText = 'N/A';
+        let showSpinner = false;
 
-    // 2. Spinner HTML logic
-    const spinnerIcon = showSpinner 
-        ? `<span class="material-symbols-rounded spinner-spin text-lg text-green-600">sync</span>`
-        : '';
-        
-    return `
+        if (vtStatus === 'queued') {
+            statusText = 'Queued (will start automatically)';
+            showSpinner = true;
+        } else if (vtStatus === 'scanning') {
+            statusText = 'Scanning with 70+ engines...';
+            showSpinner = true;
+        } else if (vtStatus === 'completed') {
+            statusText = 'Completed (polling will not start)';
+        } else if (vtStatus === 'error') {
+            statusText = 'Error during previous scan.';
+        }
+
+        // 2. Spinner HTML logic
+        const spinnerIcon = showSpinner
+            ? `<span class="material-symbols-rounded spinner-spin text-lg text-green-600">sync</span>`
+            : '';
+
+        return `
         <div id="vt-section" class="mt-6 p-4 border border-gray-300 rounded-xl bg-gray-50 text-gray-700">
             <h3 class="text-lg font-bold mb-2 border-b pb-2 text-green-700">
                 <span class="material-symbols-rounded align-middle mr-2">security_shield</span>VirusTotal Scan
@@ -2085,28 +2096,28 @@ const renderVTPollingSection = (vtStatus) => {
             </div>
         </div>
     `;
-};
+    };
 
 
-const renderMetadataCard = (metaData) => {
-    // 1. Separate VT status from general metadata
-    const vtStatus = metaData?.vt_status;
-    const filteredMetaData = { ...metaData };
-    delete filteredMetaData.vt_status; // Ensure it's not rendered in the main grid
+    const renderMetadataCard = (metaData) => {
+        // 1. Separate VT status from general metadata
+        const vtStatus = metaData?.vt_status;
+        const filteredMetaData = { ...metaData };
+        delete filteredMetaData.vt_status; // Ensure it's not rendered in the main grid
 
-    const metadataEntries = Object.entries(filteredMetaData || {});
-    
-    // Check if the original metadata was empty before filtering (if only vt_status was present)
-    const isEmpty = metadataEntries.length === 0;
+        const metadataEntries = Object.entries(filteredMetaData || {});
 
-    const metadataContent = metadataEntries.map(([key, value]) => `
+        // Check if the original metadata was empty before filtering (if only vt_status was present)
+        const isEmpty = metadataEntries.length === 0;
+
+        const metadataContent = metadataEntries.map(([key, value]) => `
         <div class="p-3 bg-gray-50 border border-gray-200 rounded-md">
             <h5 class="text-xs font-medium text-green-600 uppercase mb-1">${key.replace(/_/g, ' ')}</h5>
             <p class="text-xs text-gray-700 break-words">${value || 'N/A'}</p>
         </div>
     `).join("");
 
-    const metadataCardHTML = `
+        const metadataCardHTML = `
         <div class="p-5 bg-white rounded-xl shadow-lg border border-green-100">
             <h4 class="text-lg font-bold mb-4 text-green-700 border-b pb-2">
                 <span class="material-symbols-rounded align-middle mr-2">sell</span>Core File Metadata
@@ -2117,78 +2128,78 @@ const renderMetadataCard = (metaData) => {
             ${isEmpty ? '<div class="p-4 bg-gray-100 text-gray-700 rounded-lg mt-4">ℹ️ No core metadata extracted.</div>' : ''}
         </div>
     `;
-    
-    // 3. Combine the Metadata Card with the dynamic VT Section (if VT data exists)
-    const vtSectionHTML = vtStatus ? renderVTPollingSection(vtStatus) : '';
-    
-    // Return both HTML blocks combined.
-    return metadataCardHTML + vtSectionHTML;
-};
+
+        // 3. Combine the Metadata Card with the dynamic VT Section (if VT data exists)
+        const vtSectionHTML = vtStatus ? renderVTPollingSection(vtStatus) : '';
+
+        // Return both HTML blocks combined.
+        return metadataCardHTML + vtSectionHTML;
+    };
 
 
-const renderCircularProgress = (percentage, title, prediction, predictionType) => {
-    const clampedPercentage = Math.min(100, Math.max(0, percentage));
-    
-    let mainColorClass = 'green';
-    
-    if (predictionType === 'Deepfake') {
-        if (clampedPercentage > 50 && prediction?.toLowerCase() === 'fake') {
-            mainColorClass = 'red';
-        } else if (clampedPercentage > 50 && prediction?.toLowerCase() === 'real') {
-            mainColorClass = 'green';
+    const renderCircularProgress = (percentage, title, prediction, predictionType) => {
+        const clampedPercentage = Math.min(100, Math.max(0, percentage));
+
+        let mainColorClass = 'green';
+
+        if (predictionType === 'Deepfake') {
+            if (clampedPercentage > 50 && prediction?.toLowerCase() === 'fake') {
+                mainColorClass = 'red';
+            } else if (clampedPercentage > 50 && prediction?.toLowerCase() === 'real') {
+                mainColorClass = 'green';
+            }
+        } else if (predictionType === 'Tamper') {
+            if (clampedPercentage >= 40) {
+                mainColorClass = 'red';
+            } else if (clampedPercentage >= 25) {
+                mainColorClass = 'orange';
+            } else if (clampedPercentage >= 15) {
+                mainColorClass = 'yellow';
+            } else if (clampedPercentage >= 5) {
+                mainColorClass = 'lime';
+            } else {
+                mainColorClass = 'green';
+            }
         }
-    } else if (predictionType === 'Tamper') {
-        if (clampedPercentage >= 40) {
-            mainColorClass = 'red';       
-        } else if (clampedPercentage >= 25) {
-            mainColorClass = 'orange';    
-        } else if (clampedPercentage >= 15) {
-            mainColorClass = 'yellow';    
-        } else if (clampedPercentage >= 5) {
-            mainColorClass = 'lime';      
-        } else {
-            mainColorClass = 'green';     
+
+        let fillColor = '';
+        let textColor = '';
+
+        switch (mainColorClass) {
+            case 'red':
+                fillColor = '#ef4444';
+                textColor = 'text-red-700';
+                break;
+            case 'orange':
+                fillColor = '#f97316';
+                textColor = 'text-orange-700';
+                break;
+            case 'yellow':
+                fillColor = '#facc15';
+                textColor = 'text-yellow-700';
+                break;
+            case 'lime':
+                fillColor = '#84cc16';
+                textColor = 'text-lime-700';
+                break;
+            case 'green':
+                fillColor = '#10b981';
+                textColor = 'text-green-700';
+                break;
+            default:
+                fillColor = '#9ca3af';
+                textColor = 'text-gray-700';
+                break;
         }
-    }
 
-    let fillColor = '';
-    let textColor = '';
-    
-    switch (mainColorClass) {
-        case 'red':
-            fillColor = '#ef4444'; 
-            textColor = 'text-red-700';
-            break;
-        case 'orange':
-            fillColor = '#f97316'; 
-            textColor = 'text-orange-700';
-            break;
-        case 'yellow':
-            fillColor = '#facc15'; 
-            textColor = 'text-yellow-700';
-            break;
-        case 'lime':
-            fillColor = '#84cc16'; 
-            textColor = 'text-lime-700';
-            break;
-        case 'green':
-            fillColor = '#10b981'; 
-            textColor = 'text-green-700';
-            break;
-        default:
-            fillColor = '#9ca3af'; 
-            textColor = 'text-gray-700';
-            break;
-    }
-
-    const conicGradientStyle = `
+        const conicGradientStyle = `
         background: conic-gradient(
             ${fillColor} ${clampedPercentage}%, 
             #e5e7eb ${clampedPercentage}%
         );
     `;
 
-    return `
+        return `
         <div class="flex flex-col items-center p-3">
             <h5 class="text-sm font-semibold text-gray-600 mb-2">${title}</h5>
             
@@ -2208,18 +2219,18 @@ const renderCircularProgress = (percentage, title, prediction, predictionType) =
             <p class="text-xs text-gray-500 text-center uppercase tracking-wider">${predictionType}</p>
         </div>
     `;
-};
+    };
 
 
 
-// Function to generate the HTML (NO EMBEDDED <script> tag)
-const renderFileHashes = (hashes) => {
-    const hashEntries = Object.entries(hashes || {});
-    const initialDisplayCount = 4;
-    const totalCount = hashEntries.length;
+    // Function to generate the HTML (NO EMBEDDED <script> tag)
+    const renderFileHashes = (hashes) => {
+        const hashEntries = Object.entries(hashes || {});
+        const initialDisplayCount = 4;
+        const totalCount = hashEntries.length;
 
-    if (totalCount === 0) {
-        return `
+        if (totalCount === 0) {
+            return `
             <div class="p-5 bg-white rounded-xl shadow-lg border border-green-100">
                 <h4 class="text-lg font-bold mb-4 text-green-700 border-b pb-2">
                     <span class="material-symbols-rounded align-middle mr-2">lock</span>File Integrity Hashes
@@ -2227,30 +2238,30 @@ const renderFileHashes = (hashes) => {
                 <div class="p-4 bg-gray-100 text-gray-700 rounded-lg">No file hashes provided for this evidence.</div>
             </div>
         `;
-    }
+        }
 
-    const initialHashes = hashEntries.slice(0, initialDisplayCount);
-    const hiddenHashes = hashEntries.slice(initialDisplayCount);
-    const hiddenCount = totalCount - initialDisplayCount;
+        const initialHashes = hashEntries.slice(0, initialDisplayCount);
+        const hiddenHashes = hashEntries.slice(initialDisplayCount);
+        const hiddenCount = totalCount - initialDisplayCount;
 
-    // Pre-calculate the initial button text
-    const initialButtonText = `Show ${hiddenCount} More`;
+        // Pre-calculate the initial button text
+        const initialButtonText = `Show ${hiddenCount} More`;
 
-    const initialContent = initialHashes.map(([key, value]) => `
+        const initialContent = initialHashes.map(([key, value]) => `
         <div class="p-3 bg-gray-50 border border-gray-200 rounded-md">
             <h5 class="text-xs font-medium text-green-600 uppercase mb-1">${key.toUpperCase()}</h5>
             <p class="text-xs font-mono text-gray-700 break-all">${value}</p>
         </div>
     `).join("");
 
-    const hiddenContent = hiddenHashes.map(([key, value]) => `
+        const hiddenContent = hiddenHashes.map(([key, value]) => `
         <div class="p-3 bg-gray-50 border border-gray-200 rounded-md">
             <h5 class="text-xs font-medium text-green-600 uppercase mb-1">${key.toUpperCase()}</h5>
             <p class="text-xs font-mono text-gray-700 break-all">${value}</p>
         </div>
     `).join("");
 
-    return `
+        return `
         <div class="p-5 bg-white rounded-xl shadow-lg border border-green-100">
             <h4 class="text-lg font-bold mb-4 text-green-700 border-b pb-2">
                 <span class="material-symbols-rounded align-middle mr-2">lock</span>File Integrity Hashes
@@ -2277,11 +2288,11 @@ const renderFileHashes = (hashes) => {
             ` : ''}
         </div>
     `;
-};
+    };
 
-const verdictColorBorder = (majorAnalysis.verdict || df.prediction)?.toLowerCase().includes('fake') ? 'border-red-600' : 'border-green-600';
+    const verdictColorBorder = (majorAnalysis.verdict || df.prediction)?.toLowerCase().includes('fake') ? 'border-red-600' : 'border-green-600';
 
-const videoSummaryContent = `
+    const videoSummaryContent = `
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         <div class="lg:col-span-1 space-y-6">
@@ -2301,17 +2312,17 @@ const videoSummaryContent = `
                 
                 <div class="grid grid-cols-2 gap-3 pt-5 border-t border-gray-100">
                     ${renderCircularProgress(
-                        df.confidence * 100 || 0, 
-                        "Deepfake Confidence", 
-                        df.prediction,
-                        'Deepfake'
-                    )}
+        df.confidence * 100 || 0,
+        "Deepfake Confidence",
+        df.prediction,
+        'Deepfake'
+    )}
                     ${renderCircularProgress(
-                        majorAnalysis.tamper_probability * 100 || 0, 
-                        "Tamper Probability", 
-                        (majorAnalysis.tamper_probability || 0) > 0.4 ? 'Strongly Tampered' : ((majorAnalysis.tamper_probability || 0) > 0.25 ? 'Tampered' : 'Intact'),
-                        'Tamper'
-                    )}
+        majorAnalysis.tamper_probability * 100 || 0,
+        "Tamper Probability",
+        (majorAnalysis.tamper_probability || 0) > 0.4 ? 'Strongly Tampered' : ((majorAnalysis.tamper_probability || 0) > 0.25 ? 'Tampered' : 'Intact'),
+        'Tamper'
+    )}
                 </div>
             </div>
 
@@ -2349,14 +2360,14 @@ const videoSummaryContent = `
                     <span class="material-symbols-rounded align-middle mr-2">folder_open</span>Case & File Details
                 </h4>
                 ${renderDataList([
-                    { title: "Evidence Name", value: task.task_name || "N/A" },
-                    { title: "Description", value: task.task_description || "No description provided" },
-                    { title: "File Name", value: fileName },
-                    { title: "File Type", value: task.file_type || "N/A" },
-                    { title: "File Size", value: formatFileSize(task.file_size || 0) },
-                    { title: "Report Reference", value: majorAnalysis.report_reference?.filename || 'N/A' },
-                    { title: "Analysis Timestamp", value: majorAnalysis.report_reference?.timestamp || "N/A" }
-                ])}
+        { title: "Evidence Name", value: task.task_name || "N/A" },
+        { title: "Description", value: task.task_description || "No description provided" },
+        { title: "File Name", value: fileName },
+        { title: "File Type", value: task.file_type || "N/A" },
+        { title: "File Size", value: formatFileSize(task.file_size || 0) },
+        { title: "Report Reference", value: majorAnalysis.report_reference?.filename || 'N/A' },
+        { title: "Analysis Timestamp", value: majorAnalysis.report_reference?.timestamp || "N/A" }
+    ])}
             </div>
 
             ${renderFileHashes(hashes)}
@@ -2365,197 +2376,197 @@ const videoSummaryContent = `
 `;
 
 
-function initializeHeatmapCarousel() {
-    // 1. Get the elements by their unique IDs defined in the HTML
-    const container = document.getElementById('heatmap-carousel-container');
-    const prevBtn = document.getElementById('heatmap-prev-btn');
-    const nextBtn = document.getElementById('heatmap-next-btn');
-    
-    // Safety check: if the carousel HTML section was not rendered (e.g., no heatmaps), exit.
-    if (!container || !prevBtn || !nextBtn) {
-        return; 
+    function initializeHeatmapCarousel() {
+        // 1. Get the elements by their unique IDs defined in the HTML
+        const container = document.getElementById('heatmap-carousel-container');
+        const prevBtn = document.getElementById('heatmap-prev-btn');
+        const nextBtn = document.getElementById('heatmap-next-btn');
+
+        // Safety check: if the carousel HTML section was not rendered (e.g., no heatmaps), exit.
+        if (!container || !prevBtn || !nextBtn) {
+            return;
+        }
+
+        const scrollStep = 250;
+
+        const checkScroll = () => {
+            // Disable prev button if at the start
+            prevBtn.disabled = container.scrollLeft <= 1;
+
+            // Disable next button if at the end (using a small tolerance)
+            nextBtn.disabled = container.scrollLeft >= (container.scrollWidth - container.clientWidth - 5);
+        };
+
+        // 3. Attach Event Listeners
+
+        prevBtn.addEventListener('click', () => {
+            container.scrollBy({ left: -scrollStep, behavior: 'smooth' });
+            // Use setTimeout to check scroll after smooth animation starts
+            setTimeout(checkScroll, 150);
+        });
+
+        nextBtn.addEventListener('click', () => {
+            container.scrollBy({ left: scrollStep, behavior: 'smooth' });
+            setTimeout(checkScroll, 150);
+        });
+
+        // Check scroll position when scrolling naturally (by mouse/touch) or resizing
+        container.addEventListener('scroll', checkScroll);
+        window.addEventListener('resize', checkScroll);
+
+        // 4. Initial check to set the button states immediately
+        checkScroll();
+
+        console.log("Heatmap Carousel Initialized."); // For debugging
     }
-    
-    const scrollStep = 250; 
-    
-    const checkScroll = () => {
-        // Disable prev button if at the start
-        prevBtn.disabled = container.scrollLeft <= 1; 
-        
-        // Disable next button if at the end (using a small tolerance)
-        nextBtn.disabled = container.scrollLeft >= (container.scrollWidth - container.clientWidth - 5);
+
+    /**
+     * Helper function to safely convert a value to a finite number.
+     * Accepts numbers or numeric strings. Returns undefined for invalid values.
+     * @param {any} v
+     * @returns {number|undefined}
+     */
+    const toNumber = (v) => {
+        if (v === null || v === undefined) return undefined;
+        if (typeof v === 'number') {
+            return Number.isFinite(v) ? v : undefined;
+        }
+        if (typeof v === 'string') {
+            const n = Number(v.trim());
+            return Number.isFinite(n) ? n : undefined;
+        }
+        return undefined;
     };
 
-    // 3. Attach Event Listeners
-    
-    prevBtn.addEventListener('click', () => {
-        container.scrollBy({ left: -scrollStep, behavior: 'smooth' });
-        // Use setTimeout to check scroll after smooth animation starts
-        setTimeout(checkScroll, 150); 
-    });
+    /**
+     * Helper to return a safe numeric value or fallback.
+     * @param {any} v
+     * @param {number} fallback
+     * @returns {number}
+     */
+    const safeNum = (v, fallback = 0) => {
+        const n = toNumber(v);
+        return typeof n === 'number' ? n : fallback;
+    };
 
-    nextBtn.addEventListener('click', () => {
-        container.scrollBy({ left: scrollStep, behavior: 'smooth' });
-        setTimeout(checkScroll, 150); 
-    });
-    
-    // Check scroll position when scrolling naturally (by mouse/touch) or resizing
-    container.addEventListener('scroll', checkScroll);
-    window.addEventListener('resize', checkScroll);
-    
-    // 4. Initial check to set the button states immediately
-    checkScroll();
-    
-    console.log("Heatmap Carousel Initialized."); // For debugging
-}
+    /**
+     * Helper function to safely format fractional scores (0 to 1) as percentages.
+     * Returns 'N/A' if the value is not a valid number.
+     * NOTE: returns numeric string without the trailing '%' so callers can decide
+     * whether to append '%' (keeps compatibility with your template usage).
+     * @param {number|string} value - The score to convert (e.g., 0.6713 or "0.6713")
+     * @returns {string} The formatted percentage string (e.g., '67.13') or 'N/A'
+     */
+    const formatPercentage = (value) => {
+        const n = toNumber(value);
+        if (typeof n === 'number') {
+            return (n * 100).toFixed(2);
+        }
+        return 'N/A';
+    };
 
-/**
- * Helper function to safely convert a value to a finite number.
- * Accepts numbers or numeric strings. Returns undefined for invalid values.
- * @param {any} v
- * @returns {number|undefined}
- */
-const toNumber = (v) => {
-    if (v === null || v === undefined) return undefined;
-    if (typeof v === 'number') {
-        return Number.isFinite(v) ? v : undefined;
-    }
-    if (typeof v === 'string') {
-        const n = Number(v.trim());
-        return Number.isFinite(n) ? n : undefined;
-    }
-    return undefined;
-};
+    /**
+     * Helper function to safely format a raw number to a specified decimal place.
+     * Returns 'N/A' if the value is not a valid number.
+     * @param {number|string} value - The number to format.
+     * @param {number} decimals - Number of decimal places (default 4).
+     * @returns {string} The formatted number string or 'N/A'.
+     */
+    const formatNumber = (value, decimals = 0) => {
+        const n = toNumber(value);
+        if (typeof n === 'number') {
+            return n.toFixed(decimals);
+        }
+        return 'N/A';
+    };
 
-/**
- * Helper to return a safe numeric value or fallback.
- * @param {any} v
- * @param {number} fallback
- * @returns {number}
- */
-const safeNum = (v, fallback = 0) => {
-    const n = toNumber(v);
-    return typeof n === 'number' ? n : fallback;
-};
+    /**
+     * Helper function to determine the visual severity color for a score tile.
+     * This logic is based on common forensic score interpretations.
+     * @param {number|string} score - accepts numeric strings too.
+     * @param {string} metricType - 'probability' | 'instability' | 'correlation'
+     * @returns {string} Tailwind CSS classes.
+     */
+    const getScoreColor = (score, metricType) => {
+        const safeScore = toNumber(score) ?? 0;
 
-/**
- * Helper function to safely format fractional scores (0 to 1) as percentages.
- * Returns 'N/A' if the value is not a valid number.
- * NOTE: returns numeric string without the trailing '%' so callers can decide
- * whether to append '%' (keeps compatibility with your template usage).
- * @param {number|string} value - The score to convert (e.g., 0.6713 or "0.6713")
- * @returns {string} The formatted percentage string (e.g., '67.13') or 'N/A'
- */
-const formatPercentage = (value) => {
-    const n = toNumber(value);
-    if (typeof n === 'number') {
-        return (n * 100).toFixed(2);
-    }
-    return 'N/A';
-};
-
-/**
- * Helper function to safely format a raw number to a specified decimal place.
- * Returns 'N/A' if the value is not a valid number.
- * @param {number|string} value - The number to format.
- * @param {number} decimals - Number of decimal places (default 4).
- * @returns {string} The formatted number string or 'N/A'.
- */
-const formatNumber = (value, decimals = 0) => {
-    const n = toNumber(value);
-    if (typeof n === 'number') {
-        return n.toFixed(decimals);
-    }
-    return 'N/A';
-};
-
-/**
- * Helper function to determine the visual severity color for a score tile.
- * This logic is based on common forensic score interpretations.
- * @param {number|string} score - accepts numeric strings too.
- * @param {string} metricType - 'probability' | 'instability' | 'correlation'
- * @returns {string} Tailwind CSS classes.
- */
-const getScoreColor = (score, metricType) => {
-    const safeScore = toNumber(score) ?? 0;
-
-    if (metricType === 'probability' || metricType === 'instability') {
-        if (safeScore > 0.8) return 'text-red-700 bg-red-100 border-red-300';
-        if (safeScore > 0.5) return 'text-orange-700 bg-orange-100 border-orange-300';
-        return 'text-green-700 bg-green-100 border-green-300';
-    } else if (metricType === 'correlation') {
-        if (safeScore < 0.05) return 'text-red-700 bg-red-100 border-red-300';
-        if (safeScore < 0.15) return 'text-orange-700 bg-orange-100 border-orange-300';
-        return 'text-green-700 bg-green-100 border-green-300';
-    }
-    return 'text-gray-700 bg-gray-100 border-gray-300';
-};
+        if (metricType === 'probability' || metricType === 'instability') {
+            if (safeScore > 0.8) return 'text-red-700 bg-red-100 border-red-300';
+            if (safeScore > 0.5) return 'text-orange-700 bg-orange-100 border-orange-300';
+            return 'text-green-700 bg-green-100 border-green-300';
+        } else if (metricType === 'correlation') {
+            if (safeScore < 0.05) return 'text-red-700 bg-red-100 border-red-300';
+            if (safeScore < 0.15) return 'text-orange-700 bg-orange-100 border-orange-300';
+            return 'text-green-700 bg-green-100 border-green-300';
+        }
+        return 'text-gray-700 bg-gray-100 border-gray-300';
+    };
 
 
-const renderDetailedChecks = (detailedChecks) => {
-  
-    if (!detailedChecks.detailed_checks || typeof detailedChecks.detailed_checks !== 'object' || Array.isArray(detailedChecks.detailed_checks)) {
-        return '<div class="text-xs text-gray-500">No detailed checks data available.</div>';
-    }
+    const renderDetailedChecks = (detailedChecks) => {
 
-    const entries = Object.entries(detailedChecks.detailed_checks);
-    if (entries.length === 0) {
-        return '<div class="text-xs text-gray-500">No detailed checks data available.</div>';
-    }
+        if (!detailedChecks.detailed_checks || typeof detailedChecks.detailed_checks !== 'object' || Array.isArray(detailedChecks.detailed_checks)) {
+            return '<div class="text-xs text-gray-500">No detailed checks data available.</div>';
+        }
 
-    const checks = entries.map(([key, value]) => {
-        const label = String(key).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        const passed = Boolean(value);
-        const color = passed ? 'text-green-600' : 'text-red-600';
-        const icon = passed ? 'done' : 'close';
-        return `
+        const entries = Object.entries(detailedChecks.detailed_checks);
+        if (entries.length === 0) {
+            return '<div class="text-xs text-gray-500">No detailed checks data available.</div>';
+        }
+
+        const checks = entries.map(([key, value]) => {
+            const label = String(key).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const passed = Boolean(value);
+            const color = passed ? 'text-green-600' : 'text-red-600';
+            const icon = passed ? 'done' : 'close';
+            return `
         
         <div class="flex items-center space-x-2"><span class="material-symbols-rounded text-base ${color} flex-shrink-0">${icon}</span><span class="text-xs font-medium text-gray-700">${label}</span></div>
         
         
         `;
-    }).join('');
-    return `
+        }).join('');
+        return `
     
     ${checks}
     `;
-};
+    };
 
 
-const renderExplanationBullets = (explanationBullets) => {
-    if (!Array.isArray(explanationBullets) || explanationBullets.length === 0) {
-        return `<li class="text-sm text-gray-500">No detailed explanation bullets provided.</li>`;
-    }
-    return explanationBullets.map(bullet => {
-        const safeBullet = String(bullet);
-        return `
+    const renderExplanationBullets = (explanationBullets) => {
+        if (!Array.isArray(explanationBullets) || explanationBullets.length === 0) {
+            return `<li class="text-sm text-gray-500">No detailed explanation bullets provided.</li>`;
+        }
+        return explanationBullets.map(bullet => {
+            const safeBullet = String(bullet);
+            return `
             <li class="flex items-start space-x-2 text-sm text-gray-700">
                 <span class="material-symbols-rounded text-base text-purple-500 flex-shrink-0 mt-1">chevron_right</span>
                 <span>${safeBullet}</span>
             </li>
         `;
-    }).join('');
-};
-
-
-const renderGlobalStats = (globalStats) => {
-    const meanCorr = (globalStats || {}).mean_correlation || {};
-    const stdCorr = (globalStats || {}).std_correlation || {};
-    const madCorr = (globalStats || {}).mad_correlation || {};
-
-    const stats = {
-        'Mean Correlation': meanCorr,
-        'Std Correlation': stdCorr,
-        'MAD Correlation': madCorr
+        }).join('');
     };
 
-    return Object.entries(stats).map(([label, data]) => {
-        const min = formatNumber(data.min, 4);
-        const max = formatNumber(data.max, 4);
-        const p25 = formatNumber(data.p25, 4);
-        const median = formatNumber(data.median, 4);
-        const p75 = formatNumber(data.p75, 4);
-        return `
+
+    const renderGlobalStats = (globalStats) => {
+        const meanCorr = (globalStats || {}).mean_correlation || {};
+        const stdCorr = (globalStats || {}).std_correlation || {};
+        const madCorr = (globalStats || {}).mad_correlation || {};
+
+        const stats = {
+            'Mean Correlation': meanCorr,
+            'Std Correlation': stdCorr,
+            'MAD Correlation': madCorr
+        };
+
+        return Object.entries(stats).map(([label, data]) => {
+            const min = formatNumber(data.min, 4);
+            const max = formatNumber(data.max, 4);
+            const p25 = formatNumber(data.p25, 4);
+            const median = formatNumber(data.median, 4);
+            const p75 = formatNumber(data.p75, 4);
+            return `
             <div class="p-3 border rounded-lg bg-white shadow-sm">
                 <p class="text-sm font-semibold mb-1 text-gray-700">${label}</p>
                 <div class="grid grid-cols-3 gap-2 text-xs">
@@ -2567,33 +2578,33 @@ const renderGlobalStats = (globalStats) => {
                 </div>
             </div>
         `;
-    }).join('');
-};
+        }).join('');
+    };
 
 
-const renderCalibThresholds = (calibThresholds) => {
-    const consistent = calibThresholds?.consistent_camera ?? {};
-    const tampering  = calibThresholds?.possible_tampering ?? {};
+    const renderCalibThresholds = (calibThresholds) => {
+        const consistent = calibThresholds?.consistent_camera ?? {};
+        const tampering = calibThresholds?.possible_tampering ?? {};
 
-    const hasConsistent = Object.keys(consistent).length > 0;
-    const hasTampering  = Object.keys(tampering).length > 0;
+        const hasConsistent = Object.keys(consistent).length > 0;
+        const hasTampering = Object.keys(tampering).length > 0;
 
-    const formatLabel = (key) =>
-        key
-            .replace(/_/g, ' ')
-            .replace(/\b\w/g, c => c.toUpperCase());
+        const formatLabel = (key) =>
+            key
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, c => c.toUpperCase());
 
-    const renderBlock = (data, title) => {
-        const rows = Object.entries(data)
-            .filter(([, value]) => typeof value === 'number')
-            .map(([key, value]) => `
+        const renderBlock = (data, title) => {
+            const rows = Object.entries(data)
+                .filter(([, value]) => typeof value === 'number')
+                .map(([key, value]) => `
                 <span class="font-mono">
                     ${formatLabel(key)}: ${formatNumber(value, 4)}
                 </span>
             `)
-            .join('');
+                .join('');
 
-        return ` 
+            return ` 
             <div class="p-3 border rounded-lg bg-white shadow-sm">
                 <p class="text-sm font-semibold mb-1 text-gray-700">${title}</p>
                 <div class="grid grid-cols-3 gap-2 text-xs">
@@ -2601,52 +2612,52 @@ const renderCalibThresholds = (calibThresholds) => {
                 </div>
             </div>
         `;
+        };
+
+        const consistentHtml = hasConsistent
+            ? renderBlock(consistent, 'Consistent Camera Thresholds')
+            : '';
+
+        const tamperingHtml = hasTampering
+            ? renderBlock(tampering, 'Possible Tampering Thresholds')
+            : '';
+
+        return (consistentHtml + tamperingHtml) ||
+            '<div class="text-xs text-gray-500">No specific thresholds derived.</div>';
     };
 
-    const consistentHtml = hasConsistent
-        ? renderBlock(consistent, 'Consistent Camera Thresholds')
-        : '';
 
-    const tamperingHtml = hasTampering
-        ? renderBlock(tampering, 'Possible Tampering Thresholds')
-        : '';
-
-    return (consistentHtml + tamperingHtml) ||
-        '<div class="text-xs text-gray-500">No specific thresholds derived.</div>';
-};
-
-
-/**
- * Renders Stream Metadata.
- * stream: ffmpeg stream object (may be {}), title: string, format: ffmpeg format object (may be {}).
- */
-const renderStreamMetadata = (stream, title, format) => {
-    // 1. Initial Guard Clause (Already present, which is good)
-    if (!stream || typeof stream !== 'object' || Object.keys(stream).length === 0) {
-        return `
+    /**
+     * Renders Stream Metadata.
+     * stream: ffmpeg stream object (may be {}), title: string, format: ffmpeg format object (may be {}).
+     */
+    const renderStreamMetadata = (stream, title, format) => {
+        // 1. Initial Guard Clause (Already present, which is good)
+        if (!stream || typeof stream !== 'object' || Object.keys(stream).length === 0) {
+            return `
             <div class="p-6 bg-white border border-slate-200 rounded-2xl shadow-sm">
                 <h5 class="text-sm font-black uppercase tracking-widest mb-2 text-slate-400">${title}</h5>
                 <p class="text-sm text-slate-500 italic">Stream data is unavailable.</p>
             </div>`;
-    }
+        }
 
-    const type = stream.codec_type || 'unknown';
-    
-    // 2. FIXED LINE: Added optional chaining and a fallback to 'UNKNOWN'
-    const codecName = (stream.codec_name?.toUpperCase()) || 'UNKNOWN';
-    const profile = stream.profile ? ` (${stream.profile})` : '';
-    const codec = codecName + profile;
+        const type = stream.codec_type || 'unknown';
 
-    const frameCount = stream.nb_frames || 'N/A';
-    const duration = stream.duration ? parseFloat(stream.duration).toFixed(2) + 's' : 'N/A';
-    
-    // 3. Bitrate Safety
-    const brValue = stream.bit_rate || format?.bit_rate;
-    const brNum = brValue ? parseInt(brValue) : NaN;
-    const bitRateDisplay = !isNaN(brNum) ? `${Math.round(brNum / 1000)} kb/s` : 'N/A';
+        // 2. FIXED LINE: Added optional chaining and a fallback to 'UNKNOWN'
+        const codecName = (stream.codec_name?.toUpperCase()) || 'UNKNOWN';
+        const profile = stream.profile ? ` (${stream.profile})` : '';
+        const codec = codecName + profile;
 
-    // Helper for Video Stats (Added fallbacks for width/height)
-    const renderVideoSpecific = () => `
+        const frameCount = stream.nb_frames || 'N/A';
+        const duration = stream.duration ? parseFloat(stream.duration).toFixed(2) + 's' : 'N/A';
+
+        // 3. Bitrate Safety
+        const brValue = stream.bit_rate || format?.bit_rate;
+        const brNum = brValue ? parseInt(brValue) : NaN;
+        const bitRateDisplay = !isNaN(brNum) ? `${Math.round(brNum / 1000)} kb/s` : 'N/A';
+
+        // Helper for Video Stats (Added fallbacks for width/height)
+        const renderVideoSpecific = () => `
         <div class="flex justify-between py-1 border-b border-slate-50">
             <dt class="text-slate-500">Resolution</dt>
             <dd class="font-bold text-slate-800">${stream.width || '?'} x ${stream.height || '?'}</dd>
@@ -2661,10 +2672,10 @@ const renderStreamMetadata = (stream, title, format) => {
         </div>
     `;
 
-    // Helper for Audio Stats (Added safety for sample_rate)
-    const renderAudioSpecific = () => {
-        const sRate = stream.sample_rate ? (parseInt(stream.sample_rate) / 1000).toFixed(1) + ' kHz' : 'N/A';
-        return `
+        // Helper for Audio Stats (Added safety for sample_rate)
+        const renderAudioSpecific = () => {
+            const sRate = stream.sample_rate ? (parseInt(stream.sample_rate) / 1000).toFixed(1) + ' kHz' : 'N/A';
+            return `
             <div class="flex justify-between py-1 border-b border-slate-50">
                 <dt class="text-slate-500">Sample Rate</dt>
                 <dd class="font-bold text-slate-800">${sRate}</dd>
@@ -2678,9 +2689,9 @@ const renderStreamMetadata = (stream, title, format) => {
                 <dd class="font-mono font-bold text-indigo-600">${frameCount}</dd>
             </div>
         `;
-    };
+        };
 
-    return `
+        return `
         <div class="p-6 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-indigo-200 transition-colors">
             <div class="flex items-center justify-between mb-4">
                 <h5 class="text-sm font-black uppercase tracking-widest text-indigo-600">${title}</h5>
@@ -2715,24 +2726,24 @@ const renderStreamMetadata = (stream, title, format) => {
             ` : ''}
         </div>
     `;
-};
-/**
- * Renders a modern, 3D-style bar chart for histogram data.
- * @param {Array} data - The histogram array (e.g., mean_corr).
- * @param {string} colorClass - Tailwind color for the bars.
- * @returns {string} HTML for the chart.
- */
-/**
- * Renders a formal 3D-style bar graph with X and Y axes.
- */
-const render3DChart = (data, colorClass = 'bg-indigo-500') => {
-    if (!data || data.length === 0) return '<p class="text-xs text-gray-400">No data</p>';
-    
-    const maxVal = Math.max(...data.map(d => d.count), 0);
-    const yAxisMax = maxVal < 5 ? 5 : Math.ceil(maxVal / 5) * 5;
-    const yTicks = [yAxisMax, Math.floor(yAxisMax * 0.75), Math.floor(yAxisMax * 0.5), Math.floor(yAxisMax * 0.25), 0];
+    };
+    /**
+     * Renders a modern, 3D-style bar chart for histogram data.
+     * @param {Array} data - The histogram array (e.g., mean_corr).
+     * @param {string} colorClass - Tailwind color for the bars.
+     * @returns {string} HTML for the chart.
+     */
+    /**
+     * Renders a formal 3D-style bar graph with X and Y axes.
+     */
+    const render3DChart = (data, colorClass = 'bg-indigo-500') => {
+        if (!data || data.length === 0) return '<p class="text-xs text-gray-400">No data</p>';
 
-    return `
+        const maxVal = Math.max(...data.map(d => d.count), 0);
+        const yAxisMax = maxVal < 5 ? 5 : Math.ceil(maxVal / 5) * 5;
+        const yTicks = [yAxisMax, Math.floor(yAxisMax * 0.75), Math.floor(yAxisMax * 0.5), Math.floor(yAxisMax * 0.25), 0];
+
+        return `
         <div class="flex flex-col w-full">
             <div class="flex h-48 w-full">
                 <div class="flex flex-col justify-between items-end pr-2 pb-6 text-[10px] text-gray-400 font-mono w-8">
@@ -2746,10 +2757,10 @@ const render3DChart = (data, colorClass = 'bg-indigo-500') => {
                     </div>
 
                     ${data.map(item => {
-                        const heightPercent = (item.count / yAxisMax) * 100;
-                        const isActive = item.count > 0;
-                        
-                        return `
+            const heightPercent = (item.count / yAxisMax) * 100;
+            const isActive = item.count > 0;
+
+            return `
                             <div class="group relative flex flex-col items-center flex-1 mx-1 transition-all duration-300 hover:z-[50] z-10">
                                 
                                 <div class="absolute -top-16 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-gray-900 text-white text-[10px] rounded-lg px-3 py-2 pointer-events-none shadow-2xl border border-white/10 w-max min-w-[100px] z-[100]">
@@ -2782,7 +2793,7 @@ const render3DChart = (data, colorClass = 'bg-indigo-500') => {
                                 </div>
                             </div>
                         `;
-                    }).join('')}
+        }).join('')}
                 </div>
             </div>
             <div class="flex justify-between mt-12 px-2 italic text-[9px] text-gray-400 font-bold tracking-widest uppercase">
@@ -2791,14 +2802,14 @@ const render3DChart = (data, colorClass = 'bg-indigo-500') => {
             </div>
         </div>
     `;
-};
+    };
 
-/**
- * Main function to handle the Histogram Modal
- */
-window.openHistogramModal = (histogramsJson) => {
-    const histograms = JSON.parse(decodeURIComponent(histogramsJson));
-    const modalHtml = `
+    /**
+     * Main function to handle the Histogram Modal
+     */
+    window.openHistogramModal = (histogramsJson) => {
+        const histograms = JSON.parse(decodeURIComponent(histogramsJson));
+        const modalHtml = `
         <div id="hist-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4">
             <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-8 relative animate-in fade-in zoom-in duration-300">
                 <button onclick="document.getElementById('hist-modal').remove()" class="absolute top-6 right-6 text-gray-400 hover:text-gray-600">
@@ -2840,21 +2851,21 @@ window.openHistogramModal = (histogramsJson) => {
             </div>
         </div>
     `;
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-};
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    };
 
 
-window.openMathExplanationModal = (dataJson) => {
-    const data = JSON.parse(decodeURIComponent(dataJson));
-    const benchmarks = data.benchmarks;
-    const ratios = data.ratios;
-    const bullets = data.explanation_bullets;
+    window.openMathExplanationModal = (dataJson) => {
+        const data = JSON.parse(decodeURIComponent(dataJson));
+        const benchmarks = data.benchmarks;
+        const ratios = data.ratios;
+        const bullets = data.explanation_bullets;
 
-    // THE CALIBRATION IMPETUS: CALCULATING THE SHIFT
-    // Impetus: Offset = UI_Display_Value - Raw_JSON_Value (0.2075 - 0.1843)
-    const calibrationShift = 0.0232;
+        // THE CALIBRATION IMPETUS: CALCULATING THE SHIFT
+        // Impetus: Offset = UI_Display_Value - Raw_JSON_Value (0.2075 - 0.1843)
+        const calibrationShift = 0.0232;
 
-    const modalHtml = `
+        const modalHtml = `
         <div id="math-modal" class="fixed inset-0 z-[150] flex items-center justify-center bg-slate-200/60 backdrop-blur-md p-4 overflow-y-auto">
             <div class="bg-white rounded-3xl shadow-2xl w-full max-w-6xl my-auto p-10 relative border border-slate-200 animate-in fade-in zoom-in duration-300 text-slate-900">
                 
@@ -2987,77 +2998,77 @@ window.openMathExplanationModal = (dataJson) => {
             </div>
         </div>
     `;
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-};
-/**
- * Renders the complete analysis tab, capturing all fields from the provided JSON structure.
- * @param {object} reportData - The full content of the forensic report JSON file.
- * @returns {string} The HTML string for the tab content.
- */
-const renderMajorAnalysisTab = (reportData) => {
-    // --- Data Extraction with safe fallbacks ---
-    const file = reportData && reportData.file ? String(reportData.file) : 'N/A';
-    const tamperProb = toNumber(reportData && reportData.tamper_probability);
-    const verdict = reportData && reportData.verdict ? String(reportData.verdict) : 'N/A';
-    const isTampered = typeof verdict === 'string' && verdict.toUpperCase().includes('SUSPICIOUS');
-    const isno= typeof verdict ==="string" && verdict.toUpperCase().includes ("NO")
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    };
+    /**
+     * Renders the complete analysis tab, capturing all fields from the provided JSON structure.
+     * @param {object} reportData - The full content of the forensic report JSON file.
+     * @returns {string} The HTML string for the tab content.
+     */
+    const renderMajorAnalysisTab = (reportData) => {
+        // --- Data Extraction with safe fallbacks ---
+        const file = reportData && reportData.file ? String(reportData.file) : 'N/A';
+        const tamperProb = toNumber(reportData && reportData.tamper_probability);
+        const verdict = reportData && reportData.verdict ? String(reportData.verdict) : 'N/A';
+        const isTampered = typeof verdict === 'string' && verdict.toUpperCase().includes('SUSPICIOUS');
+        const isno = typeof verdict === "string" && verdict.toUpperCase().includes("NO")
 
-    const features = (reportData && reportData.features) || {};
-   
-
+        const features = (reportData && reportData.features) || {};
 
 
 
-    // Core Indicators
-    const gopIrregularity = toNumber(features.gop_irregularity);
-    const duplicateRatio = toNumber(features.duplicate_ratio);
-    const cutDensity = toNumber(features.cut_density);
-    const metadataFlag = toNumber(features.metadata_flag);
 
-    // Explanations (PRNU Summary)
-    const prnuExplanations = (features.explanations && typeof features.explanations === 'object') ? features.explanations : {};
-    const detailedChecks = prnuExplanations.detailed_checks || {};
-    const explanationBullets = Array.isArray(prnuExplanations.explanation_bullets) ? prnuExplanations.explanation_bullets : [];
 
-    // PRNU Checker
-    const prnuCheckers = (features.prnu_checkers && typeof features.prnu_checkers === 'object') ? features.prnu_checkers : {};
+        // Core Indicators
+        const gopIrregularity = toNumber(features.gop_irregularity);
+        const duplicateRatio = toNumber(features.duplicate_ratio);
+        const cutDensity = toNumber(features.cut_density);
+        const metadataFlag = toNumber(features.metadata_flag);
 
-    // PRNU Full Calibration
-    const prnuFullCalib = (features.prnu_full_calibration && typeof features.prnu_full_calibration === 'object') ? features.prnu_full_calibration : {};
-    const globalStats = prnuFullCalib.global_statistics || {};
-    const calibThresholds = prnuFullCalib.threshold_suggestions || {};
-    const processedVideosCount = Array.isArray(prnuFullCalib.videos_processed) ? prnuFullCalib.videos_processed.length : 0;
-    const histogramsAvailable = prnuFullCalib.histograms && Object.keys(prnuFullCalib.histograms).length > 0;
-    const histogramsJson = histogramsAvailable 
-    ? encodeURIComponent(JSON.stringify(prnuFullCalib.histograms)) 
-    : '';
+        // Explanations (PRNU Summary)
+        const prnuExplanations = (features.explanations && typeof features.explanations === 'object') ? features.explanations : {};
+        const detailedChecks = prnuExplanations.detailed_checks || {};
+        const explanationBullets = Array.isArray(prnuExplanations.explanation_bullets) ? prnuExplanations.explanation_bullets : [];
 
-    const gop_irregularity= features.gop_irregularity 
-    const duplicate_ratio= features.duplicate_ratio 
-    const cut_density= features.cut_density 
-    const metadata_flag=features.metadata_flag 
-  
-   
+        // PRNU Checker
+        const prnuCheckers = (features.prnu_checkers && typeof features.prnu_checkers === 'object') ? features.prnu_checkers : {};
 
-    // PRNU metrics (fall back to checker values)
-    const prnuMeanCorr = toNumber(prnuExplanations.mean_corr) ?? toNumber(prnuCheckers.mean_corr);
-    const prnuMedianCorr = toNumber(prnuExplanations.median_corr) ?? toNumber(prnuCheckers.median_corr);
-    const prnuStdCorr = toNumber(prnuExplanations.std_corr) ?? toNumber(prnuCheckers.std_corr);
-    const prnuMadCorr = toNumber(prnuExplanations.mad_corr) ?? toNumber(prnuCheckers.mad_corr);
-    const meta=reportData.metadata ||{}
-    const important_metadata=meta.important_Metadata 
-    const printable_string=meta.printable_strings 
-    const extracted_text=important_metadata.extracted_text
-    const metadata= important_metadata.metadata
-    const embedded_subtitles= important_metadata.embedded_subtitles 
-    const format = metadata.format 
-    const streams = Array.isArray(metadata.streams) ? metadata.streams : [];
-    const videoStream = streams.find(s => s && s.codec_type === 'video') || {};
-    const audioStream = streams.find(s => s && s.codec_type === 'audio') || {};
-    
+        // PRNU Full Calibration
+        const prnuFullCalib = (features.prnu_full_calibration && typeof features.prnu_full_calibration === 'object') ? features.prnu_full_calibration : {};
+        const globalStats = prnuFullCalib.global_statistics || {};
+        const calibThresholds = prnuFullCalib.threshold_suggestions || {};
+        const processedVideosCount = Array.isArray(prnuFullCalib.videos_processed) ? prnuFullCalib.videos_processed.length : 0;
+        const histogramsAvailable = prnuFullCalib.histograms && Object.keys(prnuFullCalib.histograms).length > 0;
+        const histogramsJson = histogramsAvailable
+            ? encodeURIComponent(JSON.stringify(prnuFullCalib.histograms))
+            : '';
 
-    // --- Main HTML Structure ---
-    return `
+        const gop_irregularity = features.gop_irregularity
+        const duplicate_ratio = features.duplicate_ratio
+        const cut_density = features.cut_density
+        const metadata_flag = features.metadata_flag
+
+
+
+        // PRNU metrics (fall back to checker values)
+        const prnuMeanCorr = toNumber(prnuExplanations.mean_corr) ?? toNumber(prnuCheckers.mean_corr);
+        const prnuMedianCorr = toNumber(prnuExplanations.median_corr) ?? toNumber(prnuCheckers.median_corr);
+        const prnuStdCorr = toNumber(prnuExplanations.std_corr) ?? toNumber(prnuCheckers.std_corr);
+        const prnuMadCorr = toNumber(prnuExplanations.mad_corr) ?? toNumber(prnuCheckers.mad_corr);
+        const meta = reportData.metadata || {}
+        const important_metadata = meta.important_Metadata || {};
+        const printable_string = meta.printable_strings || [];
+        const extracted_text = important_metadata.extracted_text || {};
+        const metadata = important_metadata.metadata || {};
+        const embedded_subtitles = important_metadata.embedded_subtitles || [];
+        const format = metadata.format || {};
+        const streams = Array.isArray(metadata.streams) ? metadata.streams : [];
+        const videoStream = streams.find(s => s && s.codec_type === 'video') || {};
+        const audioStream = streams.find(s => s && s.codec_type === 'audio') || {};
+
+
+        // --- Main HTML Structure ---
+        return `
     
             <h3 class="text-3xl font-extrabold text-gray-800 border-b-4 border-green-600 pb-4 flex items-center">
                 <span class="material-symbols-rounded text-4xl text-green-600 mr-3">assessment</span>
@@ -3101,11 +3112,11 @@ const renderMajorAnalysisTab = (reportData) => {
 
                 <div class="grid md:grid-cols-4 gap-4 text-center">
                     ${[
-                        { label: 'Mean Correlation', value: prnuMeanCorr, type: 'correlation' },
-                        { label: 'Median Correlation', value: prnuMedianCorr, type: 'correlation' },
-                        { label: 'Std Dev (Instability)', value: prnuStdCorr, type: 'instability' },
-                        { label: 'MAD (Noise Outliers)', value: prnuMadCorr, type: 'instability' }
-                    ].map(metric => `
+                { label: 'Mean Correlation', value: prnuMeanCorr, type: 'correlation' },
+                { label: 'Median Correlation', value: prnuMedianCorr, type: 'correlation' },
+                { label: 'Std Dev (Instability)', value: prnuStdCorr, type: 'instability' },
+                { label: 'MAD (Noise Outliers)', value: prnuMadCorr, type: 'instability' }
+            ].map(metric => `
                         <div class="p-4 rounded-lg bg-white border ${getScoreColor(metric.value, metric.type)} shadow-sm">
                             <p class="text-sm font-semibold text-gray-600">${metric.label}</p>
                             <p class="text-2xl font-bold mt-1 font-mono">${formatNumber(metric.value, 4)}</p>
@@ -3140,11 +3151,11 @@ const renderMajorAnalysisTab = (reportData) => {
                 </h4>
                 <div class="grid md:grid-cols-4 gap-4 text-center">
                     ${[
-                        { label: 'GOP Irregularity', value: gopIrregularity, decimals: 4 },
-                        { label: 'Duplicate Frame Ratio', value: duplicateRatio, decimals: 4, isPercentage: true },
-                        { label: 'Cut Density (Per Frame)', value: cutDensity, decimals: 4 },
-                        { label: 'Metadata Flag', value: metadataFlag, decimals: 4 }
-                    ].map(metric => `
+                { label: 'GOP Irregularity', value: gopIrregularity, decimals: 4 },
+                { label: 'Duplicate Frame Ratio', value: duplicateRatio, decimals: 4, isPercentage: true },
+                { label: 'Cut Density (Per Frame)', value: cutDensity, decimals: 4 },
+                { label: 'Metadata Flag', value: metadataFlag, decimals: 4 }
+            ].map(metric => `
                         <div class="p-4 rounded-lg bg-white border border-gray-300 shadow-sm">
                             <p class="text-sm font-semibold text-gray-600">${metric.label}</p>
                             <p class="text-2xl font-bold mt-1 text-gray-700 font-mono">
@@ -3171,11 +3182,11 @@ const renderMajorAnalysisTab = (reportData) => {
                     
                    <p class="text-xs text-gray-500 pt-3 border-t">
             Note: Histograms for deeper statistical analysis are 
-            ${histogramsAvailable 
+            ${histogramsAvailable
                 ? `<span class="text-green-600 font-bold cursor-pointer hover:text-green-700 underline decoration-dotted" 
                          onclick="window.openHistogramModal('${histogramsJson}')">
                         AVAILABLE
-                   </span>` 
+                   </span>`
                 : '<span class="text-red-600 font-bold">NOT AVAILABLE</span>'
             }.
         </p>
@@ -3233,100 +3244,100 @@ const renderMajorAnalysisTab = (reportData) => {
             </p>
        
     `;
-};
+    };
 
 
 
 
 
-/**
- * Function that initiates the fetch for the full JSON report.
- * It is called directly in the main rendering HTML template.
- * @param {object} majorAnalysisObject - The initial server response object.
- * @param {string} targetId - The ID of the container element to populate later.
- * @returns {string} The HTML string for the initial loading placeholder.
- */
-const initiateMajorAnalysisLoad = (majorAnalysisObject, targetId) => {
-    
-    setTimeout(() => {
-        loadMajorAnalysisContent(majorAnalysisObject, targetId);
-    }, 0); 
+    /**
+     * Function that initiates the fetch for the full JSON report.
+     * It is called directly in the main rendering HTML template.
+     * @param {object} majorAnalysisObject - The initial server response object.
+     * @param {string} targetId - The ID of the container element to populate later.
+     * @returns {string} The HTML string for the initial loading placeholder.
+     */
+    const initiateMajorAnalysisLoad = (majorAnalysisObject, targetId) => {
 
-    // Return the loading placeholder immediately for the initial render
-    return `
+        setTimeout(() => {
+            loadMajorAnalysisContent(majorAnalysisObject, targetId);
+        }, 0);
+
+        // Return the loading placeholder immediately for the initial render
+        return `
         <div id="${targetId}-content" class="p-8 text-center text-gray-500 bg-white rounded-xl shadow-inner">
             <span class="material-symbols-rounded text-6xl animate-spin text-indigo-400 block mx-auto mb-2">autorenew</span>
             <p class="text-lg">Loading core forensic metrics...</p>
         </div>
     `;
-};
+    };
 
-// **This is the function that handles the async fetch and populates the DOM.**
-const loadMajorAnalysisContent = (majorAnalysisObject, targetId) => {
-    // 1. Get the element. It is now SAFE to access this element ID.
-    const targetElement = document.getElementById(targetId); 
-    if (!targetElement) {
-        console.error(`DOM Error: Target element with ID '${targetId}' not found.`);
-        return; 
-    }
-    
-    // Check for the inner content placeholder
-    let contentContainer = document.getElementById(`${targetId}-content`);
-    if (!contentContainer) {
-        // Fallback if structure changes
-        contentContainer = targetElement;
-    }
-    const metadataTarget = document.getElementById('metadata-content-target');
-    
-    const path = '/evidence/forensics/' + majorAnalysisObject.report_reference.filename;
+    // **This is the function that handles the async fetch and populates the DOM.**
+    const loadMajorAnalysisContent = (majorAnalysisObject, targetId) => {
+        // 1. Get the element. It is now SAFE to access this element ID.
+        const targetElement = document.getElementById(targetId);
+        if (!targetElement) {
+            console.error(`DOM Error: Target element with ID '${targetId}' not found.`);
+            return;
+        }
 
-    fetch(path)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(fullReportData => {
-            currentForensicData = fullReportData;
-           
-            const htmlContent = renderMajorAnalysisTab(fullReportData);
-            contentContainer.innerHTML = htmlContent;
-            if (metadataTarget) {
-                metadataTarget.innerHTML = metadataContent(fullReportData);
-            }
-        })
-        .catch(error => {
-            
-            console.error("Failed to load full report JSON:", error);
-            contentContainer.innerHTML = `
+        // Check for the inner content placeholder
+        let contentContainer = document.getElementById(`${targetId}-content`);
+        if (!contentContainer) {
+            // Fallback if structure changes
+            contentContainer = targetElement;
+        }
+        const metadataTarget = document.getElementById('metadata-content-target');
+
+        const path = '/evidence/forensics/' + majorAnalysisObject.report_reference.filename;
+
+        fetch(path)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(fullReportData => {
+                currentForensicData = fullReportData;
+
+                const htmlContent = renderMajorAnalysisTab(fullReportData);
+                contentContainer.innerHTML = htmlContent;
+                if (metadataTarget) {
+                    metadataTarget.innerHTML = metadataContent(fullReportData);
+                }
+            })
+            .catch(error => {
+
+                console.error("Failed to load full report JSON:", error);
+                contentContainer.innerHTML = `
                 <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
                     <h1>JSON Load Error</h1>
                     <p>Could not load the core analysis file: ${path}</p>
                     <p>Details: ${error.message}</p>
                 </div>
             `;
-        });
-};
+            });
+    };
 
 
 
 
 
-const renderCombinedDeepfakeAnalysis = (df) => {
-    
+    const renderCombinedDeepfakeAnalysis = (df) => {
 
-    const verdictStyle = getVerdictStyle(df.prediction).replace(/bg-\w+-\d+/, 'text-');
-    
-   
-    const renderHeatmapItem = (path, index) => {
-        const frameMatch = path.match(/frame_(\d+)/);
-        const frameNumber = frameMatch ? frameMatch[1] : 'N/A';
-        const confidenceMatch = path.match(/conf_(\d+)/);
-        const confidence = confidenceMatch ? confidenceMatch[1] : 'N/A';
-        
-     
-        return `
+
+        const verdictStyle = getVerdictStyle(df.prediction).replace(/bg-\w+-\d+/, 'text-');
+
+
+        const renderHeatmapItem = (path, index) => {
+            const frameMatch = path.match(/frame_(\d+)/);
+            const frameNumber = frameMatch ? frameMatch[1] : 'N/A';
+            const confidenceMatch = path.match(/conf_(\d+)/);
+            const confidence = confidenceMatch ? confidenceMatch[1] : 'N/A';
+
+
+            return `
             <div id="heatmap-item-${index}" class="min-w-[200px] w-[200px] rounded-lg shadow-md border border-red-100 overflow-hidden bg-gray-50 hover:shadow-lg transition duration-300 cursor-pointer" onclick="openHeatmapModal('${path}')">
                 <img src="${path}" alt="Suspicious Region Heatmap" class="w-full h-auto object-cover border-b">
                 <div class="p-2 text-center">
@@ -3335,10 +3346,10 @@ const renderCombinedDeepfakeAnalysis = (df) => {
                 </div>
             </div>
         `;
-    };
+        };
 
-  
-    const summarySection = `
+
+        const summarySection = `
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
             
             <div class="col-span-1 p-6 bg-white rounded-2xl shadow-2xl border-t-4 border-green-500 transform hover:scale-[1.01] transition duration-300">
@@ -3364,11 +3375,11 @@ const renderCombinedDeepfakeAnalysis = (df) => {
                 
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                     ${[
-                        { title: "Frames Analyzed", value: df.processed_frames || 0, icon: 'crop_free' },
-                        { title: "Total Faces", value: (df.fake_face_count || 0) + (df.real_face_count || 0), icon: 'face' },
-                        { title: "Fake Face %", value: `${(df.fake_face_percentage || 0).toFixed(1)}%`, color: 'text-red-600', icon: 'thumb_down' },
-                        { title: "Real Face %", value: `${(100 - (df.fake_face_percentage || 0)).toFixed(1)}%`, color: 'text-green-600', icon: 'thumb_up' }
-                    ].map(item => `
+                { title: "Frames Analyzed", value: df.processed_frames || 0, icon: 'crop_free' },
+                { title: "Total Faces", value: (df.fake_face_count || 0) + (df.real_face_count || 0), icon: 'face' },
+                { title: "Fake Face %", value: `${(df.fake_face_percentage || 0).toFixed(1)}%`, color: 'text-red-600', icon: 'thumb_down' },
+                { title: "Real Face %", value: `${(100 - (df.fake_face_percentage || 0)).toFixed(1)}%`, color: 'text-green-600', icon: 'thumb_up' }
+            ].map(item => `
                         <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
                             <span class="material-symbols-rounded text-3xl ${item.color || 'text-indigo-400'} mb-1">${item.icon}</span>
                             <p class="text-3xl font-extrabold ${item.color || 'text-gray-900'}">${item.value}</p>
@@ -3380,8 +3391,8 @@ const renderCombinedDeepfakeAnalysis = (df) => {
         </div>
     `;
 
-   
-    const heatmapSection = df.heatmap_paths && df.heatmap_paths.length > 0 ? `
+
+        const heatmapSection = df.heatmap_paths && df.heatmap_paths.length > 0 ? `
         <div class="mt-10 p-6 bg-white rounded-2xl shadow-xl border border-red-200">
             <h4 class="text-2xl font-bold text-gray-800 mb-4 flex items-center border-b pb-2">
                 <span class="material-symbols-rounded text-3xl text-red-600 mr-2">warning</span>
@@ -3410,9 +3421,9 @@ const renderCombinedDeepfakeAnalysis = (df) => {
             
         </div>
     ` : `<div class="p-4 bg-emerald-100 text-emerald-800 rounded-xl mt-8 flex items-center"><span class="material-symbols-rounded mr-2">info</span> No highly suspicious heatmap regions detected, or heatmaps are still processing.</div>`;
-    
-  
-    const frameLogSection = df.frame_predictions && df.frame_predictions.length > 0 ? `
+
+
+        const frameLogSection = df.frame_predictions && df.frame_predictions.length > 0 ? `
         <div class="mt-10 p-6 bg-white rounded-2xl shadow-xl border border-indigo-200">
             <h4 class="text-2xl font-bold text-gray-800 mb-4 flex items-center border-b pb-2">
                 <span class="material-symbols-rounded text-3xl text-indigo-600 mr-2">timeline</span>
@@ -3432,12 +3443,12 @@ const renderCombinedDeepfakeAnalysis = (df) => {
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-100">
                         ${(df.frame_predictions || []).map(frame => {
-                            const isFake = frame.prediction?.toLowerCase() === 'fake';
-                            const predictionClass = isFake ? 'text-red-600 font-extrabold' : 'text-green-600 font-semibold';
-                            const confidenceValue = (frame.confidence * 100).toFixed(2);
-                            const rowClass = isFake && parseFloat(confidenceValue) > 90 ? 'bg-red-50/70' : 'hover:bg-gray-50';
+            const isFake = frame.prediction?.toLowerCase() === 'fake';
+            const predictionClass = isFake ? 'text-red-600 font-extrabold' : 'text-green-600 font-semibold';
+            const confidenceValue = (frame.confidence * 100).toFixed(2);
+            const rowClass = isFake && parseFloat(confidenceValue) > 90 ? 'bg-red-50/70' : 'hover:bg-gray-50';
 
-                            return `
+            return `
                                 <tr class="${rowClass}">
                                     <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-mono">${frame.frame_number}</td>
                                     <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">${frame.timestamp.toFixed(2)}</td>
@@ -3446,17 +3457,17 @@ const renderCombinedDeepfakeAnalysis = (df) => {
                                     <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">${frame.num_faces}</td>
                                 </tr>
                             `;
-                        }).join('')}
+        }).join('')}
                     </tbody>
                 </table>
             </div>
             ${df.frame_predictions?.length > 50 ? `<p class="mt-4 text-sm text-gray-500 text-center">Only 50 frames are shown in this log. The full log is available in the detailed analysis files.</p>` : ''}
         </div>
     ` : `<div class="p-4 bg-yellow-100 text-yellow-800 rounded-xl mt-8 flex items-center"><span class="material-symbols-rounded mr-2">pending</span> Frame prediction data is unavailable or still processing.</div>`;
-    
-    
-    
-    return `
+
+
+
+        return `
        
         <p class="text-lg text-gray-600 mb-10 border-l-4 border-indigo-400 pl-4 bg-indigo-50 p-3 rounded-lg">
             This report summarizes the results of advanced forensic models used to detect digital manipulation, facial inconsistencies, and deepfake creation.
@@ -3466,9 +3477,9 @@ const renderCombinedDeepfakeAnalysis = (df) => {
         ${heatmapSection}
         ${frameLogSection}
     `;
-};
-    
-   
+    };
+
+
     const framePredictionsContent = `
         <h3 class="text-2xl font-bold mb-6 text-gray-800">⏱️ Frame-by-Frame Timeline and Predictions</h3>
         
@@ -3507,12 +3518,12 @@ const renderCombinedDeepfakeAnalysis = (df) => {
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     ${(df.frame_predictions || []).map(frame => {
-                        const isFake = frame.prediction?.toLowerCase() === 'fake';
-                        const predictionClass = isFake ? 'text-red-600' : 'text-green-600';
-                        const confidenceValue = (frame.confidence * 100).toFixed(2);
-                        const confidenceColor = parseFloat(confidenceValue) > 90 && isFake ? 'bg-red-50' : (parseFloat(confidenceValue) < 80 && !isFake ? 'bg-green-50' : 'bg-white');
+        const isFake = frame.prediction?.toLowerCase() === 'fake';
+        const predictionClass = isFake ? 'text-red-600' : 'text-green-600';
+        const confidenceValue = (frame.confidence * 100).toFixed(2);
+        const confidenceColor = parseFloat(confidenceValue) > 90 && isFake ? 'bg-red-50' : (parseFloat(confidenceValue) < 80 && !isFake ? 'bg-green-50' : 'bg-white');
 
-                        return `
+        return `
                             <tr class="${confidenceColor} hover:bg-gray-50">
                                 <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-mono">${frame.frame_number}</td>
                                 <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">${frame.timestamp.toFixed(2)}</td>
@@ -3521,7 +3532,7 @@ const renderCombinedDeepfakeAnalysis = (df) => {
                                 <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">${frame.num_faces}</td>
                             </tr>
                         `;
-                    }).join('')}
+    }).join('')}
                 </tbody>
             </table>
         </div>
@@ -3532,44 +3543,44 @@ const renderCombinedDeepfakeAnalysis = (df) => {
 
 
 
-const metadataContent = (reportData)=>{
-    const meta = reportData.metadata || {};
-    const important_metadata = meta.important_Metadata || {};
-    const rawMetadata = important_metadata.metadata || {}; // The node containing streams/format
-    const format = rawMetadata.format || {}; 
-    const embedded_subtitles = important_metadata.embedded_subtitles || [];
-    const formatSize = (bytes) => {
-    const b = parseInt(bytes);
-    if (isNaN(b)) return 'N/A';
-    return (b / (1024 * 1024)).toFixed(2) + ' MB';
-    };
+    const metadataContent = (reportData) => {
+        const meta = reportData.metadata || {};
+        const important_metadata = meta.important_Metadata || {};
+        const rawMetadata = important_metadata.metadata || {}; // The node containing streams/format
+        const format = rawMetadata.format || {};
+        const embedded_subtitles = important_metadata.embedded_subtitles || [];
+        const formatSize = (bytes) => {
+            const b = parseInt(bytes);
+            if (isNaN(b)) return 'N/A';
+            return (b / (1024 * 1024)).toFixed(2) + ' MB';
+        };
 
-    const formatDuration = (seconds) => {
-        const s = parseFloat(seconds);
-        if (isNaN(s)) return 'N/A';
-        const mins = Math.floor(s / 60);
-        const secs = Math.floor(s % 60);
-        return `${mins}:${secs.toString().padStart(2, '0')} (${s.toFixed(2)}s)`;
-    };
+        const formatDuration = (seconds) => {
+            const s = parseFloat(seconds);
+            if (isNaN(s)) return 'N/A';
+            const mins = Math.floor(s / 60);
+            const secs = Math.floor(s % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')} (${s.toFixed(2)}s)`;
+        };
 
-    const getProbeStatus = (score) => {
-        const s = parseInt(score);
-        if (isNaN(s)) return { label: 'Unknown', color: 'text-slate-400', bg: 'bg-slate-50', icon: 'help' };
-        if (s >= 100) return { label: 'Verified', color: 'text-green-600', bg: 'bg-green-50', icon: 'verified' };
-        if (s >= 50) return { label: 'Ambiguous', color: 'text-amber-600', bg: 'bg-amber-50', icon: 'warning' };
-        return { label: 'Suspicious/Corrupt', color: 'text-red-600', bg: 'bg-red-50', icon: 'dangerous' };
-    };
+        const getProbeStatus = (score) => {
+            const s = parseInt(score);
+            if (isNaN(s)) return { label: 'Unknown', color: 'text-slate-400', bg: 'bg-slate-50', icon: 'help' };
+            if (s >= 100) return { label: 'Verified', color: 'text-green-600', bg: 'bg-green-50', icon: 'verified' };
+            if (s >= 50) return { label: 'Ambiguous', color: 'text-amber-600', bg: 'bg-amber-50', icon: 'warning' };
+            return { label: 'Suspicious/Corrupt', color: 'text-red-600', bg: 'bg-red-50', icon: 'dangerous' };
+        };
 
-    const probe = getProbeStatus(format.probe_score);
-    console.log("Forensic Path Check:", {
-        root: reportData,
-        level1: reportData?.metadata,
-        level2: reportData?.metadata?.important_Metadata,
-        level3: reportData?.metadata?.important_Metadata?.metadata
-    });
+        const probe = getProbeStatus(format.probe_score);
+        console.log("Forensic Path Check:", {
+            root: reportData,
+            level1: reportData?.metadata,
+            level2: reportData?.metadata?.important_Metadata,
+            level3: reportData?.metadata?.important_Metadata?.metadata
+        });
 
 
-return `
+        return `
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <h3 class="text-2xl font-bold text-gray-800 flex items-center">
             <span class="material-symbols-rounded mr-2 text-indigo-600">info</span>
@@ -3702,7 +3713,7 @@ return `
 </div>
     </div>
 `;
-}
+    }
     section.innerHTML = `
         <div class="analysis-container modern-analysis bg-gray-50 p-6 md:p-10">
            <h2 class="text-3xl font-extrabold text-gray-900 mb-6 border-b pb-3">
@@ -3741,24 +3752,24 @@ return `
             </div>
 
     `;
-    
 
-document.querySelectorAll('.modern-tab-button').forEach(button => { 
-    button.addEventListener('click', () => {
-        const targetTab = button.getAttribute('data-tab');
 
-        document.querySelectorAll('.modern-tab-button').forEach(btn => btn.classList.remove('active')); 
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    document.querySelectorAll('.modern-tab-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.getAttribute('data-tab');
 
-        button.classList.add('active');
-        document.getElementById(targetTab)?.classList.add('active');
-        if (targetTab === 'deepfakeTab') {
-    
-            setTimeout(initializeHeatmapCarousel, 50); 
-            console.log("Deepfake Tab clicked: Initializing Heatmap Carousel.");
-        }
+            document.querySelectorAll('.modern-tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            button.classList.add('active');
+            document.getElementById(targetTab)?.classList.add('active');
+            if (targetTab === 'deepfakeTab') {
+
+                setTimeout(initializeHeatmapCarousel, 50);
+                console.log("Deepfake Tab clicked: Initializing Heatmap Carousel.");
+            }
+        });
     });
-});
 
 }
 
@@ -3767,16 +3778,16 @@ document.querySelectorAll('.modern-tab-button').forEach(button => {
 
 
 document.addEventListener('DOMContentLoaded', () => {
- 
 
-   
+
+
     document.body.addEventListener('click', (event) => {
-        
+
         const toggleButton = event.target.closest('[data-hash-toggle="true"]');
 
         if (toggleButton) {
-    
-            const hashContainer = toggleButton.closest('.p-5.bg-white'); 
+
+            const hashContainer = toggleButton.closest('.p-5.bg-white');
             if (!hashContainer) return;
 
             const hiddenContent = hashContainer.querySelector('#hidden-hashes-content');
@@ -3784,26 +3795,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const buttonIcon = toggleButton.querySelector('.material-symbols-rounded');
 
             if (!hiddenContent || !buttonText || !buttonIcon) return;
-            
-           
+
+
             const initialCount = parseInt(toggleButton.dataset.initialCount, 10);
             const totalCount = parseInt(toggleButton.dataset.totalCount, 10);
-            
+
             if (hiddenContent.classList.contains('hidden')) {
-                
+
                 hiddenContent.classList.remove('hidden');
                 buttonText.textContent = 'Hide Extra Hashes';
-                buttonIcon.textContent = 'expand_less'; 
+                buttonIcon.textContent = 'expand_less';
                 buttonIcon.classList.add('rotate-180');
             } else {
-              
+
                 hiddenContent.classList.add('hidden');
-                
-              
+
+
                 const hiddenCount = totalCount - initialCount;
-                buttonText.textContent = `Show ${hiddenCount} More`; 
-                
-                buttonIcon.textContent = 'expand_more'; 
+                buttonText.textContent = `Show ${hiddenCount} More`;
+
+                buttonIcon.textContent = 'expand_more';
                 buttonIcon.classList.remove('rotate-180');
             }
         }
@@ -3852,11 +3863,11 @@ window.openHeatmapModal = (path) => {
     const downloadBtn = document.getElementById('downloadButton');
     const colorKey = document.getElementById('modalColorKey');
     const scrollContainer = document.getElementById('imageScrollContainer');
-    
+
     // Reset zoom level every time a new image is opened
     currentZoomLevel = 1.0;
     image.style.transform = `scale(${currentZoomLevel})`;
-    image.style.width = 'auto'; 
+    image.style.width = 'auto';
     image.style.height = 'auto';
     image.style.maxWidth = 'none';
 
@@ -3871,43 +3882,43 @@ window.openHeatmapModal = (path) => {
     title.textContent = `Deepfake Heatmap - Frame ${frameNumber} (Confidence: ${confidence}%)`;
     downloadBtn.href = path; // Set download link to the image path
     colorKey.innerHTML = getHeatmapColorKeyHtml(); // Insert the color key
-    
-   image.onload = () => {
+
+    image.onload = () => {
         const scrollContainer = document.getElementById('imageScrollContainer');
-        
+
         // Step 1: Ensure the transform property (zoom) is reset
-        image.style.transform = `scale(1.0)`; 
+        image.style.transform = `scale(1.0)`;
         currentZoomLevel = 1.0;
 
         // Step 2: Use a delay to ensure scrollWidth is calculated based on the NATIVE image size
         setTimeout(() => {
-            
+
             // Check if the content is wider than the container
             if (scrollContainer.scrollWidth > scrollContainer.clientWidth) {
-                
+
                 // Calculate position to center the content
                 // Subtracting clientWidth ensures we scroll to the position where the image is centered in the viewport
                 const centerPosition = (scrollContainer.scrollWidth - scrollContainer.clientWidth) / 2;
-                
+
                 // Set initial scroll position to the center
                 scrollContainer.scrollLeft = centerPosition;
-                
+
                 // Set vertical scroll to center (optional, but helps tall images)
                 scrollContainer.scrollTop = (scrollContainer.scrollHeight - scrollContainer.clientHeight) / 2;
 
-                console.log(`Scroll centered at: ${centerPosition} / ${scrollContainer.scrollWidth}`); 
+                console.log(`Scroll centered at: ${centerPosition} / ${scrollContainer.scrollWidth}`);
             } else {
-                 // If image is small, reset scroll to ensure it starts at 0,0
+                // If image is small, reset scroll to ensure it starts at 0,0
                 scrollContainer.scrollLeft = 0;
                 scrollContainer.scrollTop = 0;
             }
-            
+
             // Disable onload handler
             image.onload = null;
         }, 50); // Increased delay to 50ms for high reliability
     };
-  
-    
+
+
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 };
@@ -3928,7 +3939,7 @@ window.closeHeatmapModal = () => {
 window.zoomHeatmap = (delta) => {
     const image = document.getElementById('modalImage');
     const newZoom = currentZoomLevel + delta;
-    
+
     // Set bounds for zoom (e.g., min 0.5x, max 4x)
     if (newZoom >= 0.5 && newZoom <= 4.0) {
         currentZoomLevel = newZoom;
@@ -3964,12 +3975,12 @@ window.showStringModal = (type, title) => {
         data = ocrNode.all_strings || [];
         modalSubtitle.innerText = "Full OCR sequence captured from video frames";
         html = renderAllStrings(data);
-    } 
+    }
     else if (type === 'unique') {
         data = ocrNode.unique_strings || [];
         modalSubtitle.innerText = "Deduplicated keywords and entities";
         html = renderUniqueStrings(data);
-    } 
+    }
     else if (type === 'printable') {
         data = printableNode;
         modalSubtitle.innerText = "Readable ASCII/UTF-8 strings extracted from binary stream";
@@ -3984,7 +3995,7 @@ window.showStringModal = (type, title) => {
 
 const renderAllStrings = (items) => {
     if (!items.length) return renderEmptyState("No OCR strings were extracted from this file.");
-    
+
     return items.map(item => `
         <div class="group flex items-center justify-between p-3 border-b border-slate-50 hover:bg-indigo-50/50 rounded-lg transition-colors">
             <div class="flex items-center gap-4">
@@ -4003,7 +4014,7 @@ const renderAllStrings = (items) => {
 
 const renderUniqueStrings = (strings) => {
     if (!strings.length) return renderEmptyState("No unique keywords detected.");
-    
+
     return `
         <div class="flex flex-wrap gap-2">
             ${strings.map(str => `
@@ -4017,7 +4028,7 @@ const renderUniqueStrings = (strings) => {
 
 const renderPrintableStrings = (offsets) => {
     if (!offsets.length) return renderEmptyState("No printable strings found in binary data.");
-    
+
     return `
         <div class="font-mono text-[11px]">
             <div class="grid grid-cols-12 gap-2 mb-4 text-slate-400 font-bold uppercase tracking-widest border-b pb-2">
@@ -4057,7 +4068,7 @@ window.closeForensicModal = () => {
 document.getElementById('forensicSearch').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase();
     const rows = document.querySelectorAll('#modalBody > div, #modalBody > span');
-    
+
     rows.forEach(row => {
         const text = row.innerText.toLowerCase();
         row.style.display = text.includes(term) ? '' : 'none';

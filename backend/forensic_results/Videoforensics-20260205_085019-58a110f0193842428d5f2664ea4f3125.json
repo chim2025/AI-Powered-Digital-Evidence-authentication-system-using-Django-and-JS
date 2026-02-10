@@ -1,7 +1,7 @@
 {
-    "file": "1836477f524047418969ff7b493c64a4.mp4",
-    "tamper_probability": 0.6213,
-    "verdict": "SUSPICIOUS — NEEDS MANUAL REVIEW",
+    "file": "e30cc9200bcb45d7835c7308a8ae6c24.mp4",
+    "tamper_probability": 0.9472,
+    "verdict": "TAMPERED — HIGH CONFIDENCE",
     "metadata": {
         "important_Metadata": {
             "extracted_text": {
@@ -5679,136 +5679,7 @@
                 "ocr_confidence_avg": 72.23
             },
             "metadata": {
-                "streams": [
-                    {
-                        "index": 0,
-                        "codec_name": "h264",
-                        "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
-                        "profile": "High",
-                        "codec_type": "video",
-                        "codec_tag_string": "avc1",
-                        "codec_tag": "0x31637661",
-                        "width": 368,
-                        "height": 368,
-                        "coded_width": 368,
-                        "coded_height": 368,
-                        "has_b_frames": 0,
-                        "pix_fmt": "yuv420p",
-                        "level": 30,
-                        "color_range": "tv",
-                        "color_primaries": "bt470bg",
-                        "chroma_location": "left",
-                        "field_order": "progressive",
-                        "refs": 1,
-                        "is_avc": "true",
-                        "nal_length_size": "4",
-                        "id": "0x1",
-                        "r_frame_rate": "30/1",
-                        "avg_frame_rate": "8120/271",
-                        "time_base": "1/90000",
-                        "start_pts": 0,
-                        "start_time": "0.000000",
-                        "duration_ts": 4878000,
-                        "duration": "54.200000",
-                        "bit_rate": "418526",
-                        "bits_per_raw_sample": "8",
-                        "nb_frames": "1624",
-                        "extradata_size": 34,
-                        "disposition": {
-                            "default": 1,
-                            "dub": 0,
-                            "original": 0,
-                            "comment": 0,
-                            "lyrics": 0,
-                            "karaoke": 0,
-                            "forced": 0,
-                            "hearing_impaired": 0,
-                            "visual_impaired": 0,
-                            "clean_effects": 0,
-                            "attached_pic": 0,
-                            "timed_thumbnails": 0,
-                            "non_diegetic": 0,
-                            "captions": 0,
-                            "descriptions": 0,
-                            "metadata": 0,
-                            "dependent": 0,
-                            "still_image": 0,
-                            "multilayer": 0
-                        },
-                        "tags": {
-                            "language": "und"
-                        }
-                    },
-                    {
-                        "index": 1,
-                        "codec_name": "aac",
-                        "codec_long_name": "AAC (Advanced Audio Coding)",
-                        "profile": "HE-AACv2",
-                        "codec_type": "audio",
-                        "codec_tag_string": "mp4a",
-                        "codec_tag": "0x6134706d",
-                        "sample_fmt": "fltp",
-                        "sample_rate": "44100",
-                        "channels": 2,
-                        "channel_layout": "stereo",
-                        "bits_per_sample": 0,
-                        "initial_padding": 0,
-                        "id": "0x2",
-                        "r_frame_rate": "0/0",
-                        "avg_frame_rate": "0/0",
-                        "time_base": "1/48000",
-                        "start_pts": 0,
-                        "start_time": "0.000000",
-                        "duration_ts": 2605706,
-                        "duration": "54.285542",
-                        "bit_rate": "32023",
-                        "nb_frames": "1169",
-                        "extradata_size": 4,
-                        "disposition": {
-                            "default": 1,
-                            "dub": 0,
-                            "original": 0,
-                            "comment": 0,
-                            "lyrics": 0,
-                            "karaoke": 0,
-                            "forced": 0,
-                            "hearing_impaired": 0,
-                            "visual_impaired": 0,
-                            "clean_effects": 0,
-                            "attached_pic": 0,
-                            "timed_thumbnails": 0,
-                            "non_diegetic": 0,
-                            "captions": 0,
-                            "descriptions": 0,
-                            "metadata": 0,
-                            "dependent": 0,
-                            "still_image": 0,
-                            "multilayer": 0
-                        },
-                        "tags": {
-                            "language": "und"
-                        }
-                    }
-                ],
-                "chapters": [],
-                "format": {
-                    "filename": "C:\\Users\\profo\\Desktop\\evidence\\backend\\files\\1836477f524047418969ff7b493c64a4.mp4",
-                    "nb_streams": 2,
-                    "nb_programs": 0,
-                    "nb_stream_groups": 0,
-                    "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
-                    "format_long_name": "QuickTime / MOV",
-                    "start_time": "0.000000",
-                    "duration": "54.285542",
-                    "size": "3070696",
-                    "bit_rate": "452525",
-                    "probe_score": 100,
-                    "tags": {
-                        "major_brand": "mp42",
-                        "minor_version": "0",
-                        "compatible_brands": "mp42isom"
-                    }
-                }
+                "error": "[WinError 2] The system cannot find the file specified"
             },
             "embedded_subtitles": [],
             "hashes": {
@@ -17820,186 +17691,186 @@
         ]
     },
     "features": {
-        "gop_irregularity": 0.003,
+        "gop_irregularity": 1.0,
         "duplicate_ratio": 92.85,
         "cut_density": 0.185,
         "metadata_flag": 0,
         "prnu_full_calibration": {
-            "analysis_date": "2026-01-28T08:22:00",
+            "analysis_date": "2026-02-05T07:50:13",
             "total_videos_requested": 1,
             "videos_processed": [
                 {
-                    "video": "1836477f524047418969ff7b493c64a4.mp4",
-                    "full_path": "C:\\Users\\profo\\Desktop\\evidence\\backend\\files\\1836477f524047418969ff7b493c64a4.mp4",
+                    "video": "e30cc9200bcb45d7835c7308a8ae6c24.mp4",
+                    "full_path": "C:\\Users\\Digital Forensic\\Music\\AI_Forensics_V3\\backend\\files\\e30cc9200bcb45d7835c7308a8ae6c24.mp4",
                     "frames_used": 117,
                     "patch_size": 32,
-                    "mean_corr": 0.5068,
-                    "median_corr": 0.4771,
-                    "std_corr": 0.258,
-                    "mad_corr": 0.029700000000000004,
+                    "mean_corr": 0.5476,
+                    "median_corr": 0.5185,
+                    "std_corr": 0.3295,
+                    "mad_corr": 0.029100000000000015,
                     "status": "ok"
                 }
             ],
             "global_statistics": {
                 "videos_analyzed": 1,
                 "mean_correlation": {
-                    "min": 0.5068,
-                    "p25": 0.5068,
-                    "median": 0.5068,
-                    "p75": 0.5068,
-                    "max": 0.5068
+                    "min": 0.5476,
+                    "p25": 0.5476,
+                    "median": 0.5476,
+                    "p75": 0.5476,
+                    "max": 0.5476
                 },
                 "std_correlation": {
-                    "min": 0.258,
-                    "p25": 0.258,
-                    "median": 0.258,
-                    "p75": 0.258,
-                    "max": 0.258
+                    "min": 0.3295,
+                    "p25": 0.3295,
+                    "median": 0.3295,
+                    "p75": 0.3295,
+                    "max": 0.3295
                 },
                 "mad_correlation": {
-                    "min": 0.029700000000000004,
-                    "p25": 0.029700000000000004,
-                    "median": 0.029700000000000004,
-                    "p75": 0.029700000000000004,
-                    "max": 0.029700000000000004
+                    "min": 0.029100000000000015,
+                    "p25": 0.029100000000000015,
+                    "median": 0.029100000000000015,
+                    "p75": 0.029100000000000015,
+                    "max": 0.029100000000000015
                 }
             },
             "threshold_suggestions": {
                 "consistent_camera": {
-                    "mean_corr_min": 0.5068,
+                    "mean_corr_min": 0.5476,
                     "std_corr_max": 0.05,
-                    "mad_corr_max": 0.029700000000000004
+                    "mad_corr_max": 0.029100000000000015
                 },
                 "possible_tampering": {
                     "mean_corr_max": 0.018,
-                    "std_corr_min": 0.258,
+                    "std_corr_min": 0.3295,
                     "mad_corr_min": 0.05
                 }
             },
             "histograms": {
                 "mean_corr": [
                     {
-                        "range": "0.0068–0.1318",
+                        "range": "0.0476–0.1726",
                         "count": 0
                     },
                     {
-                        "range": "0.1318–0.2568",
+                        "range": "0.1726–0.2976",
                         "count": 0
                     },
                     {
-                        "range": "0.2568–0.3818",
+                        "range": "0.2976–0.4226",
                         "count": 0
                     },
                     {
-                        "range": "0.3818–0.5068",
+                        "range": "0.4226–0.5476",
                         "count": 0
                     },
                     {
-                        "range": "0.5068–0.6318",
+                        "range": "0.5476–0.6726",
                         "count": 1
                     },
                     {
-                        "range": "0.6318–0.7568",
+                        "range": "0.6726–0.7976",
                         "count": 0
                     },
                     {
-                        "range": "0.7568–0.8818",
+                        "range": "0.7976–0.9226",
                         "count": 0
                     },
                     {
-                        "range": "0.8818–1.0068",
+                        "range": "0.9226–1.0476",
                         "count": 0
                     }
                 ],
                 "std_corr": [
                     {
-                        "range": "-0.2420–-0.1170",
+                        "range": "-0.1705–-0.0455",
                         "count": 0
                     },
                     {
-                        "range": "-0.1170–0.0080",
+                        "range": "-0.0455–0.0795",
                         "count": 0
                     },
                     {
-                        "range": "0.0080–0.1330",
+                        "range": "0.0795–0.2045",
                         "count": 0
                     },
                     {
-                        "range": "0.1330–0.2580",
+                        "range": "0.2045–0.3295",
                         "count": 0
                     },
                     {
-                        "range": "0.2580–0.3830",
+                        "range": "0.3295–0.4545",
                         "count": 1
                     },
                     {
-                        "range": "0.3830–0.5080",
+                        "range": "0.4545–0.5795",
                         "count": 0
                     },
                     {
-                        "range": "0.5080–0.6330",
+                        "range": "0.5795–0.7045",
                         "count": 0
                     },
                     {
-                        "range": "0.6330–0.7580",
+                        "range": "0.7045–0.8295",
                         "count": 0
                     }
                 ],
                 "mad_corr": [
                     {
-                        "range": "-0.4703–-0.3453",
+                        "range": "-0.4709–-0.3459",
                         "count": 0
                     },
                     {
-                        "range": "-0.3453–-0.2203",
+                        "range": "-0.3459–-0.2209",
                         "count": 0
                     },
                     {
-                        "range": "-0.2203–-0.0953",
+                        "range": "-0.2209–-0.0959",
                         "count": 0
                     },
                     {
-                        "range": "-0.0953–0.0297",
+                        "range": "-0.0959–0.0291",
                         "count": 0
                     },
                     {
-                        "range": "0.0297–0.1547",
+                        "range": "0.0291–0.1541",
                         "count": 1
                     },
                     {
-                        "range": "0.1547–0.2797",
+                        "range": "0.1541–0.2791",
                         "count": 0
                     },
                     {
-                        "range": "0.2797–0.4047",
+                        "range": "0.2791–0.4041",
                         "count": 0
                     },
                     {
-                        "range": "0.4047–0.5297",
+                        "range": "0.4041–0.5291",
                         "count": 0
                     }
                 ]
             }
         },
         "prnu_checkers": {
-            "video": "1836477f524047418969ff7b493c64a4.mp4",
-            "full_path": "C:\\Users\\profo\\Desktop\\evidence\\backend\\files\\1836477f524047418969ff7b493c64a4.mp4",
+            "video": "e30cc9200bcb45d7835c7308a8ae6c24.mp4",
+            "full_path": "C:\\Users\\Digital Forensic\\Music\\AI_Forensics_V3\\backend\\files\\e30cc9200bcb45d7835c7308a8ae6c24.mp4",
             "frames_used": 117,
             "patch_size": 32,
-            "mean_corr": 0.5068,
-            "median_corr": 0.4771,
-            "std_corr": 0.258,
-            "mad_corr": 0.029700000000000004,
+            "mean_corr": 0.5476,
+            "median_corr": 0.5185,
+            "std_corr": 0.3295,
+            "mad_corr": 0.029100000000000015,
             "status": "ok",
             "threshold_suggestions": {
                 "consistent_camera": {
-                    "mean_corr_min": 0.5068,
+                    "mean_corr_min": 0.5476,
                     "std_corr_max": 0.05,
-                    "mad_corr_max": 0.029700000000000004
+                    "mad_corr_max": 0.029100000000000015
                 },
                 "possible_tampering": {
                     "mean_corr_max": 0.018,
-                    "std_corr_min": 0.258,
+                    "std_corr_min": 0.3295,
                     "mad_corr_min": 0.05
                 }
             }
@@ -18008,10 +17879,10 @@
             "classification": "INCONSISTENT – POSSIBLE TAMPERING / MULTI-CAMERA",
             "confidence": "Low",
             "overall_score_0_100": 40,
-            "mean_corr": 0.5068,
-            "median_corr": 0.4771,
-            "std_corr": 0.258,
-            "mad_corr": 0.0297,
+            "mean_corr": 0.5476,
+            "median_corr": 0.5185,
+            "std_corr": 0.3295,
+            "mad_corr": 0.0291,
             "frames_used": 117,
             "thresholds_used": "adaptive/from_calibration",
             "detailed_checks": {
@@ -18025,9 +17896,9 @@
                 "no_computation_error": true
             },
             "explanation_bullets": [
-                "Mean corr 0.5068 ≥ 0.5068 → strong fingerprint (1.014 of typical max 0.50)",
-                "Std dev 0.2580 > 0.0500 → unstable (possible splicing) (0.516 of typical max 0.50)",
-                "MAD 0.0297 ≤ 0.0297 → very uniform noise (0.099 of typical max 0.30)",
+                "Mean corr 0.5476 ≥ 0.5476 → strong fingerprint (1.095 of typical max 0.50)",
+                "Std dev 0.3295 > 0.0500 → unstable (possible splicing) (0.659 of typical max 0.50)",
+                "MAD 0.0291 ≤ 0.0291 → very uniform noise (0.097 of typical max 0.30)",
                 "One or more metrics fall into tampering range"
             ],
             "benchmarks": {
@@ -18049,10 +17920,10 @@
                 }
             },
             "ratios": {
-                "mean_corr": 1.0136,
-                "median_corr": 0.9542,
-                "std_corr": 0.516,
-                "mad_corr": 0.099
+                "mean_corr": 1.0952,
+                "median_corr": 1.037,
+                "std_corr": 0.659,
+                "mad_corr": 0.097
             },
             "raw_notes": "ok"
         }

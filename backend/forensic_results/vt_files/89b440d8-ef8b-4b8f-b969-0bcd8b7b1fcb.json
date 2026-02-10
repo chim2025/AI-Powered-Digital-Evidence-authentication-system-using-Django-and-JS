@@ -1,0 +1,18 @@
+{
+  "task_id": "89b440d8-ef8b-4b8f-b969-0bcd8b7b1fcb",
+  "file_path": "C:\\Users\\Digital Forensic\\Music\\AI_Forensics_V3\\backend\\files\\fe1ad00fc5f54fff9281c1b4acd0fecd.webp",
+  "created_at": "2026-02-09T12:30:25.264971",
+  "vt_status": "completed",
+  "vt_result": {
+    "malicious": 0,
+    "suspicious": 0,
+    "undetected": 58,
+    "harmless": 0,
+    "total_engines": 76,
+    "detection_ratio": "0/76",
+    "permalink": "https://www.virustotal.com/gui/file/a27ecccea10092720ee3d4224ef6184195980dd6a3fae65f2cb54daca10b1b2d",
+    "sha256": "a27ecccea10092720ee3d4224ef6184195980dd6a3fae65f2cb54daca10b1b2d"
+  },
+  "vt_started_at": "2026-02-09T12:30:38.956053",
+  "vt_completed_at": "2026-02-09T12:32:45.388038"
+}
